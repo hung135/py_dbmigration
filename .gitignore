@@ -1,0 +1,5 @@
+**/env_vars.rc
+env_vars.rc
+scripts/.py/
+*.pyc
+

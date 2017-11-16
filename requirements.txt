@@ -1,0 +1,10 @@
+psycopg2
+pandas
+sqlalchemy
+xlrd
+pymssql
+openpyxl
+xlsxwriter
+requests
+BeautifulSoup4
+inflection
