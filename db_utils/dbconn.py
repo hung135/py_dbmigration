@@ -10,7 +10,6 @@ from misc_utils import timer_decorator
 
 # Decorator function to log and time how long a function took to run
 
-
 class Connection:
     _conn = None
     _cur = None
@@ -28,18 +27,18 @@ class Connection:
 
     def connect_sqlalchemy(self, schema=None, db=None):
         import sqlalchemy
-        import pymssql
+        #import pymssql
         '''Returns a connection and a metadata object'''
         # We connect with the help of the PostgreSQL URL
         # postgresql://federer:grandestslam@localhost:5432/tennis
         url = ""
         if db is None and self._dbtype is None:
-            db="POSTGRES"
+            db = "POSTGRES"
         else:
-            db=self._dbtype
+            db = self._dbtype
         if schema is None:
-            schema=self.dbschema
-        
+            schema = self.dbschema
+
         if db.upper() == "POSTGRES":
 
             url = 'postgresql://{}:{}@{}:{}/{}'
@@ -58,9 +57,6 @@ class Connection:
         return con, meta
 
     def print_drop_tables(self):
-        import csv
-        import sqlalchemy
-        from sqlalchemy.dialects import postgresql
 
         con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
         for n, t in meta.tables.items():
@@ -68,51 +64,41 @@ class Connection:
             print ("drop table if exists {}.{} cascade;".format(self.dbschema,t.name))
               
 
-    def pandas_dump_table_csv(self, table_list, folder,chunksize=100000):
-    #def get_pandas_frame(self, table_name,rows=None):
+    def pandas_dump_table_csv(self, table_list, folder, chunksize=100000):
+        # def get_pandas_frame(self, table_name,rows=None):
         import pandas as pd
         import migrate_utils as migu
-        conn,meta = self.connect_sqlalchemy()
-        
+        conn, meta = self.connect_sqlalchemy()
 
-        #z=db.get_pandas_frame('errorlog')
+        # z=db.get_pandas_frame('errorlog')
         for t in table_list:
-            z=pd.read_sql_table(t,conn,schema=self.dbschema,index_col=None,
-            coerce_float=True,parse_dates=None,columns=None,chunksize=chunksize)
-            #with open(folder+"/"+t+".csv","wb") as f:
-            filename="{}_{}_{}.csv".format(self._database_name,self.dbschema,t)
-            full_file_path=folder+"/"+filename
-            #print(type(z),filename)
-            i=0
-            with open(full_file_path,"wb") as f:
-                print(bytes("Dumping to CSV: {}".format(t),"utf-8"))
+            z = pd.read_sql_table(t, conn, schema=self.dbschema, index_col=None,
+                                  coerce_float=True, parse_dates=None, columns=None, chunksize=chunksize)
+            # with open(folder+"/"+t+".csv","wb") as f:
+            filename = "{}_{}_{}.csv".format(self._database_name, self.dbschema, t)
+            full_file_path = folder + "/" + filename
+            # print(type(z),filename)
+            i = 0
+            with open(full_file_path, "wb") as f:
+                print(bytes("Dumping to CSV: {}".format(t), "utf-8"))
                 for df in z:
-                    i+=1
-                    
+                    i += 1
 
-                    if i==1:
-                        #print(list(df.columns))
-                        column_list_snake=migu.convert_list_to_snake_case(list(df.columns))
-                        #print(column_list_snake)
-                        df.columns=column_list_snake
-                        df.to_csv(full_file_path,index=False,header=True)
+                    if i == 1:
+                        # print(list(df.columns))
+                        column_list_snake = migu.convert_list_to_snake_case(list(df.columns))
+                        # print(column_list_snake)
+                        df.columns = column_list_snake
+                        df.to_csv(full_file_path, index=False, header=True)
                         print("Records Dumped: {}".format(len(df.index)))
                     else:
-                        df.to_csv(full_file_path,mode="a",index=False)
-                        print("Records Dumped: {}".format(i*chunksize))
-                    #print(dir(df),type(df))
- 
+                        df.to_csv(full_file_path, mode="a", index=False)
+                        print("Records Dumped: {}".format(i * chunksize))
+                    # print(dir(df),type(df))
 
-
-                    
-                    
-
-
-
-    def dump_tables_csv(self,table_list,folder):
+    def dump_tables_csv(self, table_list, folder):
         import csv
         import sqlalchemy
-        from sqlalchemy.dialects import postgresql
 
         con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
         # print dir(meta.tables)
@@ -129,7 +115,7 @@ class Connection:
 
     def print_tables(self, table_list):
         import sqlalchemy
-        from sqlalchemy.dialects import postgresql
+
         print(self.dbschema, self._dbtype)
         con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
         # print dir(meta.tables)
@@ -140,12 +126,12 @@ class Connection:
                 stmt = sqlalchemy.schema.CreateTable(table)
                 print(str(stmt) + ";")
             except:
-                print("-- Cannot Find Table: {}".format(t))
+                #print("Cannot Find Table: {}".format(t))
+                logging.Error("Cannot Find Table: {}".format(t))
 
     def print_create_table(self, folder=None):
         import migrate_utils as mig
         import sqlalchemy
-        from sqlalchemy.dialects import postgresql
 
         con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
         # print dir(meta.tables)
@@ -161,7 +147,7 @@ class Connection:
             if folder is None:
                 print(str(createsql) + ";")
             else:
-                with open(folder + "/" + t.name + ".sqlx", "wb") as f:
+                with open(folder + "/" + t.name + ".sql", "wb") as f:
                     f.write(createsql + ";")
         print("Total Tables:{}".format(table_count))
 
@@ -185,8 +171,6 @@ class Connection:
     def insert_table(self, table_name, column_list, values, onconflict=''):
         sqlstring = "Insert into " + table_name + \
             " (" + column_list + ") values " + values + " " + onconflict
-        #logging.debug("SQL:{}".format(sqlstring))
-        #print(sqlstring)
         self._cur.execute(sqlstring)
         self.commit()
         self.last_row_count = self._cur.rowcount
@@ -204,7 +188,10 @@ class Connection:
         """
         if table_name is None:
             self._cur.execute("vacuum")
+            logging.debug("Vacuuming Schema")
+
         else:
+            logging.debug("Vacuuming Table:{0}".format(table_name))
             self._cur.execute("vacuum {0}".format(table_name))
 
     def execute(self, sqlstring, debug=False):
@@ -224,8 +211,9 @@ class Connection:
         self.commit()
 
     def truncate_table(self, table_name):
-        logging.debug("Truncating Table: \n\tHost:{0}\n\tDatabase:{1}\n\tTablename:{2}".format(self._host,
-                                                                                               self._database_name, table_name))
+        logging.debug(
+            "Truncating Table: \n\tHost:{0}\n\tDatabase:{1}\n\tTablename:{2}".format(
+                self._host, self._database_name, table_name))
         self._cur.execute('TRUNCATE table {0}'.format(table_name))
 
         self.commit()
@@ -269,6 +257,7 @@ class Connection:
             self._port = 5432
         conn = psycopg2.connect(dbname=self._database_name, user=self._userid,
                                 password=self._password, port=self._port, host=self._host)
+        conn.set_client_encoding('UNICODE')
         return conn
 
     def _connect_mssql(self):
@@ -424,52 +413,44 @@ class Connection:
                          self._host, self._port, self._database_name)
         return url
 
- 
-    #this one breaks w/ sqlserver
-    def get_table_list(self,  dbschema=None):
+    # this one breaks w/ sqlserver
+    def get_table_list(self, dbschema=None):
         Base = automap_base()
-        
+
         #from sqlalchemy.orm import Session
-        schema=dbschema
+        schema = dbschema
         if dbschema is None:
-                schema=self.dbschema
-        
+            schema = self.dbschema
+
         con, meta = self.connect_sqlalchemy(schema=schema)
         Base.prepare(con, reflect=True, schema=schema)
-        l=[]
-        for t,k in Base.classes.items():
-                #print(t,(k.__dict__))
-                #for m in k:
-                l.append(t)
+        l = []
+        for t, k in Base.classes.items():
+            # print(t,(k.__dict__))
+            # for m in k:
+            l.append(t)
         return l
 
-  
-
-
-    def get_columns(self,table_name,dbschema):
+    def get_columns(self, table_name, dbschema):
         import migrate_utils as mig
         import sqlalchemy
         from sqlalchemy.dialects import postgresql
-        
 
         con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
-        #print dir(meta.tables)
-        
-       
-     
-       
-            #print(n, t.name)
+        # print dir(meta.tables)
 
-             # print(type(n), n, t.name)
-        print(table_name,"-----------------",dbschema)
+        #print(n, t.name)
+
+        # print(type(n), n, t.name)
+        print(table_name, "-----------------", dbschema)
         table = sqlalchemy.Table(
             table_name, meta, autoload=True, autoload_with=con)
         print(table)
-        column_list= [c.name for c in table.columns]
-        print(column_list,"-----------------")
+        column_list = [c.name for c in table.columns]
+        print(column_list, "-----------------")
         return list(column_list)
 
-    # returns a list of table dict 
+    # returns a list of table dict
     def get_tables(self):
         import migrate_utils as mig
         import sqlalchemy
@@ -477,66 +458,74 @@ class Connection:
 
         con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
         # print dir(meta.tables)
-        
-        table_obj=[]
+
+        table_obj = []
         for n, t in meta.tables.items():
-       
+
             #print(n, t.name)
 
              # print(type(n), n, t.name)
             table = sqlalchemy.Table(
                 t.name, meta, autoload=True, autoload_with=con)
             column_list = [c.name for c in table.columns]
-            d=dict({"db":self._database_name,"schema":self.dbschema,"table_name":t.name,"columns":column_list})
+            d = dict({"db": self._database_name, "schema": self.dbschema, "table_name": t.name, "columns": column_list})
             table_obj.append(d)
-    
 
         return table_obj
-		
-		
-		
-    def get_tables_row_count(self,schema=None):
+
+    def get_table_row_count_fast(self, table_name, schema=None):
+        x = 0
+        if dbtype == 'POSTGRES':
+            db.vacuum(table_name)
+            row = self.query("""select n_live_tup 
+                    from pg_stat_user_tables 
+                    where schemaname='{}' and relname='{}'""".format(schema, table_name))
+            x = row[0][0]
+
+        return x
+
+    def get_tables_row_count(self, schema=None):
         import migrate_utils as mig
-        import sqlalchemy
         from sqlalchemy.dialects import postgresql
         if schema is None:
-            schema=self.dbschema
+            schema = self.dbschema
         con, meta = self.connect_sqlalchemy(schema, self._dbtype)
         # print dir(meta.tables)
-        
-        table_obj=[]
+
+        table_obj = []
         for n, t in meta.tables.items():
-       
+
             #print(n, t.name)
 
             #print(type(n), n, dir(t))
-            x= self.query("select count(*) from {}".format(t.key))
-            rowcount=x[0][0]
-            #print(type(rowcount),dir(rowcount))
-            d=dict({"db":self._database_name,"schema":self.dbschema,"table_name":t.name,"row_counts":rowcount})
+            x = self.query("select count(*) from {}".format(t.key))
+            rowcount = x[0][0]
+            # print(type(rowcount),dir(rowcount))
+            d = dict({"db": self._database_name, "schema": self.dbschema, "table_name": t.name, "row_counts": rowcount})
             table_obj.append(d)
-    
 
         return table_obj
 
     def print_table_info(self, table_name, dbschema):
         Base = automap_base()
-        #from sqlalchemy.orm import Session
+        # from sqlalchemy.orm import Session
 
         Base.prepare(self.engine, reflect=True, schema=dbschema)
         l = eval('Base.classes.{}'.format(table_name))
         for m in l.__table__.columns:
             print(m, m.type)
     # this is only in this class for convience atm, should be moved out eventually
-    def get_pandas_frame(self, table_name,rows=None):
+
+    def get_pandas_frame(self, table_name, rows=None):
         import pandas as pd
-        conn,meta = self.connect_sqlalchemy()
-        z=pd.read_sql_table(table_name,conn,schema=self.dbschema,index_col=None,
-        coerce_float=True,parse_dates=None,columns=None,chunksize=rows)
+        conn, meta = self.connect_sqlalchemy()
+        z = pd.read_sql_table(table_name, conn, schema=self.dbschema, index_col=None,
+                              coerce_float=True, parse_dates=None, columns=None, chunksize=rows)
         return z
-    def put_pandas_frame(self, table_name,df):
+
+    def put_pandas_frame(self, table_name, df):
         import pandas as pd
-        conn,meta = self.connect_sqlalchemy()
-        z=df.to_sql(table_name,conn,schema=self.dbschema, index=False,
-         if_exists='append',chunksize=None,dtype=None)
+        conn, meta = self.connect_sqlalchemy()
+        z = df.to_sql(table_name, conn, schema=self.dbschema, index=False,
+                      if_exists='append', chunksize=None, dtype=None)
         return z

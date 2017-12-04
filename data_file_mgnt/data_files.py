@@ -102,7 +102,8 @@ class DataFile:
         if file_path == '':
             file_path = '.'
         return file_path
-
+    #id_regex is used to extract some meaning data from the name of the file like a year or month or date
+    #that id gets stored with the meta data about the file to later use
     def build_sql(self, list, id_regex=None):
         sqlvalue = []
         p = None
@@ -126,7 +127,7 @@ class DataFile:
 
             sqlvalue.append(
                 ("('{0}','{1}','{2}','{3}')").format(i, self.source_file_path, file_id, self.compressed_file_type))
-        #logging.debug("Meta DataFiles:{}".format(sqlvalue))
+        # logging.debug("Meta DataFiles:{}".format(sqlvalue))
         return sqlvalue
 
     def insert_working_files(self, db, id_regex=None):
@@ -227,7 +228,7 @@ class DataFile:
         logging.debug("Into Import:{0}".format(dest.table_name))
         if db is not None:
 
-            logging.debug("Into Import:{0}".format(dest.table_name))
+            #logging.debug("Into Import:{0}".format(dest.table_name))
             if re.match(dest.regex, self.curr_src_working_file):
                 t = lg.DbLogging(db)
 
@@ -292,9 +293,9 @@ class DataFile:
 
                     log_entry.records_inserted = i[1]
                     logging.info(
-                        "Copy Command Compleated: {0}".format(data_file))
+                        "Copy Command Completed: {0}".format(data_file))
                     t.session.add(log_entry)
-                #t.session.commit()
+                t.session.commit()
         else:
             logging.debug("Regex Not Match Skipping:{0}".format(dest.table_name))
     """
@@ -463,6 +464,25 @@ class DataFile:
         if hr:
             return md5.hexdigest()
         return md5.digest()
+    def count_csv(self,full_file_path):
+        import csv
+        import datetime
+        starttime=datetime.datetime.now()
+        print("starttime",starttime)
+        logging.debug("Counting File:")
+        chunksize = 10 ** 6
+        i=0
+        for chunk in pd.read_csv(full_file_path, chunksize=chunksize):
+            i+=1
+            #print(i,chunksize,i*chunksize,datetime.datetime.now())
+         
+        if i>0:
+            count_size=len(chunk)+(i-1)*chunksize
+            #print(chunk.columns,len(chunk)+(i-1)*chunksize,starttime,datetime.datetime.now())
+        else:
+            count_size=0
+        logging.debug("File Row Count:{0}".format(count_size))
+        return count_size
 
     def count_file_lines(self, file):
         # this is 10-100x slower than using WC command
@@ -514,7 +534,7 @@ class DataFile:
                     where current_worker_host is not null and current_worker_host_pid is not null
                     order by process_start_dtm"""))
 
-    def finish_work(self, db, process_error=None, dbtable=''):
+    def finish_work(self, db, process_error=None, dbtable=None,vacuum=True):
         file_imported = ''
         print(process_error)
 
@@ -528,7 +548,8 @@ class DataFile:
         db.update(sqlstring.format(db.dbschema, self.host,
                                    self.curr_pid, self.curr_src_working_file,
                                    file_imported, self.processed_file_count, process_error, dbtable))
-        db.vacuum()
+        if vacuum:
+            db.vacuum(table_name=dbtable)
 
     def get_work(self, db):
         self.processed_file_count = 0
@@ -538,13 +559,13 @@ class DataFile:
                     current_worker_host='{1}', current_worker_host_pid={2}, process_start_dtm=now()
                     where(file_path ||file_name) in (select file_path ||file_name
                         from {0}.meta_source_files where current_worker_host is null order by
-                        embedded_id desc ,file_type asc limit 1)
+                        file_size asc, embedded_id desc ,file_type asc limit 1)
                     """).format(db.dbschema, self.host, self.curr_pid))
         row = db.query(("""select file_name, file_path,embedded_id, file_type,id,total_rows from {0}.meta_source_files where
                          current_worker_host='{1}'
                          and current_worker_host_pid={2}
                         and process_end_dtm is null
-                         order by file_type asc,process_start_dtm desc limit 1
+                         order by file_size asc, file_type asc,process_start_dtm desc limit 1
                          """).format(db.dbschema, self.host, self.curr_pid))
 
         if not row:
@@ -566,7 +587,7 @@ class DataFile:
 
             if self.work_file_type == 'DATA' and self.row_count==0:
                 logging.debug("Working DATAFILE:{0}:".format(self.curr_src_working_file))
-                self.row_count = self.count_file_lines(self.source_file_path + '/' + self.curr_src_working_file)
+                self.row_count = self.count_csv(self.source_file_path + '/' + self.curr_src_working_file)
 
                 # set_file_size()
                 # row_count()
@@ -600,7 +621,7 @@ class DataFile:
     # When it is done with the processing of the record it we stamp the process_end_dtm
     # signifying the file has been processed
 
-    def do_work(self, db, datafiles, cleanup=True, limit_rows=None,import_type='Pandas'):
+    def do_work(self, db, datafiles, cleanup=True, limit_rows=None,import_type='Pandas',vacuum=True):
         df = self
         while df.get_work(db) is not None:
 
@@ -608,7 +629,6 @@ class DataFile:
             if df.work_file_type == 'DATA':
                 year = df.embedded_id[:-2]
                 quarter = df.embedded_id[-1:]
-                print(self.row_count,"--------")
                 # use the line below if we need to stamp the data file w/ a column that has additional data
                 # df.insert_into_file(df.source_file_path + df.curr_src_working_file, str(quarter)+str(year)+ '|', 'LINE')
                 # one of these won't execute because the file won't match the regex
@@ -635,10 +655,10 @@ class DataFile:
                         pattern_found = True
                 if not pattern_found:
                     process_error = process_error + "RegEx Pattern Not found for File"
-                df.finish_work(db, process_error=process_error, dbtable=dbtable)
+                df.finish_work(db, process_error=process_error, dbtable=dbtable,vacuum=vacuum)
             else:
                 df.extract_file(db)
-                df.finish_work(db)
+                df.finish_work(db,vacuum=vacuum)
             if cleanup:
                 df.cleanup_files()
             # import_files(files,loan_acquisition)

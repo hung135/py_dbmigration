@@ -213,14 +213,12 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
 
         drop = "DROP FUNCTION IF EXISTS {}.{};".format(db.dbschema, basefilename + "_upsert();")
         with open(folder_revert + filename, "wb") as f:
-            for line in rows:
-                f.write(bytes(drop, 'UTF-8'))
-                f.write(bytes("\n", 'UTF-8'))
+            f.write(bytes(drop, 'UTF-8'))
+            f.write(bytes("\n", 'UTF-8'))
 
         with open(folder_verify + filename, "wb") as f:
-            for line in rows:
-                f.write(bytes("-- NA ", 'UTF-8'))
-                f.write(bytes("\n", 'UTF-8'))
+            f.write(bytes("-- NA ", 'UTF-8'))
+            f.write(bytes("\n", 'UTF-8'))
     print("Total Tables:{}".format(table_count))
     with open(folder + "/sqitchplanadd_upsert.bash", "wb") as f:
         f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table_upsert()", 'UTF-8'))
@@ -266,7 +264,7 @@ def print_table_dict(db, folder=None, targetschema=None):
     print("Total Tables:{}".format(table_count))
 
 
-def print_create_table(db, folder=None, targetschema=None):
+def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
     import migrate_utils as mig
     import sqlalchemy
     import os
@@ -295,8 +293,10 @@ def print_create_table(db, folder=None, targetschema=None):
     for n, t in meta.tables.items():
         table_count += 1
  
-        
-        filename = dbschema+"."+t.name.lower() + ".sql"
+        if file_prefix is not None:
+            filename = file_prefix+t.name.lower() + ".sql"
+        else:
+            filename = t.name.lower() + ".sql" 
         basefilename = t.name.lower()
         #print(type(n), n, t.name)
         table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
