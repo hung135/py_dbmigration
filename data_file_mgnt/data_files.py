@@ -1,7 +1,7 @@
 import re
 import os
 import glob
-import zip_utils
+from .. import  zip_utils
 import socket
 import logging
 import hashlib
@@ -9,7 +9,8 @@ import subprocess as commands
 import time
 import datetime as dt
 import pandas as pd
-import db_logging as lg
+from .. import db_logging as lg
+from .. import reflection as msf
 import sys
 from subprocess import call
 
@@ -60,7 +61,7 @@ class DataFile:
         self.source_file_path = None
         self.working_path = None
         self.curr_src_working_file = None
-        self.curr_file_sucess = True
+        self.curr_file_success = True
         self.curr_pid = None
         self.host = None
         self.source_files = None  # the  files found walking the source directory based on the regex passed in
@@ -74,20 +75,21 @@ class DataFile:
                            where file_name='{1}' and
                            """
         self.copy_command_sql = "call op_dba.copy_from_host('{0}','{1}','DELIMITER ''|'' CSV')"
-        self.copy_command_client_side = """psql -c "\copy {0} FROM '{1}' with (format csv,HEADER, FORCE_NULL ({3}),delimiter '{2}')" """
+        self.copy_command_client_side = """psql -c "\copy {0} FROM '{1}' with (format csv,{4} FORCE_NULL ({3}),delimiter '{2}')" """
         self.copy_command_root_path = "/home/dtwork/dw/file_transfers/"
         self.Dblogger = None
         self.create_meta_table(db)
-        compiled_regex = re.compile(regex, re.IGNORECASE)
+        compiled_regex = self.validate_regex(regex)
         self.source_file_path = file_path
         self.working_path = working_path
         self.source_files = self.walk_dir(file_path, compiled_regex)
+        print(type(self.source_files),"----list----")
         # self.file_type = file_type
         self.compressed_file_type = compressed_file_type
 
         logging.debug("Source PATH:{}".format(self.source_file_path))
         logging.debug("Working PATH:".format(self.working_path))
-        # logging.debug(self.source_files)
+        logging.debug(self.source_files)
         if len(list(self.source_files)) > 0 :
             self.insert_working_files(db, id_regex)
         else:
@@ -95,6 +97,21 @@ class DataFile:
         self.curr_pid = os.getpid()
         self.host = socket.gethostbyname(socket.gethostname())
         self.Dblogger = lg.DbLogging(db)
+    # compiles a given regext and will returned a compiled regex
+    # will logg and error and returnx None if regext can not be compiled
+    def validate_regex(self,regex):
+        compiled_regex=None
+
+        try:
+            compiled_regex=re.compile(regex, re.IGNORECASE)
+        except Exception as e:
+            logging.error("Invalid Regex: {}".format(regex))
+            raise
+        else:
+            pass
+        finally:
+            pass
+        return compiled_regex
 
     def append_os_slash(file_path):
         if file_path[-1] != '/':
@@ -110,7 +127,7 @@ class DataFile:
         extracted_id = None
 
         if id_regex is not None:
-            p = re.compile(id_regex)
+            p = self.validate_regex(id_regex)
         for i in list:
 
             extracted_id = None
@@ -131,11 +148,44 @@ class DataFile:
         return sqlvalue
 
     def insert_working_files(self, db, id_regex=None):
-        conflict_clause = "ON CONFLICT (file_path,file_name) DO NOTHING"
+        """conflict_clause = "ON CONFLICT (file_path,file_name) DO NOTHING"
         value_list = ',\n'.join(self.build_sql(self.source_files, id_regex))
         if len(value_list)>1:
             db.insert_table('{0}.meta_source_files'.format(db.dbschema),
                         'file_name,file_path,embedded_id,file_type', value_list, conflict_clause)
+"""
+
+
+        print(self.source_files,"--------")
+        t=msf.MetaSourceFiles(db)
+        for i in self.source_files:
+            try:
+                extracted_id = None
+                file_id = '0'
+                if id_regex is not None:
+                    try:
+                        extracted_id = p.findall(i)
+                        if len(extracted_id)>0:
+                            file_id = extracted_id[0]
+                        #print("-----",type(extracted_id),len(extracted_id),extracted_id)
+                    except Exception as e:
+                        logging.warning("No Embedded ID Found in FileName: id_REGEX = {}".format(id_regex))
+
+                x=t.insert_meta_source_files( 
+                file_path=self.working_path,
+                file_name=i,
+                embedded_id=file_id,
+                file_type=self.compressed_file_type
+                )
+             
+            except Exception as e:
+                logging.debug("Duplicate File: {}".format(str(e)))
+            else:
+                pass
+            finally:
+                pass
+
+             
 
     def dump_delimited_file(self, db, file_name, delimiter):
         shell_command = """psql -c "copy data_table from '{0}}' WITH DELIMITER AS '{1}' CSV QUOTE AS '"' """
@@ -240,6 +290,7 @@ class DataFile:
                     error_timestamp=None,
                     user_name=db._userid,
                     sql_statement='')
+
                 log_entry = t.LoadStatus(table_name=dest.table_name,
                                          program_unit=sys.argv[0],
                                          program_unit_type_code='python',
@@ -257,33 +308,44 @@ class DataFile:
                 copy_string = None
                 if len(dest.column_list) >0:
                     print("HAS COLUMNS",dest.column_list)
-                    copy_string = "{}({})".format(dest.table_name, ",".join(dest.column_list))
+                    copy_string = "{}({})".format(dest.table_name, ",".join(dest.column_list.replace(' ','').replace('\n','').strip(',')))
                 else:
                     copy_string = dest.schema_name+"."+dest.table_name
                 logging.info("Import From file into: {}".format(copy_string))
+                 
+                cols=db.get_columns(dest.table_name,dest.schema_name)
+                
+                header=''
+                if dest.has_header:
+                    header='HEADER,'
+
                 command_text = self.copy_command_client_side.format(
-                    copy_string, data_file, dest.file_delimiter,",".join(db.get_columns(dest.table_name,dest.schema_name)))
+                    copy_string, data_file, dest.file_delimiter,",".join(cols),header)
 
                 logging.info("Copy Command STARTED:{0}".format(dest.table_name))
-
+               
                 txt_out = commands.getstatusoutput(command_text)
+                if  ('ERROR' in txt_out[1]):
+                    logging.info("ERROR running Copy Copy Command")
+                    logging.error(txt_out)
 
                 logging.info("Command:{0}".format(command_text))
                 
                 logging.info("OUTPUT:{0} ".format(txt_out))
 
-                if txt_out[0] > 0 and not ('ERROR' in txt_out[1]):
+                #if txt_out[0] > 0 and not ('ERROR' in txt_out[1]):
+                if int(txt_out[0]) > 0 :
                     self.flag_bad_file(
                         db, self.source_file_path, self.curr_src_working_file, txt_out[1])
-                    self.curr_file_sucess = False
+                    self.curr_file_success = False
                     # flagging each data item we want to log durring an error
                     log_entry.success = 0
                     error_log_entry.error_code = txt_out[0]
-                    error_log_entry.error_msg = txt_out[1]
+                    error_log_entry.error_message = txt_out[1]
                     error_log_entry.sql_statement = command_text
                     error_log_entry.error_timestamp = dt.datetime.now()
                     t.session.add(error_log_entry)
-                    logging.error("Import ERROR Occured: {}".format(txt_out))
+                    logging.error("Copy Command ERROR Occured: {}".format(txt_out))
 
                 else:
                     self.processed_file_count += 1
@@ -295,7 +357,17 @@ class DataFile:
                     logging.info(
                         "Copy Command Completed: {0}".format(data_file))
                     t.session.add(log_entry)
-                t.session.commit()
+                try:
+                    t.session.commit()
+                except Exception as e:
+                    logging.error(e)
+                    logging.debug("Error Occured Logging, Exiting Application")
+                    sys.exit()
+                else:
+                    pass
+                finally:
+                    t.session.close()
+                
         else:
             logging.debug("Regex Not Match Skipping:{0}".format(dest.table_name))
     """
@@ -336,7 +408,7 @@ class DataFile:
                 dataframe.to_sql(table_name, conn, schema=dest.schema_name, if_exists='append', index=False, chunksize=5000)
                 self.Dblogger.insert_LoadStatus(table_name=dest.table_name, program_unit="FileImport",
                                                 program_unit_type_code="Pandas",
-                                                file_path=full_file_path, success=int(self.curr_file_sucess))
+                                                file_path=full_file_path, success=int(self.curr_file_success))
             except Exception as e:
                 # status=str(e)
 
@@ -344,7 +416,7 @@ class DataFile:
                 status = "Error Inserting File"
                 cols_tb = db.get_table_columns(str.lower(dest.table_name))
                 delta = diff_list(dataframe.columns.tolist(), cols_tb)
-                self.curr_file_sucess = False
+                self.curr_file_success = False
                 self.Dblogger.insert_ErrorLog(error_code="Err", error_message=str(e)[:200],
                                               program_unit="FileImport", user_name=db._userid,
                                               sql_statement=full_file_path)
@@ -365,7 +437,7 @@ class DataFile:
                 # print (db.get_table_columns(str.lower(dest.table_name)))
 
                 # self.Dblogger.insert_Errorlog(table_name=dest.table_name,program_unit="FileImport",
-                # program_unit_type_code="Pandas",file_path=full_file_path,success=self.curr_file_sucess,
+                # program_unit_type_code="Pandas",file_path=full_file_path,success=self.curr_file_success,
                 # error_timestamp=datetime.now())
 
             logging.info("Pandas Insert Completed: {0}->{1}".format(self.curr_src_working_file, full_file_path))
@@ -395,14 +467,14 @@ class DataFile:
                     if txt_out[0] > 0:
                         self.flag_bad_file(
                             db, self.source_file_path, self.curr_src_working_file, txt_out[1])
-                        self.curr_file_sucess = False
+                        self.curr_file_success = False
                     else:
                         self.processed_file_count += 1
                     logging.info(
                         "Copy Command Compleated: {0}->{1}".format(self.curr_src_working_file, file))
                     self.Dblogger.insert_LoadStatus(table_name=dest.table_name, program_unit="FileImport",
                                                     program_unit_type_code="clientside", file_path=full_file_path,
-                                                    success=self.curr_file_sucess)
+                                                    success=self.curr_file_success)
 
     def import_files_copy_cmd(self, dest, db):
         """ this won't be used right now, using copy command instead
@@ -429,27 +501,33 @@ class DataFile:
                 self.processed_file_count += 1
 
     def cleanup_files(self):
-        if self.curr_file_sucess:
+        if self.curr_file_success:
             if self.work_file_type == 'DATA':
                 logging.debug("Deleting File:{0}".format(self.source_file_path + '/' + self.curr_src_working_file))
                 os.remove(self.source_file_path + '/' + self.curr_src_working_file)
                 if not os.listdir(self.source_file_path):
                     os.rmdir(self.source_file_path)
 
-    def flag_bad_file(cur, db, file_path, file_name, error_msg):
+    def flag_bad_file(self, db, file_path, file_name, error_msg):
+        self.curr_file_success=False
+
+        """
         logging.warning("Logging bad file:{0} ErrorMsg:{1}".format(file_name, error_msg))
-        update_query = """Update {0}.meta_source_files
+        update_query = "Update {0}.meta_source_files
             set file_process_state='failed',
                 process_end_dtm=now(),
                 last_error_msg='{3}'
             where file_name='{1}' and
             file_path='{2}'
-            """
+            "
         error_msg_sql = convert_to_sql(error_msg)
 
         executable_query = update_query.format(
-            db.dbschema, file_name, file_path, error_msg_sql)
-        db.update(executable_query)
+            db.dbschema, file_name, file_path, error_msg_sql,error_msg)
+
+
+        db.update(executable_query)"""
+
 
     def md5_for_file(path, block_size=256 * 128, hr=False):
         '''
@@ -538,7 +616,7 @@ class DataFile:
         file_imported = ''
         print(process_error)
 
-        if self.curr_file_sucess:
+        if self.curr_file_success:
             file_imported = """,file_process_state='Processed'"""
 
         sqlstring = """ update {0}.meta_source_files set  process_end_dtm=now()
@@ -583,16 +661,18 @@ class DataFile:
             self.file_size = 0
             self.meta_source_file_id = row[0][4]
             self.row_count = row[0][5]
-            self.file_size = os.path.getsize(self.source_file_path + '/' + self.curr_src_working_file)
 
-            if self.work_file_type == 'DATA' and self.row_count==0:
-                logging.debug("Working DATAFILE:{0}:".format(self.curr_src_working_file))
-                self.row_count = self.count_csv(self.source_file_path + '/' + self.curr_src_working_file)
 
+            try:
+                self.file_size = os.path.getsize(self.source_file_path + '/' + self.curr_src_working_file)
+
+                if self.work_file_type == 'DATA' and self.row_count==0:
+                    logging.debug("Working DATAFILE:{0}:".format(self.curr_src_working_file))
+                    self.row_count = self.count_csv(self.source_file_path + '/' + self.curr_src_working_file)
                 # set_file_size()
                 # row_count()
 
-            db.update(("""
+                db.update(("""
                     update {0}.meta_source_files set
                     total_files={3},
                     total_rows={4},
@@ -602,6 +682,25 @@ class DataFile:
                         and current_worker_host_pid={2}
                         and process_end_dtm is null
                         """).format(db.dbschema, self.host, self.curr_pid, self.total_files, self.row_count, self.file_size))
+            except Exception as e:
+                self.flag_bad_file(db, self.source_file_path, self.curr_src_working_file, str(e))
+
+            else:
+                pass
+            finally:
+                pass
+
+        # m=msf.MetaSourceFiles(db)
+
+        # for d in m.get_row_meta_source_files():
+
+        #     # print(dir(d),type(d),"xxxxxxxx")
+        #     print(d.id,d.file_type)
+        #     d.file_type='ZZZ'
+        #     m.session.add(d)
+        #     m.session.commit()
+
+
 
         return self.curr_src_working_file
 
@@ -609,7 +708,7 @@ class DataFile:
         self.files = zip_utils.extract_file(
             self.source_file_path + self.curr_src_working_file, self.working_path +
             self.curr_src_working_file + '/', False, self.work_file_type)
-        self.total_files = self.files.total_files
+        self.total_files = len(self.files) 
 
         # We walk the tmp dir and add those data files to list of to do
         new_src_dir = self.working_path + self.curr_src_working_file + '/'
@@ -623,42 +722,54 @@ class DataFile:
 
     def do_work(self, db, datafiles, cleanup=True, limit_rows=None,import_type='Pandas',vacuum=True):
         df = self
-        while df.get_work(db) is not None:
 
-            logging.debug("Got New Working File:{0}:".format(self.curr_src_working_file))
-            if df.work_file_type == 'DATA':
-                year = df.embedded_id[:-2]
-                quarter = df.embedded_id[-1:]
-                # use the line below if we need to stamp the data file w/ a column that has additional data
-                # df.insert_into_file(df.source_file_path + df.curr_src_working_file, str(quarter)+str(year)+ '|', 'LINE')
-                # one of these won't execute because the file won't match the regex
-                process_error = ''
-                dbtable = ''
-                pattern_found = False
-                for x in datafiles:
-                    # Data files has to have atleast 2 rows 1 for Header 1 for data.
-                    min_row = 0
-                    if x.has_header:
-                        min_row = 1
-                    # print ("Min row count:",min_row,x.has_header)
-                    if df.row_count > min_row:
-                        if df.match_regex(x.regex, x.folder_regex):
-                            if import_type=='Pandas':
-                                process_error = df.import_file_pandas(x, db, limit_rows=limit_rows)
-                            if import_type=='CopyCommand':
-                                process_error = df.import_1file_client_side(x, db)
-                            pattern_found = True
-                            dbtable = x.table_name
+        m=msf.MetaSourceFiles(db)
+        print(dir(m),type(m),"xxxxxxxx")
+        for d in m.get_row_meta_source_files(file_type='ZZZ'):
 
-                    else:
-                        process_error = "File Has no Data"
-                        pattern_found = True
-                if not pattern_found:
-                    process_error = process_error + "RegEx Pattern Not found for File"
-                df.finish_work(db, process_error=process_error, dbtable=dbtable,vacuum=vacuum)
-            else:
-                df.extract_file(db)
-                df.finish_work(db,vacuum=vacuum)
-            if cleanup:
-                df.cleanup_files()
-            # import_files(files,loan_acquisition)
+            # print(dir(d),type(d),"xxxxxxxx")
+            print(d.id,d.file_type)
+            print("aaaaa")    
+
+
+
+        # while df.get_work(db) is not None:
+        #     #print(self.curr_src_working_file,"-----")
+        #     if self.curr_file_success:
+        #         logging.debug("Got New Working File:{0}:".format(self.curr_src_working_file))
+        #         if df.work_file_type == 'DATA':
+        #             year = df.embedded_id[:-2]
+        #             quarter = df.embedded_id[-1:]
+        #             # use the line below if we need to stamp the data file w/ a column that has additional data
+        #             # df.insert_into_file(df.source_file_path + df.curr_src_working_file, str(quarter)+str(year)+ '|', 'LINE')
+        #             # one of these won't execute because the file won't match the regex
+        #             process_error = ''
+        #             dbtable = ''
+        #             pattern_found = False
+        #             for x in datafiles:
+        #                 # Data files has to have atleast 2 rows 1 for Header 1 for data.
+        #                 min_row = 0
+        #                 if x.has_header:
+        #                     min_row = 1
+        #                 # print ("Min row count:",min_row,x.has_header)
+        #                 if df.row_count > min_row:
+        #                     if df.match_regex(x.regex, x.folder_regex):
+        #                         if import_type=='Pandas':
+        #                             process_error = df.import_file_pandas(x, db, limit_rows=limit_rows)
+        #                         if import_type=='CopyCommand':
+        #                             process_error = df.import_1file_client_side(x, db)
+        #                         pattern_found = True
+        #                         dbtable = x.table_name
+
+        #                 else:
+        #                     process_error = "File Has no Data"
+        #                     pattern_found = True
+        #             if not pattern_found:
+        #                 process_error = process_error + "RegEx Pattern Not found for File"
+        #             df.finish_work(db, process_error=process_error, dbtable=dbtable,vacuum=vacuum)
+        #         else:
+        #             df.extract_file(db)
+        #             df.finish_work(db,vacuum=vacuum)
+        #         if cleanup:
+        #             df.cleanup_files()
+        #         # import_files(files,loan_acquisition)

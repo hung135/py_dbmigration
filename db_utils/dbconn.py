@@ -6,7 +6,8 @@ import sys
 import __future__
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
-from misc_utils import timer_decorator
+from .. import migrate_utils as migu
+#from misc_utils import timer_decorator
 
 # Decorator function to log and time how long a function took to run
 
@@ -67,7 +68,7 @@ class Connection:
     def pandas_dump_table_csv(self, table_list, folder, chunksize=100000):
         # def get_pandas_frame(self, table_name,rows=None):
         import pandas as pd
-        import migrate_utils as migu
+        
         conn, meta = self.connect_sqlalchemy()
 
         # z=db.get_pandas_frame('errorlog')
@@ -130,7 +131,7 @@ class Connection:
                 logging.Error("Cannot Find Table: {}".format(t))
 
     def print_create_table(self, folder=None):
-        import migrate_utils as mig
+     
         import sqlalchemy
 
         con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
@@ -143,7 +144,7 @@ class Connection:
                 t.name, meta, autoload=True, autoload_with=con)
             stmt = sqlalchemy.schema.CreateTable(table)
             column_list = [c.name for c in table.columns]
-            createsql = mig.convert_snake_case(str(stmt), column_list)
+            createsql = migu.convert_snake_case(str(stmt), column_list)
             if folder is None:
                 print(str(createsql) + ";")
             else:
@@ -432,7 +433,7 @@ class Connection:
         return l
 
     def get_columns(self, table_name, dbschema):
-        import migrate_utils as mig
+
         import sqlalchemy
         from sqlalchemy.dialects import postgresql
 
@@ -452,7 +453,7 @@ class Connection:
 
     # returns a list of table dict
     def get_tables(self):
-        import migrate_utils as mig
+
         import sqlalchemy
         from sqlalchemy.dialects import postgresql
 
@@ -485,7 +486,7 @@ class Connection:
         return x
 
     def get_tables_row_count(self, schema=None):
-        import migrate_utils as mig
+ 
         from sqlalchemy.dialects import postgresql
         if schema is None:
             schema = self.dbschema
