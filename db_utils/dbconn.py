@@ -1,12 +1,16 @@
 import os
 import logging
 import subprocess as commands
-import datetime
+import datetime as dt
 import sys
+import db_logging
 import __future__
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
-from misc_utils import timer_decorator
+import migrate_utils as migu
+
+
+# from misc_utils import timer_decorator
 
 # Decorator function to log and time how long a function took to run
 
@@ -27,7 +31,7 @@ class Connection:
 
     def connect_sqlalchemy(self, schema=None, db=None):
         import sqlalchemy
-        #import pymssql
+        # import pymssql
         '''Returns a connection and a metadata object'''
         # We connect with the help of the PostgreSQL URL
         # postgresql://federer:grandestslam@localhost:5432/tennis
@@ -40,14 +44,12 @@ class Connection:
             schema = self.dbschema
 
         if db.upper() == "POSTGRES":
-
             url = 'postgresql://{}:{}@{}:{}/{}'
             url = url.format(self._userid, self._password, self._host, self._port, self._database_name)
         if db.upper() == "MSSQL":
-          
             url = 'mssql+pymssql://{}:{}@{}:{}/{}'
-            url = url.format(self._userid, self._password, self._host,self._port, self._database_name)
-        #con=self._connect_mssql()
+            url = url.format(self._userid, self._password, self._host, self._port, self._database_name)
+        # con=self._connect_mssql()
         # The return value of create_engine() is our connection object
         con = sqlalchemy.create_engine(url)
 
@@ -60,14 +62,13 @@ class Connection:
 
         con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
         for n, t in meta.tables.items():
-            #print(type(n), n, t.name)
-            print ("drop table if exists {}.{} cascade;".format(self.dbschema,t.name))
-              
+            # print(type(n), n, t.name)
+            print("drop table if exists {}.{} cascade;".format(self.dbschema, t.name))
 
     def pandas_dump_table_csv(self, table_list, folder, chunksize=100000):
         # def get_pandas_frame(self, table_name,rows=None):
         import pandas as pd
-        import migrate_utils as migu
+
         conn, meta = self.connect_sqlalchemy()
 
         # z=db.get_pandas_frame('errorlog')
@@ -126,11 +127,11 @@ class Connection:
                 stmt = sqlalchemy.schema.CreateTable(table)
                 print(str(stmt) + ";")
             except:
-                #print("Cannot Find Table: {}".format(t))
+                # print("Cannot Find Table: {}".format(t))
                 logging.Error("Cannot Find Table: {}".format(t))
 
     def print_create_table(self, folder=None):
-        import migrate_utils as mig
+
         import sqlalchemy
 
         con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
@@ -143,7 +144,7 @@ class Connection:
                 t.name, meta, autoload=True, autoload_with=con)
             stmt = sqlalchemy.schema.CreateTable(table)
             column_list = [c.name for c in table.columns]
-            createsql = mig.convert_snake_case(str(stmt), column_list)
+            createsql = migu.convert_snake_case(str(stmt), column_list)
             if folder is None:
                 print(str(createsql) + ";")
             else:
@@ -170,7 +171,7 @@ class Connection:
 
     def insert_table(self, table_name, column_list, values, onconflict=''):
         sqlstring = "Insert into " + table_name + \
-            " (" + column_list + ") values " + values + " " + onconflict
+                    " (" + column_list + ") values " + values + " " + onconflict
         self._cur.execute(sqlstring)
         self.commit()
         self.last_row_count = self._cur.rowcount
@@ -195,7 +196,10 @@ class Connection:
             self._cur.execute("vacuum {0}".format(table_name))
 
     def execute(self, sqlstring, debug=False):
+        """
 
+        :rtype: object
+        """
         logging.debug("Debug DB Execute: {0}".format(sqlstring))
         if sqlstring.lower().startswith('call '):
             self._cur.execute(sqlstring)
@@ -205,7 +209,8 @@ class Connection:
 
     def drop_schema(self, schema):
         logging.debug("Drop Database Schema: \n\tHost:{0}\n\tDatabase:{1}\nSchema:{2}".format(self._host,
-                                                                                              self._database_name, schema))
+                                                                                              self._database_name,
+                                                                                              schema))
         print(self._cur.execute('drop schema {0} cascade'.format(schema)))
 
         self.commit()
@@ -239,25 +244,28 @@ class Connection:
         import psycopg2
 
         try:
-            self._password = os.environ['PGPASSWORD']
-            self._userid = os.environ['PGUSER']
-            self._sslmode = os.environ['PGSSLMODE']
+            if self._password is None:
+                self._password = os.getenv('PGPASSWORD', 'tester')
+            if self._userid is None:
+                self._userid = os.getenv('PGUSER', 'postgres')
+            if self._sslmode is None:
+                self._sslmode = os.getenv('PGSSLMODE', None)
             if self._host is None:
-                self._host = os.environ['PGHOST']
-            if self._port is None:
-                self._port = os.environ['PGPORT']
-            if self._database_name is None:
-                self._database_name = os.environ['PGDATABASE']
+                self._host = os.getenv('PGHOST', '192.168.99.100')
+            if self._sslmode is None:
+                self._port = os.getenv('PGPORT', 5432)
+            if self._sslmode is None:
+                self._database_name = os.getenv('PGDATABASE', 'postgres')
 
-        except Exception:
-            logging.info(Exception)
+        except:
+            logging.error(Exception)
             sys.exit()
 
-        if self._port == '':
-            self._port = 5432
+        logging.debug("DB Connecting Databse: {0}:{1}:{2}".format(self._host, self._database_name, self._dbtype))
         conn = psycopg2.connect(dbname=self._database_name, user=self._userid,
                                 password=self._password, port=self._port, host=self._host)
         conn.set_client_encoding('UNICODE')
+
         return conn
 
     def _connect_mssql(self):
@@ -320,12 +328,10 @@ class Connection:
         if host is not None:
             self._host = host
 
-        logging.debug("DB Connecting To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
         self._dbtype = dbtype.upper()
         if self._dbtype == 'POSTGRES':
             self._conn = self._connect_postgres()
         if self._dbtype == 'MSSQL':
-
             self._conn = self._connect_mssql()
         if self._dbtype == 'MYSQL':
             self._conn = self._connect_mysql()
@@ -335,10 +341,13 @@ class Connection:
         logging.debug("DB Connected To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
 
     def __del__(self):
-        self.commit()
-        self._cur.close()
-        self._conn.close()
-        logging.debug("Closed DB Connection: {0}:{1}:{2}".format(self._host, self._database_name, self._dbtype))
+        try:
+            self.commit()
+            self._cur.close()
+            self._conn.close()
+            logging.debug("Closed DB Connection: {0}:{1}:{2}".format(self._host, self._database_name, self._dbtype))
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
 
     def copy_to_csv(self, sqlstring, full_file_path, delimiter):
         # save the Current shell password
@@ -417,7 +426,7 @@ class Connection:
     def get_table_list(self, dbschema=None):
         Base = automap_base()
 
-        #from sqlalchemy.orm import Session
+        # from sqlalchemy.orm import Session
         schema = dbschema
         if dbschema is None:
             schema = self.dbschema
@@ -432,14 +441,14 @@ class Connection:
         return l
 
     def get_columns(self, table_name, dbschema):
-        import migrate_utils as mig
+
         import sqlalchemy
         from sqlalchemy.dialects import postgresql
 
         con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
         # print dir(meta.tables)
 
-        #print(n, t.name)
+        # print(n, t.name)
 
         # print(type(n), n, t.name)
         print(table_name, "-----------------", dbschema)
@@ -452,7 +461,7 @@ class Connection:
 
     # returns a list of table dict
     def get_tables(self):
-        import migrate_utils as mig
+
         import sqlalchemy
         from sqlalchemy.dialects import postgresql
 
@@ -461,10 +470,9 @@ class Connection:
 
         table_obj = []
         for n, t in meta.tables.items():
+            # print(n, t.name)
 
-            #print(n, t.name)
-
-             # print(type(n), n, t.name)
+            # print(type(n), n, t.name)
             table = sqlalchemy.Table(
                 t.name, meta, autoload=True, autoload_with=con)
             column_list = [c.name for c in table.columns]
@@ -475,8 +483,8 @@ class Connection:
 
     def get_table_row_count_fast(self, table_name, schema=None):
         x = 0
-        if dbtype == 'POSTGRES':
-            db.vacuum(table_name)
+        if self._dbtype == 'POSTGRES':
+            self.vacuum(table_name)
             row = self.query("""select n_live_tup 
                     from pg_stat_user_tables 
                     where schemaname='{}' and relname='{}'""".format(schema, table_name))
@@ -485,7 +493,7 @@ class Connection:
         return x
 
     def get_tables_row_count(self, schema=None):
-        import migrate_utils as mig
+
         from sqlalchemy.dialects import postgresql
         if schema is None:
             schema = self.dbschema
@@ -494,10 +502,9 @@ class Connection:
 
         table_obj = []
         for n, t in meta.tables.items():
+            # print(n, t.name)
 
-            #print(n, t.name)
-
-            #print(type(n), n, dir(t))
+            # print(type(n), n, dir(t))
             x = self.query("select count(*) from {}".format(t.key))
             rowcount = x[0][0]
             # print(type(rowcount),dir(rowcount))
@@ -514,6 +521,7 @@ class Connection:
         l = eval('Base.classes.{}'.format(table_name))
         for m in l.__table__.columns:
             print(m, m.type)
+
     # this is only in this class for convience atm, should be moved out eventually
 
     def get_pandas_frame(self, table_name, rows=None):
