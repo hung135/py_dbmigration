@@ -1,7 +1,7 @@
 import os
 # import logging
 # import datetime
-import db_utils
+from .. import db_utils
 import datetime as dt
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
@@ -54,8 +54,8 @@ class DbLogging:
 
         for key, value in Kwargs.items():
             setattr(x, key, value)
-        self.session.add(x)
-        self.session.commit()
+        #self.session.add(x)
+        #self.session.commit()
         return x
 
     def insert_ErrorLog(self, **Kwargs):
@@ -69,8 +69,8 @@ class DbLogging:
             if key == "sql_statement":
                 value = str(value)[:2000]
             setattr(x, key, value)
-        self.session.add(x)
-        self.session.commit()
+        #self.session.add(x)
+        #self.session.commit()
         return x
 
     def fill_defaults(self, ptable):

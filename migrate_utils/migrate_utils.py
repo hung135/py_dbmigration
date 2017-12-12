@@ -180,7 +180,7 @@ def print_postgres_table(db, folder=None, targetschema=None):
     print("Total Tables:{}".format(table_count))
 
 def print_create_table_upsert(db, folder=None, targetschema=None):
-    from .. import migrate_utils as mig
+    import migrate_utils as mig
     import sqlalchemy
     import os
     from sqlalchemy.dialects import postgresql
@@ -228,7 +228,7 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
 
 
 def print_table_dict(db, folder=None, targetschema=None):
-    from .. import migrate_utils as mig
+    import migrate_utils as mig
     import sqlalchemy
     import os
     from sqlalchemy.dialects import postgresql
@@ -265,11 +265,11 @@ def print_table_dict(db, folder=None, targetschema=None):
 
 
 def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
-    from .. import migrate_utils as mig
+    import migrate_utils as mig
     import sqlalchemy
     import os
     from sqlalchemy.dialects import postgresql
-    dbschema = db.dbschema
+
     con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
     # print dir(meta.tables)
     folder_deploy = folder + "/deploy/tables/"
@@ -281,7 +281,7 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
     table_count = 0
     sqitch = []
     tables = []
-    print(targetschema, "--------")
+    
     if targetschema is None:
         dbschema=db.dbschema
 
@@ -297,8 +297,7 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
             filename = file_prefix+t.name.lower() + ".sql"
             fqn = file_prefix
         else:
-            filename = t.name.lower() + ".sql"
-            fqn = ""
+            filename = t.name.lower() + ".sql" 
         basefilename = t.name.lower()
         #print(type(n), n, t.name)
         table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
@@ -306,12 +305,11 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
         column_list = [c.name for c in table.columns]
         createsql = mig.convert_sql_snake_case(str(stmt), column_list)
         logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
-
-        line = ("\nsqitch add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
+        line = ("\nsqitch add tables/{} -n \"Adding {}\" ".format(basefilename, filename))
 
         sqitch.append(line)
         if targetschema is not None:
-            createsql = createsql.replace(("table " + db.dbschema + ".").lower(), "table " + targetschema + ".")
+            createsql = createsql.replace(("table " + dbschema + ".").lower(), "table " + targetschema + ".")
         m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
         tables.append(m)
 
@@ -328,7 +326,7 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
                 f.write(bytes(i["sql"], 'UTF-8'))
 
             drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
-            print(dbschema, "-----db---")
+
             v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
                 dbschema, i["table"])
             verify = "BEGIN;\n" + v_str

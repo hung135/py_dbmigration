@@ -45,7 +45,7 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
                 file.extractall(writeable_path)
                 file.close()
 
-     
+
 # print writeable_path
 # cleanup_file(file.namelist(),writeable_path)
 
