@@ -4,7 +4,7 @@ import logging
 def print_sqitch_files(folder, file_type, trg_folder):
     import os
     from os import listdir
-    from os.path import isfile, join, basename
+    from os.path import isfile, join
 
     onlyfiles = [f for f in listdir(folder) if isfile(join(folder, f))]
     for ff in onlyfiles:
@@ -142,11 +142,8 @@ def appdend_to_readme(db, folder=None, targetschema=None):
 
 
 def print_postgres_table(db, folder=None, targetschema=None):
-    import migrate_utils as mig
-    import sqlalchemy
     import os
-    from sqlalchemy.dialects import postgresql
-    import subprocess 
+    import subprocess
     
     con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
     # print dir(meta.tables)
@@ -180,10 +177,7 @@ def print_postgres_table(db, folder=None, targetschema=None):
     print("Total Tables:{}".format(table_count))
 
 def print_create_table_upsert(db, folder=None, targetschema=None):
-    from .. import migrate_utils as mig
-    import sqlalchemy
     import os
-    from sqlalchemy.dialects import postgresql
 
     con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
     # print dir(meta.tables)
@@ -228,10 +222,8 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
 
 
 def print_table_dict(db, folder=None, targetschema=None):
-    from .. import migrate_utils as mig
+    import migrate_utils as mig
     import sqlalchemy
-    import os
-    from sqlalchemy.dialects import postgresql
 
     con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
     # print dir(meta.tables)
@@ -265,11 +257,10 @@ def print_table_dict(db, folder=None, targetschema=None):
 
 
 def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
-    from .. import migrate_utils as mig
+    import migrate_utils as mig
     import sqlalchemy
     import os
-    from sqlalchemy.dialects import postgresql
-    dbschema=db.dbschema
+
     con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
     # print dir(meta.tables)
     folder_deploy = folder + "/deploy/tables/"
@@ -281,12 +272,12 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
     table_count = 0
     sqitch = []
     tables = []
-    print(targetschema,"--------")
+
     if targetschema is None:
         dbschema=db.dbschema
 
     else:
-        dbschema=targetschema
+        dbschema = targetschema
 
 
     # for n, t in meta.tables.iteritems():
@@ -295,10 +286,9 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
  
         if file_prefix is not None:
             filename = file_prefix+t.name.lower() + ".sql"
-            fqn=file_prefix
+            fqn = file_prefix
         else:
             filename = t.name.lower() + ".sql" 
-            fqn=""
         basefilename = t.name.lower()
         #print(type(n), n, t.name)
         table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
@@ -306,12 +296,11 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
         column_list = [c.name for c in table.columns]
         createsql = mig.convert_sql_snake_case(str(stmt), column_list)
         logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
-
-        line = ("\nsqitch add tables/{}{} -n \"Adding {}\" ".format(fqn,basefilename, filename))
+        line = ("\nsqitch add tables/{} -n \"Adding {}\" ".format(basefilename, filename))
 
         sqitch.append(line)
         if targetschema is not None:
-            createsql = createsql.replace(("table " + db.dbschema + ".").lower(), "table " + targetschema + ".")
+            createsql = createsql.replace(("table " + dbschema + ".").lower(), "table " + targetschema + ".")
         m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
         tables.append(m)
 
@@ -328,7 +317,7 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
                 f.write(bytes(i["sql"], 'UTF-8'))
 
             drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
-            print(dbschema,"-----db---")
+
             v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
                 dbschema, i["table"])
             verify = "BEGIN;\n" + v_str
@@ -350,7 +339,6 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
 
 
 def reset_migration(db):
-    import sys
     db._cur.execute("""
     Drop schema if exists enforce cascade;
     Drop schema if exists stg cascade;

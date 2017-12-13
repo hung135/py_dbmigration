@@ -1,26 +1,25 @@
-import zipfile
-import tarfile
-import gzip
-import os
 import logging
+import os
+import tarfile
+import zipfile
 
 
 class object:
     pass
 
 
-def extract_file(source_file, writeable_path, skip=False, zip_type='zip',skip_ifexists=True):
+def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_ifexists=True):
     namelist = []
     """
     returns list of file names and path
     """
-    dir_exist=os.path.isdir(writeable_path)
-    
+    dir_exist = os.path.isdir(writeable_path)
+
     if skip_ifexists and dir_exist:
         logging.debug("Extract Target Directory Exists and Skip=True")
     else:
-        zip_type=zip_type.lower()
-        
+        zip_type = zip_type.lower()
+
         if zip_type == 'zip':
             logging.info("Extracting Zip File:{0}".format(source_file))
             file = zipfile.ZipFile(source_file)
@@ -38,20 +37,18 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip',skip_if
                 file.close()
         if zip_type == 'gzip':
             logging.info("Extracting GZip File:{0}".format(source_file))
-            #file = tarfile.TarFile(source_file)
+            # file = tarfile.TarFile(source_file)
             file = tarfile.open(source_file, "r:gz")
             namelist = list(file.getnames())
             if skip is False:
                 file.extractall(writeable_path)
                 file.close()
 
-     
-# print writeable_path
+    # print writeable_path
 # cleanup_file(file.namelist(),writeable_path)
-   
+
     logging.debug("Files Extracted:{0}".format(list(namelist)))
- 
- 
+
     return list(namelist)
 
 

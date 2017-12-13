@@ -1,13 +1,10 @@
-import os
 import logging
+import os
 import subprocess as commands
-import datetime
 import sys
-import __future__
-from sqlalchemy import create_engine
+
 from sqlalchemy.ext.automap import automap_base
-from .. import migrate_utils as migu
-#from misc_utils import timer_decorator
+
 
 # Decorator function to log and time how long a function took to run
 
@@ -68,7 +65,7 @@ class Connection:
     def pandas_dump_table_csv(self, table_list, folder, chunksize=100000):
         # def get_pandas_frame(self, table_name,rows=None):
         import pandas as pd
-        
+        import migrate_utils as migu
         conn, meta = self.connect_sqlalchemy()
 
         # z=db.get_pandas_frame('errorlog')
@@ -131,7 +128,7 @@ class Connection:
                 logging.Error("Cannot Find Table: {}".format(t))
 
     def print_create_table(self, folder=None):
-     
+        import migrate_utils as mig
         import sqlalchemy
 
         con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
@@ -144,7 +141,7 @@ class Connection:
                 t.name, meta, autoload=True, autoload_with=con)
             stmt = sqlalchemy.schema.CreateTable(table)
             column_list = [c.name for c in table.columns]
-            createsql = migu.convert_snake_case(str(stmt), column_list)
+            createsql = mig.convert_snake_case(str(stmt), column_list)
             if folder is None:
                 print(str(createsql) + ";")
             else:
@@ -240,18 +237,21 @@ class Connection:
         import psycopg2
 
         try:
-            self._password = os.environ['PGPASSWORD']
-            self._userid = os.environ['PGUSER']
-            self._sslmode = os.environ['PGSSLMODE']
+            if self._password is None:
+                self._password = os.getenv('PGPASSWORD', 'tester')
+            if self._userid is None:
+                self._userid = os.getenv('PGUSER', 'postgres')
+            if self._sslmode is None:
+                self._sslmode = os.getenv('PGSSLMODE', None)
             if self._host is None:
-                self._host = os.environ['PGHOST']
-            if self._port is None:
-                self._port = os.environ['PGPORT']
-            if self._database_name is None:
-                self._database_name = os.environ['PGDATABASE']
+                self._host = os.getenv('PGHOST', '192.168.99.100')
+            if self._sslmode is None:
+                self._port = os.getenv('PGPORT', 5432)
+            if self._sslmode is None:
+                self._database_name = os.getenv('PGDATABASE', 'postgres')
 
-        except Exception:
-            logging.info(Exception)
+        except:
+            logging.error(Exception)
             sys.exit()
 
         if self._port == '':
@@ -336,11 +336,13 @@ class Connection:
         logging.debug("DB Connected To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
 
     def __del__(self):
-        self.commit()
-        self._cur.close()
-        self._conn.close()
-        logging.debug("Closed DB Connection: {0}:{1}:{2}".format(self._host, self._database_name, self._dbtype))
-
+        try:
+            self.commit()
+            self._cur.close()
+            self._conn.close()
+            logging.debug("Closed DB Connection: {0}:{1}:{2}".format(self._host, self._database_name, self._dbtype))
+        except:
+            pass
     def copy_to_csv(self, sqlstring, full_file_path, delimiter):
         # save the Current shell password
         prev_password = os.environ['PGPASSWORD']
@@ -433,9 +435,7 @@ class Connection:
         return l
 
     def get_columns(self, table_name, dbschema):
-
         import sqlalchemy
-        from sqlalchemy.dialects import postgresql
 
         con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
         # print dir(meta.tables)
@@ -453,9 +453,7 @@ class Connection:
 
     # returns a list of table dict
     def get_tables(self):
-
         import sqlalchemy
-        from sqlalchemy.dialects import postgresql
 
         con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
         # print dir(meta.tables)
@@ -486,8 +484,6 @@ class Connection:
         return x
 
     def get_tables_row_count(self, schema=None):
- 
-        from sqlalchemy.dialects import postgresql
         if schema is None:
             schema = self.dbschema
         con, meta = self.connect_sqlalchemy(schema, self._dbtype)
@@ -525,7 +521,6 @@ class Connection:
         return z
 
     def put_pandas_frame(self, table_name, df):
-        import pandas as pd
         conn, meta = self.connect_sqlalchemy()
         z = df.to_sql(table_name, conn, schema=self.dbschema, index=False,
                       if_exists='append', chunksize=None, dtype=None)
