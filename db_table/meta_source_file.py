@@ -11,7 +11,7 @@ class MetaSourceFiles(MetaBase):
     file_name = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
     process_date = Column(DateTime)
-    embedded_id = Column(String, nullable=True)
+    file_name_data = Column(String, nullable=True)
     file_type = Column(String, nullable=True)
     file_process_state = Column(String, nullable=True)
     process_start_dtm = Column(DateTime, default=None)

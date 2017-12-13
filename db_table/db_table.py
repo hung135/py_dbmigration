@@ -15,23 +15,23 @@ class RecordKeeper():
 
         self.table = MetaSourceFiles
 
-        engine = create_engine(db.get_conn_url())
+        self.engine = create_engine(db.get_conn_url())
         try:
-            engine.execute(CreateSchema(DbSchema))
+            self.engine.execute(CreateSchema(DbSchema))
             logging.debug("Creating Database Schema: {}".format(DbSchema))
         except:
             logging.debug("Schema Already Exists No need to create:")
         # create tables
-        MetaBase.metadata.create_all(bind=engine)
+        MetaBase.metadata.create_all(bind=self.engine)
 
         # create session
         Session = sessionmaker()
-        Session.configure(bind=engine)
+        Session.configure(bind=self.engine)
         self.session = Session()
 
         # reflecting whole schema
         self.metadata = MetaData()
-        self.metadata.reflect(bind=engine)
+        self.metadata.reflect(bind=self.engine)
         logging.debug(self.metadata.tables)
 
     def add_record(self, table, commit=False):
