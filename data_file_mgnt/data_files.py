@@ -691,7 +691,7 @@ class DataFile:
                             if import_type == 'CopyCommand':
                                 process_error = df.import_1file_client_side(x, db)
                             pattern_found = True
-                    if(not self.curr_file_success):
+                    if not self.curr_file_success:
                         vacuum=False
                     df.finish_work(db, process_error=process_error, dest=x, vacuum=vacuum)
 
