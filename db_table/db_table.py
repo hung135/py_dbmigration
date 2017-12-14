@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
 
-from .meta_source_file import MetaSourceFiles, MetaBase, DbSchema
+from .meta_source_file import MetaSourceFiles, MetaBase, LoadStatus,ErrorLog
 
 
 class RecordKeeper():
@@ -17,8 +17,13 @@ class RecordKeeper():
 
         self.engine = create_engine(db.get_conn_url())
         try:
-            self.engine.execute(CreateSchema(DbSchema))
-            logging.debug("Creating Database Schema: {}".format(DbSchema))
+            self.engine.execute(CreateSchema(MetaSourceFiles.DbSchema))
+            logging.debug("Creating Database Schema: {}".format(MetaSourceFiles.DbSchema))
+        except:
+            logging.debug("Schema Already Exists No need to create:")
+        try:
+            self.engine.execute(CreateSchema(LoadStatus.DbSchema))
+            logging.debug("Creating Database Schema: {}".format(LoadStatus.DbSchema))
         except:
             logging.debug("Schema Already Exists No need to create:")
         # create tables
@@ -32,7 +37,7 @@ class RecordKeeper():
         # reflecting whole schema
         self.metadata = MetaData()
         self.metadata.reflect(bind=self.engine)
-        logging.debug(self.metadata.tables)
+
 
     def add_record(self, table, commit=False):
 
