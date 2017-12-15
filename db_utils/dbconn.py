@@ -207,7 +207,7 @@ class Connection:
         logging.debug(
             "Truncating Table: \n\tHost:{0}\n\tDatabase:{1}\n\tTablename:{2}".format(self._host, self._database_name,
                 table_name))
-        self._cur.execute('TRUNCATE table IF EXISTS {0}.{1}'.format(dbschema,table_name))
+        self._cur.execute('TRUNCATE table {0}.{1}'.format(dbschema,table_name))
 
         self.commit()
         self.vacuum(dbschema,table_name)

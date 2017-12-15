@@ -38,7 +38,7 @@ class MetaSourceFiles(MetaBase):
     last_error_msg = Column(c.String, nullable=True)
 
     database_table = Column(c.String, nullable=True)
-
+    parent_file_id = Column(c.Integer, default=0)
 
 class ErrorLog(MetaBase):
     DbSchema = 'logging'
