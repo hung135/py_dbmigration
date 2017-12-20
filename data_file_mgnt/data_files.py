@@ -1,7 +1,7 @@
 import re
 import os
 import glob
-import zip_utils
+from py_dbmigration import zip_utils
 import socket
 import logging
 import hashlib
@@ -9,9 +9,9 @@ import subprocess as commands
 import time
 import datetime as dt
 import pandas as pd
-import db_logging as lg
+from py_dbmigration import db_logging as lg
 import reflection as msf
-import db_table
+from py_dbmigration import db_table
 import sys
 import db_table.db_table
 from subprocess import call
@@ -249,7 +249,7 @@ class DataFile:
         # logging.debug("Done Walking Directory:")
         match_list = list(filter(regex.match, files_list))
 
-        logging.debug(f"Done Walking Directory:{list(match_list)}")
+        logging.debug("Done Walking Directory:{}".format(list(match_list)))
 
         DestinationDB.file_list = match_list
         return DestinationDB
@@ -511,7 +511,7 @@ class DataFile:
         import datetime
         starttime = datetime.datetime.now()
         # print("starttime", starttime)
-        logging.debug(f"Counting File: {datetime.datetime.now()}")
+        logging.debug("Counting File: {}".format(datetime.datetime.now()))
         chunksize = 10 ** 5
         i = 0
         for chunk in pd.read_csv(full_file_path, chunksize=chunksize):
@@ -575,7 +575,7 @@ class DataFile:
 
         if option is None or option == 'LINE':
             logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append))
-            print(f"------{newfile}-xxxx")
+            #print(f"------{newfile}-xxxx")
             self.insert_each_line(file, newfile, text_append, header_name)
 
             # os.rename(newfile, file)
@@ -647,7 +647,7 @@ class DataFile:
             self.file_size = row.file_size
             self.meta_source_file_id = row.id
             self.row_count = row.total_rows
-            print(f"{row.total_rows}xxxxxx")
+            #print(f"{row.total_rows}xxxxxx")
 
             try:
 
@@ -724,9 +724,9 @@ class DataFile:
                 x = get_mapped_table(self.curr_src_working_file, datafiles)
                 if x.insert_option == 'Truncate':
                     db.truncate_table(x.schema_name, x.table_name)
-                    print(f"Truncating Data:{x.schema_name}.{x.table_name}")
+                    print("Truncating Data:{}.{}".format(x.schema_name,x.table_name))
                 else:
-                    print(f"Appending  Data:{x.schema_name}.{x.table_name}")
+                    print("Appending  Data:{}.{}".format(x.schema_name,x.table_name))
                 logging.debug("DATA-File:{}".format(self.curr_src_working_file))
                 if x is None:
                     break
@@ -736,7 +736,7 @@ class DataFile:
                     full_file_name = self.source_file_path +"/"+ self.curr_src_working_file
                     print(self.working_path, "/appended/", self.curr_src_working_file)
                     full_file_name_new = self.working_path + "appended/" + self.curr_src_working_file
-                    print(f"-----{full_file_name}----")
+                    #print(f"-----{full_file_name}----")
                     self.insert_into_file(full_file_name, full_file_name_new,
                                           str(self.meta_source_file_id) + x.file_delimiter, 'LINE'
                                           , x.append_column_name + x.file_delimiter)
@@ -777,7 +777,7 @@ class DataFile:
 
             else:
                 full_file_name = self.source_file_path + self.curr_src_working_file
-                print(f"Extracting file, FileType:{self.work_file_type}{full_file_name}/{self.working_path}")
+                #print("Extracting file, FileType:{self.work_file_type}{full_file_name}/{self.working_path}")
                 self.extract_file(db, full_file_name, self.working_path + '/' + self.curr_src_working_file)
                 self.finish_work(db, vacuum=vacuum)
             if cleanup:
