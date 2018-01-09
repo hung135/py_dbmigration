@@ -1,7 +1,8 @@
 import logging
 from py_dbmigration import db_logging
 import os
-import subprocess as commands
+#import subprocess as commands
+import commands
 import sys
 import datetime as dt
 from sqlalchemy.ext.automap import automap_base
@@ -16,7 +17,7 @@ class Connection:
     _userid = None
     _sslmode = None
     _host = None
-    _port = None
+    _port = 5432
     _database_name = None
     _commit = True
     _dbtype = None
@@ -240,9 +241,9 @@ class Connection:
                 self._sslmode = os.getenv('PGSSLMODE', None)
             if self._host is None:
                 self._host = os.getenv('PGHOST', '192.168.99.100')
-            if self._sslmode is None:
+            if self._port is None:
                 self._port = os.getenv('PGPORT', 5432)
-            if self._sslmode is None:
+            if self._database_name is None:
                 self._database_name = os.getenv('PGDATABASE', 'postgres')
 
         except:
@@ -361,18 +362,18 @@ class Connection:
 
     def import_file_client_side(self, full_file_path, table_name, file_delimiter):
         copy_command_client_side = """psql --dbname={3} --host={4} -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
-        t = db_logging.DbLogging(self)
+        #t = db_logging.db_logging.DbLogging(self)
         data_file = full_file_path
-        error_log_entry = t.ErrorLog(program_unit=sys.argv[0], error_code=None, error_message=None,
-            error_timestamp=None, user_name=self._userid, sql_statement='')
-        log_entry = t.LoadStatus(table_name=table_name, program_unit=sys.argv[0], program_unit_type_code='python',
+        '''error_log_entry = t.ErrorLog(program_unit=sys.argv[0], error_code=None, error_message=None,
+        #    error_timestamp=None, user_name=self._userid, sql_statement='')
+        #log_entry = t.LoadStatus(table_name=table_name, program_unit=sys.argv[0], program_unit_type_code='python',
                                  file_path=data_file, records_inserted=0, success=1, start_date=dt.datetime.now(),
                                  end_date=dt.datetime.now(), previous_record_count=0, current_record_count=0,
                                  records_updated=0, records_deleted=0, created_by=self._userid,
                                  created_date=dt.datetime.now())
-
+        '''
         t = dt.datetime.now()
-
+        
         command_text = copy_command_client_side.format(table_name, data_file, file_delimiter, self._database_name,
             self._host)
         logging.info("Copy Command STARTED:{0} Time:{1}".format(table_name, t))
@@ -419,9 +420,9 @@ class Connection:
         # print(n, t.name)
 
         # print(type(n), n, t.name)
-        print(table_name, "-----------------", dbschema)
+        #print(table_name, "-----------------", dbschema)
         table = sqlalchemy.Table(table_name, meta, autoload=True, autoload_with=con)
-        print(table)
+        #print(table)
         column_list = [c.name for c in table.columns]
         #print(column_list, "-----------------")
         return list(column_list)
