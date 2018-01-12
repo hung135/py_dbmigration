@@ -49,11 +49,12 @@ class DestinationDB:
     file_list = []
     parent_file_id = 0
     insert_option = None
+    encoding ='UTF-8'
 
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None,
                  schema_name=None, has_header=False, folder_regex=None, append_file_id=False,
                  append_column_name='file_id', file_name_data_regex=None, file_path=None,
-                 parent_file_id=0, insert_option=None):
+                 parent_file_id=0, insert_option=None,encoding='UTF-8'):
         self.regex = file_regex
         self.folder_regex = folder_regex
         self.table_name = table_name
@@ -68,6 +69,8 @@ class DestinationDB:
         self.file_path = file_path
         self.parent_file_id = parent_file_id
         self.insert_option = insert_option
+        self.encoding=encoding
+
 
 
 def get_mapped_table(file_name, dest):
@@ -95,7 +98,7 @@ class DataFile:
                        where file_name='{1}' and
                        """
     copy_command_sql = "call op_dba.copy_from_host('{0}','{1}','DELIMITER ''|'' CSV')"
-    copy_command_client_side = """psql -c "\copy {0} FROM '{1}' with (format csv,{4} FORCE_NULL ({3}),delimiter '{2}')" """
+    copy_command_client_side = """psql -c "\copy {0} FROM '{1}' with (format csv,{4} FORCE_NULL ({3}),delimiter '{2}', ENCODING '{5}')" """
     meta_source_file_id = 0
 
     def __init__(self, working_path, db, file_pattern_list, parent_file_id=0):
@@ -226,6 +229,30 @@ class DataFile:
                 ,file_process_state='raw'
                 where upper(file_process_state)='FAILED'
                 """)
+        if option == 'RAW':
+            logging.debug("RESET META DATA RAW IMPORTS:")
+            db.update("""Update logging.meta_source_files
+                set process_start_dtm=null
+                ,process_end_dtm=null
+                ,current_worker_host=null
+                ,current_worker_host_pid=null
+                ,last_error_msg=null
+                ,file_process_state='raw'
+                where upper(file_process_state)='RAW'
+ 
+                and file_type in ('CSV','DATA')
+                """)
+        if option == 'DATA':
+            logging.debug("RESET META DATA   IMPORTS:")
+            db.update("""Update logging.meta_source_files
+                set process_start_dtm=null
+                ,process_end_dtm=null
+                ,current_worker_host=null
+                ,current_worker_host_pid=null
+                ,last_error_msg=null
+                ,file_process_state='raw'
+                where  file_type in ('CSV','DATA')
+                """)
         db.commit()
 
     def walk_dir(self, DestinationDB, level=0):
@@ -265,6 +292,7 @@ class DataFile:
     # import one file at a time using client side copy command postgres
     def import_1file_client_side(self, dest, db):
         data_file = dest.full_file_name
+        self.rows_inserted=0
         logging.debug("Into Import CopyCommand: {0}".format(dest.schema_name + "." + dest.table_name))
         if db is not None:
 
@@ -299,7 +327,7 @@ class DataFile:
                 header = 'HEADER,'
 
             command_text = self.copy_command_client_side.format(copy_string, data_file, dest.file_delimiter,
-                                                                ",".join(cols), header)
+                                                                ",".join(cols), header,dest.encoding)
 
             logging.info("Copy Command STARTED:{0}".format(dest.table_name))
 
@@ -336,6 +364,7 @@ class DataFile:
                 # flagging the logging entry
                 log_entry.end_date = dt.datetime.now()
 
+                self.rows_inserted= i[1]
                 log_entry.records_inserted = i[1]
                 logging.info("Copy Command Completed: {0}".format(data_file))
                 t.session.add(log_entry)
@@ -374,8 +403,10 @@ class DataFile:
     def import_file_pandas(self, dest, db, lowercase=True, limit_rows=None, chunk_size=10000):
         self.Dblogger = lg.db_logging.DbLogging(db)
         full_file_path = None
+        self.rows_inserted=0
         status = ''
         header = 'infer'
+        names = None
         if db is not None:
             conn, meta = db.connect_sqlalchemy()
 
@@ -400,8 +431,10 @@ class DataFile:
                                              chunksize=chunk_size, header=header):
                     # print(dataframe)
                     if not dest.has_header:
-                        dataframe.columns = map(str.lower, dest.column_list)
-                        dataframe.columns = map(str.lower, dataframe.columns)
+                         
+                        dataframe.columns = map( str, dest.column_list)
+                        #dataframe.columns = map(str.lower, dataframe.columns)
+                        #print("----- printing3",dest.column_list, dataframe.columns)
                     logging.debug(
                         "Pandas Insert Into DB: {0}->{1}-->Records:{2}".format(dest.schema_name, dest.table_name,
                                                                                counter * chunk_size))
@@ -410,7 +443,7 @@ class DataFile:
 
                                      index_label=names)
                     counter = counter + 1
-
+                self.rows_inserted= counter*chunk_size
                 self.Dblogger.insert_LoadStatus(table_name=dest.table_name, program_unit="FileImport",
                                                 program_unit_type_code="Pandas", file_path=dest.full_file_name,
                                                 success=int(self.curr_file_success))
@@ -419,9 +452,13 @@ class DataFile:
 
                 # logging.error(str(e))
                 status = "Error Inserting File"
-                cols_tb = db.get_table_columns(str.lower(dest.table_name))
-
-                delta = diff_list(dataframe.columns.tolist(), cols_tb)
+                delta=''
+                try:
+                    cols_tb = db.get_table_columns(str.lower(dest.table_name))
+                    delta = diff_list(dataframe.columns.tolist(), cols_tb)
+                except:
+                    pass
+                #delta = diff_list(dataframe.columns.tolist(), cols_tb)
                 self.curr_file_success = False
                 self.Dblogger.insert_ErrorLog(error_code="Err", error_message=str(e)[:200], program_unit="FileImport",
                                               user_name=db._userid, sql_statement=full_file_path)
@@ -618,8 +655,11 @@ class DataFile:
 
         if self.curr_file_success:
             row.file_process_state = 'Processed'
-        if process_error is not None:
+            row.database_table=dest.schema_name+'.'+dest.table_name
+            row.rows_inserted=self.rows_inserted
+        if process_error is not None and process_error !='':
             row.last_error_msg = process_error
+            row.file_process_state = 'Failed'
 
 
         if vacuum and dest is not None and process_error is None:
@@ -772,7 +812,12 @@ class DataFile:
                     if x.has_header:
                         min_row = 1
                     else:
-                        x.column_list = db.get_columns(x.table_name, x.schema_name)
+                        try:
+                            x.column_list = db.get_columns(x.table_name, x.schema_name)
+
+                        except:
+                            print("No table found: Skipping Column_list")
+                        #x.column_list = db.get_columns(x.table_name, x.schema_name)
                     #print(""df.row_count, min_row)
                     logging.debug("File Row Count:{}".format(df.row_count))
                     if df.row_count > min_row:
@@ -789,6 +834,9 @@ class DataFile:
                             pattern_found = True
                     if not self.curr_file_success:
                         vacuum = False
+                    print("--------Processo Error: ",process_error)
+                    if process_error=='':
+                        process_error=None
                     df.finish_work(db, process_error=process_error, dest=x, vacuum=vacuum)
 
                 else:

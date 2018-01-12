@@ -24,7 +24,7 @@ class MetaSourceFiles(MetaBase):
     process_date = Column(c.DateTime)
     file_name_data = Column(c.String, nullable=True)
     file_type = Column(c.String, nullable=True)
-    file_process_state = Column(c.String, default='raw')
+    file_process_state = Column(c.String, default='RAW')
     process_start_dtm = Column(c.DateTime, default=None)
     process_end_dtm = Column(c.DateTime, default=None)
     current_worker_host = Column(c.String, nullable=True)
@@ -36,10 +36,22 @@ class MetaSourceFiles(MetaBase):
     total_files = Column(c.Integer, default=0)
     total_files_processed = Column(c.Integer, default=0)
     last_error_msg = Column(c.String, nullable=True)
-
     database_table = Column(c.String, nullable=True)
     parent_file_id = Column(c.Integer, default=0)
 
+
+class PublishLog(MetaBase):
+    DbSchema = 'logging'
+    __tablename__ = 'publish_log'
+    __table_args__ = {"schema": DbSchema}
+    id = Column(c.Integer, primary_key=True)
+    data_id = Column(c.String)
+    publish_timestamp = Column(c.DateTime)
+    schema = Column(c.String)
+    table_name = Column(c.String)
+    user_name = Column(c.String)
+    
+ 
 class ErrorLog(MetaBase):
     DbSchema = 'logging'
     __tablename__ = 'error_log'

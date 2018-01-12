@@ -1,33 +1,44 @@
 import logging
-
+import pprint
 from sqlalchemy import MetaData
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
 
-from .meta_source_file import MetaSourceFiles, MetaBase, LoadStatus, ErrorLog
+from .meta_source_file import MetaSourceFiles, MetaBase, LoadStatus, ErrorLog,PublishLog
 
 
 class RecordKeeper():
     db_url = None
+    table = None
+    def __init__(self, db,table_def=None,DbSchema_overide=None ):
+        
 
-    def __init__(self, db):
+        if table_def is None:
+            self.table = MetaSourceFiles
+        else:
+            self.table = table_def
 
-        self.table = MetaSourceFiles
-        print(db.get_conn_url())
+        if DbSchema_overide is not None:
+            pprint.pprint((self.table.__dict__))
+            self.table.DbSchema=DbSchema_overide
+            self.table.__table_args__['schema']=self.table.DbSchema
+            #self.table.__table__.Table.schema=self.table.DbSchema
+            #self.table.__table_args__.schema=self.table.DbSchema
+        pprint.pprint((self.table.__table__))
+        #print ("--tb---",self.table.DbSchema)
+        #pprint.pprint((self.table.__dict__))
+        print("----",type(self.table.__table__))
+        #print("----",'\n',type(self.table.__table__),'\n',dir(self.table.__table__),'\n',dict(self.table.__table__))
         self.engine = create_engine(db.get_conn_url())
         try:
-            self.engine.execute(CreateSchema(MetaSourceFiles.DbSchema))
-            logging.debug("Creating Database Schema: {}".format(MetaSourceFiles.DbSchema))
+            self.engine.execute(CreateSchema(self.table.DbSchema))
+            logging.debug("Creating Database Schema: {}".format(self.table.DbSchema))
         except:
             #logging.debug("Schema Already Exists No need to create:")
             pass
-        try:
-            self.engine.execute(CreateSchema(LoadStatus.DbSchema))
-            logging.debug("Creating Database Schema: {}".format(LoadStatus.DbSchema))
-        except:
-            #logging.debug("Schema Already Exists No need to create:")
-            pass
+        #print("----tb2----",self.table.__table_args__,type(self.table.__table_args__))
+
         # create tables
         MetaBase.metadata.create_all(bind=self.engine)
 
@@ -75,6 +86,8 @@ class RecordKeeper():
     def __del__(self):
         try:
             self.session.close()
-            logging.debug("Closing meta_source_table Session")
+            logging.debug("Closing db_table.py Session")
         except:
-            logging.error("Error Occured Closing meta_source_table Session")
+            logging.error("Error Occured Closing db_table.py Session")
+
+
