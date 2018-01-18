@@ -1,1 +1,1 @@
-from . import migrate_utils
+from .migrate_utils import migrate_utils

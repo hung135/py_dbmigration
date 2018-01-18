@@ -286,11 +286,12 @@ class DataFile:
         logging.debug("Done Walking Directory:{}".format(list(match_list)))
 
         DestinationDB.file_list = match_list
-        print(match_list,DestinationDB.file_list,"------")
+        #print(match_list,DestinationDB.file_list,"------")
         return DestinationDB
 
     # import one file at a time using client side copy command postgres
     def import_1file_client_side(self, dest, db):
+        error_msg=None
         data_file = dest.full_file_name
         self.rows_inserted=0
         logging.debug("Into Import CopyCommand: {0}".format(dest.schema_name + "." + dest.table_name))
@@ -334,8 +335,8 @@ class DataFile:
 
             txt_out = commands.getstatusoutput(command_text)
             #txt_out = commands.getoutput(command_text)    
-            print("--------",command_text,"---------")
-            print("--------",txt_out,"---------")
+            #print("--------",command_text,"---------")
+            #print("--------",txt_out,"---------")
             if ('ERROR' in txt_out[1]):
                 logging.info("ERROR running Copy Copy Command")
                 logging.error(txt_out)
@@ -357,7 +358,7 @@ class DataFile:
                 error_log_entry.error_timestamp = dt.datetime.now()
                 t.session.add(error_log_entry)
                 logging.error("Copy Command ERROR Occured: {}".format(txt_out))
-
+                error_msg=txt_out[1]
             else:
                 self.processed_file_count += 1
                 i = txt_out[1].split()
@@ -373,6 +374,7 @@ class DataFile:
             except Exception as e:
                 print("-----------------------------------")
                 logging.error(e)
+                error_msg=e
                 logging.debug("Error Occured Logging, Exiting Application")
                 #sys.exit()
             else:
@@ -382,6 +384,7 @@ class DataFile:
 
         else:
             logging.debug("Regex Not Match Skipping:{0}".format(dest.table_name))
+        return error_msg
 
     """
     Test the currentworking file againsts the regex passted in
@@ -655,11 +658,13 @@ class DataFile:
 
         if self.curr_file_success:
             row.file_process_state = 'Processed'
-            row.database_table=dest.schema_name+'.'+dest.table_name
+            if dest is not None:
+                row.database_table=dest.schema_name+'.'+dest.table_name
             row.rows_inserted=self.rows_inserted
         if process_error is not None and process_error !='':
             row.last_error_msg = process_error
             row.file_process_state = 'Failed'
+            row.rows_inserted=0
 
 
         if vacuum and dest is not None and process_error is None:
@@ -834,7 +839,7 @@ class DataFile:
                             pattern_found = True
                     if not self.curr_file_success:
                         vacuum = False
-                    print("--------Processo Error: ",process_error)
+                    print("--------Process Error: ",process_error)
                     if process_error=='':
                         process_error=None
                     df.finish_work(db, process_error=process_error, dest=x, vacuum=vacuum)

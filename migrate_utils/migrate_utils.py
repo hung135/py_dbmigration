@@ -152,7 +152,7 @@ def print_postgres_table(db, folder=None, targetschema=None):
     # print dir(meta.tables)
     folder_table = folder + "/postgrestables/"
 
-    os.makedirs(folder_table, exist_ok=True)
+    os.makedirs(folder_table)
  
 
     sqitch = []
@@ -175,7 +175,7 @@ def print_postgres_table(db, folder=None, targetschema=None):
 
         with open(folder_table + filename, "wb") as f:
             f.write(out)    
-            f.write(bytes("\n", 'UTF-8'))
+            f.write(bytes("\n"))
 
     print("Total Tables:{}".format(table_count))
 
@@ -187,9 +187,19 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
     folder_deploy = folder + "/deploy/functions/"
     folder_revert = folder + "/revert/functions/"
     folder_verify = folder + "/verify/functions/"
-    os.makedirs(folder_deploy, exist_ok=True)
-    os.makedirs(folder_revert, exist_ok=True)
-    os.makedirs(folder_verify, exist_ok=True)
+    try:
+        os.makedirs(folder_deploy)
+    except:
+        pass
+    try:
+        os.makedirs(folder_revert)
+    except:
+        pass
+    try:
+        os.makedirs(folder_verify)
+    except:
+        pass
+
 
     sqitch = []
     table_count = 0
@@ -201,24 +211,24 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
         rows = db.query("call {}.generateUpsert_style_functions('{}','{}')".format(db._database_name, db.dbschema, t.name))
         logging.debug("Generating Upsert for Table: {}".format(t.name.lower()))
         line = ("\nsqitch add functions/{} -n \"Adding {}\" ".format(basefilename + "_upsert", filename))
-        sqitch.append(line)
 
+        sqitch.append(line)
         with open(folder_deploy + filename, "wb") as f:
             for line in rows:
-                f.write(bytes(line[0], 'UTF-8'))
-                f.write(bytes("\n", 'UTF-8'))
+                f.write(bytes(line[0]))
+                f.write(bytes("\n"))
 
         drop = "DROP FUNCTION IF EXISTS {}.{};".format(db.dbschema, basefilename + "_upsert();")
         with open(folder_revert + filename, "wb") as f:
-            f.write(bytes(drop, 'UTF-8'))
-            f.write(bytes("\n", 'UTF-8'))
+            f.write(bytes(drop))
+            f.write(bytes("\n"))
 
         with open(folder_verify + filename, "wb") as f:
-            f.write(bytes("-- NA ", 'UTF-8'))
-            f.write(bytes("\n", 'UTF-8'))
+            f.write(bytes("-- NA "))
+            f.write(bytes("\n"))
     print("Total Tables:{}".format(table_count))
     with open(folder + "/sqitchplanadd_upsert.bash", "wb") as f:
-        f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table_upsert()", 'UTF-8'))
+        f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table_upsert()"))
     for s in sqitch:
         with open(folder + "/sqitchplanadd_upsert.bash", "a") as f:
             f.write(s)
@@ -271,9 +281,18 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
     folder_deploy = folder + "/deploy/tables/"
     folder_revert = folder + "/revert/tables/"
     folder_verify = folder + "/verify/tables/"
-    os.makedirs(folder_deploy, exist_ok=True)
-    os.makedirs(folder_revert, exist_ok=True)
-    os.makedirs(folder_verify, exist_ok=True)
+    try:
+        os.makedirs(folder_deploy)
+    except:
+        pass
+    try:
+        os.makedirs(folder_revert)
+    except:
+        pass
+    try:
+        os.makedirs(folder_verify)
+    except:
+        pass
     table_count = 0
     sqitch = []
     tables = []
@@ -321,7 +340,7 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
             print("Writing:")
             print(folder_deploy + i["table"])
             with open(folder_deploy + i["filename"], "wb") as f:
-                f.write(bytes(i["sql"], 'UTF-8'))
+                f.write(bytes(i["sql"]))
 
             drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
             print(dbschema,"-----db---")
@@ -330,14 +349,14 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
             verify = "BEGIN;\n" + v_str
 
             with open(folder_revert + i["filename"], "wb") as f:
-                f.write(bytes(drop, 'UTF-8'))
-                f.write(bytes("COMMIT;\n", 'UTF-8'))
+                f.write(bytes(drop))
+                f.write(bytes("COMMIT;\n"))
             with open(folder_verify + i["filename"], "wb") as f:
-                f.write(bytes(verify, 'UTF-8'))
-                f.write(bytes("ROLLBACK;\n", 'UTF-8'))
+                f.write(bytes(verify))
+                f.write(bytes("ROLLBACK;\n"))
 
         with open(folder + "sqitchplanadd_table.bash", "wb") as f:
-            f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table()", 'UTF-8'))
+            f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table()"))
         for s in sqitch:
             with open(folder + "sqitchplanadd_table.bash", "a") as f:
                 f.write(s)

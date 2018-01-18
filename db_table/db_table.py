@@ -20,15 +20,15 @@ class RecordKeeper():
             self.table = table_def
 
         if DbSchema_overide is not None:
-            pprint.pprint((self.table.__dict__))
+            #pprint.pprint((self.table.__dict__))
             self.table.DbSchema=DbSchema_overide
             self.table.__table_args__['schema']=self.table.DbSchema
             #self.table.__table__.Table.schema=self.table.DbSchema
             #self.table.__table_args__.schema=self.table.DbSchema
-        pprint.pprint((self.table.__table__))
+        #pprint.pprint((self.table.__table__))
         #print ("--tb---",self.table.DbSchema)
         #pprint.pprint((self.table.__dict__))
-        print("----",type(self.table.__table__))
+        #print("----",type(self.table.__table__))
         #print("----",'\n',type(self.table.__table__),'\n',dir(self.table.__table__),'\n',dict(self.table.__table__))
         self.engine = create_engine(db.get_conn_url())
         try:

@@ -46,12 +46,16 @@ class PublishLog(MetaBase):
     __table_args__ = {"schema": DbSchema}
     id = Column(c.Integer, primary_key=True)
     data_id = Column(c.String)
-    publish_timestamp = Column(c.DateTime)
+    publish_start_time = Column(c.DateTime)
+    publish_end_time = Column(c.DateTime)
+    publish_status = Column(c.String)
     schema = Column(c.String)
     table_name = Column(c.String)
     user_name = Column(c.String)
-    
- 
+    message = Column(c.String)
+    row_counts = Column(c.BigInteger)
+
+
 class ErrorLog(MetaBase):
     DbSchema = 'logging'
     __tablename__ = 'error_log'
