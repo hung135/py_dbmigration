@@ -1,4 +1,4 @@
-from sqlalchemy.schema import Column,UniqueConstraint
+from sqlalchemy.schema import Column, UniqueConstraint
 import sqlalchemy.types as c
 
 from sqlalchemy.ext.declarative import declarative_base
@@ -17,7 +17,7 @@ class MetaSourceFiles(MetaBase):
     DbSchema = 'logging'
     __tablename__ = 'meta_source_files'
 
-    __table_args__ = (UniqueConstraint('file_name', 'file_path', name='uq_uniq_files'),{"schema": DbSchema})
+    __table_args__ = (UniqueConstraint('file_name', 'file_path', name='uq_uniq_files'), {"schema": DbSchema})
     id = Column(c.Integer, primary_key=True)
     file_name = Column(c.String, nullable=False)
     file_path = Column(c.String, nullable=False)
@@ -45,7 +45,7 @@ class PublishLog(MetaBase):
     __tablename__ = 'publish_log'
     __table_args__ = {"schema": DbSchema}
     id = Column(c.Integer, primary_key=True)
-    data_id = Column(c.String)
+    data_id = Column(c.Integer)
     publish_start_time = Column(c.DateTime)
     publish_end_time = Column(c.DateTime)
     publish_status = Column(c.String)

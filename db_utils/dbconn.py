@@ -192,6 +192,7 @@ class Connection:
         logging.debug("Debug DB Execute: {0}".format(sqlstring))
         try:
             self._cur.execute(sqlstring)
+            self._cur.execute("commit")
             self.commit()
         except Exception as e:
             print("Error Execute SQL:{}".format(e))

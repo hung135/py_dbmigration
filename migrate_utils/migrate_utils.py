@@ -1,5 +1,27 @@
 import logging
 
+def change_table_owner(db,schema,owner_name):
+    query="""SELECT 'ALTER TABLE '|| schemaname || '.' || tablename ||' OWNER TO operational_dba;'
+    FROM pg_tables WHERE   schemaname IN ('{}')
+    ORDER BY schemaname, tablename;
+
+    """.format(schema)
+
+    resultset=db.query(query)
+    for r in resultset:
+        db.execute(r[0])
+        
+
+def change_view_owner(db,schema,owner_name):
+    query="""SELECT 'ALTER VIEW '|| table_schema || '.' || table_name ||' OWNER TO operational_dba;'
+FROM information_schema.views WHERE  table_schema  IN ('{}')
+ORDER BY table_schema, table_name;
+    """.format(schema)
+
+    resultset=db.query(query)
+    for r in resultset:
+        db.execute(r[0])
+        
 
 def print_sqitch_files(folder, file_type, trg_folder):
     import os
