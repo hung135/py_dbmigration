@@ -118,7 +118,7 @@ class DataFile:
         self.processed_file_count = None
         self.files = None  # The contents of the zip files for the last file unzipped
         file_type = None
-
+        self.rows_inserted=0
         # self.copy_command_root_path = "/home/dtwork/dw/file_transfers/"
 
         # self.create_meta_table(db)

@@ -1,27 +1,129 @@
 import logging
+import re
 
-def change_table_owner(db,schema,owner_name):
-    query="""SELECT 'ALTER TABLE '|| schemaname || '.' || tablename ||' OWNER TO operational_dba;'
+
+def dd_lookup(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
+
+    tables = db.get_tables(schema=schema)
+    create_string = """create table if not exists _tmp_test_{} as select * from {} limit 1"""
+    t_compiled = re.compile(table_name_regex)
+    sql = """
+    insert into census.dd_lookup(year,table_name,lookup_code,lookup_type)
+     select distinct '{}','{}' , unnest(array[{}]) as col_name, unnest(array[{}])   from {} 
+     on conflict do nothing
+    """
+    sql2 = """
+    insert into census.dd_lookup(year,table_name,lookup_code,lookup_type)
+     select distinct '{}','{}' , unnest(array[{}]) as col_name,  {} 
+     -- from {} 
+     on conflict do nothing
+    """
+    p = re.compile(col_regex)
+
+    for t in tables:
+        # print(type(t),t)
+        col_base = []
+        col_pivot = []
+        if t_compiled.match(t['table_name']):
+            # print("----",t)
+            #cols= db.get_columns(t,schema)
+            cols = t['columns']
+
+            for col in cols:
+                if p.match(col):
+                    col_pivot.append(col)
+                else:
+                    if col in ['fileid', 'filetype', 'stusab', 'chariter', 'seq']:
+                        col_base.append(col)
+
+            sqlx = sql.format(schema,
+                              t['table_name'], ','.join(col_base), ','.join("'{0}'".format(x) for x in col_base), schema + '.' + t['table_name'])
+            sqlx2 = sql2.format(schema,
+                               t['table_name'], ','.join("'{0}'".format(x) for x in col_pivot), "'stats'", schema + '.' + t['table_name'])
+
+            # print(sqlx)
+            db.execute(sqlx)
+            db.execute(sqlx2)
+
+
+def pivot_table(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
+
+    tables = db.get_tables(schema=schema)
+    create_string = """create table if not exists _tmp_test_{} as select * from {} limit 1"""
+    t_compiled = re.compile(table_name_regex)
+    sql = """
+    
+     SELECT cast('{}' as varchar) as year,
+     cast('{}' as varchar) as table_name,{} , unnest(array[{}]) as col_name, unnest(array[{}]) as col_val from {} 
+    """
+    sql3=""" INSERT into census.seq_data2(dd_chariter,dd_filetype,dd_stusab,dd_seq,dd_stat,stat_val,geoid,logrecno,dd_fileid)
+    SELECT aa.id,bb.id,cc.id,dd.id,ee.id,col_val,geoid,logrecno,ff.id FROM ({}
+    ) AS x
+    join census.dd_lookup aa on aa.table_name=x.table_name and aa.year=x.year  and aa.lookup_code=x.chariter and aa.lookup_type='chariter' 
+    join census.dd_lookup bb on bb.table_name=x.table_name and bb.year=x.year  and bb.lookup_code=x.filetype and bb.lookup_type='filetype' 
+    join census.dd_lookup cc on cc.table_name=x.table_name and cc.year=x.year  and cc.lookup_code=x.stusab and cc.lookup_type='stusab' 
+    join census.dd_lookup dd on dd.table_name=x.table_name and dd.year=x.year  and dd.lookup_code=x.seq and dd.lookup_type='seq'
+    join census.dd_lookup ee on ee.table_name=x.table_name and ee.year=x.year  and ee.lookup_code=x.col_name and ee.lookup_type='stats'
+    join census.dd_lookup ff on ff.table_name=x.table_name and ff.year=x.year  and ff.lookup_code=x.fileid and ff.lookup_type='fileid'
+    where x.col_val is not null 
+    on conflict do nothing ;
+    """
+    p = re.compile(col_regex)
+
+    for t in tables:
+        # print(type(t),t)
+        col_base = []
+        col_pivot = []
+        if t_compiled.match(t['table_name']):
+            # print("----",t)
+            #cols= db.get_columns(t,schema)
+            cols = t['columns']
+
+            for col in cols:
+                if p.match(col):
+                    col_pivot.append(col)
+                else:
+                    col_base.append(col)
+            sqlx = sql.format( 
+                              schema, t['table_name'], ','.join(col_base), ','.join("'{0}'".format(x) for x in col_pivot), ','.join(col_pivot), schema + '.' + t['table_name'])
+
+            try:
+                print("Executing:", schema, t['table_name'])
+                #print(sql3.format(sqlx))
+                db.execute(sql3.format(sqlx))
+            except:
+                print("error pivoting table:", schema, t['table_name'])
+                print(sqlx)
+
+    # base=list(set(col_base))
+    # pivot=list(set(col_pivot))
+    # print(pivot)
+    # print(schema,len(pivot),len(col_pivot))
+
+
+def change_table_owner(db, schema, owner_name):
+    query = """SELECT 'ALTER TABLE '|| schemaname || '.' || tablename ||' OWNER TO operational_dba;'
     FROM pg_tables WHERE   schemaname IN ('{}')
     ORDER BY schemaname, tablename;
 
     """.format(schema)
 
-    resultset=db.query(query)
+    resultset = db.query(query)
+    db.execute('GRANT ALL ON SCHEMA {} TO operational_dba;'.format(schema))
     for r in resultset:
         db.execute(r[0])
-        
 
-def change_view_owner(db,schema,owner_name):
-    query="""SELECT 'ALTER VIEW '|| table_schema || '.' || table_name ||' OWNER TO operational_dba;'
+
+def change_view_owner(db, schema, owner_name):
+    query = """SELECT 'ALTER VIEW '|| table_schema || '.' || table_name ||' OWNER TO operational_dba;'
 FROM information_schema.views WHERE  table_schema  IN ('{}')
 ORDER BY table_schema, table_name;
     """.format(schema)
 
-    resultset=db.query(query)
+    resultset = db.query(query)
     for r in resultset:
         db.execute(r[0])
-        
+
 
 def print_sqitch_files(folder, file_type, trg_folder):
     import os
@@ -53,10 +155,12 @@ def convert_sql_snake_case(string, column_list):
         string = string.replace(i, newfield)
 
     return string.lower()
+
+
 def convert_list_to_snake_case(column_list):
     import inflection
-   
-    newlist=[]
+
+    newlist = []
     for i in column_list:
         newfield = inflection.underscore(i)
         newfield = newfield.replace("   ", " ")
@@ -71,21 +175,21 @@ def convert_list_to_snake_case(column_list):
         newfield = newfield.lower()
         newlist.append(newfield)
     return newlist
-def make_markdown_table(array):
 
+
+def make_markdown_table(array):
     """ 
     Stolen from here:
     https://gist.github.com/m0neysha/219bad4b02d2008e0154#file-pylist-to-markdown-py
     Input: Python list with rows of table as lists
                First element as header. 
         Output: String to put into a .md file 
-        
+
     Ex Input: 
         [["Name", "Age", "Height"],
          ["Jake", 20, 5'10],
          ["Mary", 21, 5'7]] 
     """
-
 
     markdown = "\n" + str("| ")
 
@@ -108,59 +212,58 @@ def make_markdown_table(array):
 
     return markdown + "\n"
 
+
 def show_users(db):
 
-    sql="""select usename
+    sql = """select usename
         -- ,rolname 
         from pg_user
         join pg_auth_members on (pg_user.usesysid=pg_auth_members.member)
         join pg_roles on (pg_roles.oid=pg_auth_members.roleid)
         where rolname='{}_readonly'
         or rolname='{}_readonly
-        ;""".format(db._database_name,db.dbschema)
+        ;""".format(db._database_name, db.dbschema)
     return db.query(sql)
 
 
 def appdend_to_readme(db, folder=None, targetschema=None):
     with open("../README.md") as f:
         content = f.readlines()
-    dictionary="<a name=\"data_dictionary\"></a>"[:25]
-    dict_query="""select table_schema,table_name,column_name,data_type,character_maximum_length
+    dictionary = "<a name=\"data_dictionary\"></a>"[:25]
+    dict_query = """select table_schema,table_name,column_name,data_type,character_maximum_length
                 from information_schema.columns a 
                 where table_schema='enforce' order by table_name,ordinal_position"""
-    header=["table_schema"+"|"+"table_name"+"|"+"column_name"+"|"+"data_type"+"|","length"]
-    header=["table_schema","table_name","old_column_name","column_name","data_type","length"]
-    pad_size=30
-    table=[header]
-    with open(folder+"/README.md","wb") as f:
+    header = ["table_schema" + "|" + "table_name" + "|" + "column_name" + "|" + "data_type" + "|", "length"]
+    header = ["table_schema", "table_name", "old_column_name", "column_name", "data_type", "length"]
+    pad_size = 30
+    table = [header]
+    with open(folder + "/README.md", "wb") as f:
         for line in content:
-            f.write(bytes(line,'UTF-8'))
-            if line[:25]==dictionary[:25]:
-                #f.write(bytes(header,'UTF-8'))
-                rows=db.query(dict_query)
+            f.write(bytes(line, 'UTF-8'))
+            if line[:25] == dictionary[:25]:
+                # f.write(bytes(header,'UTF-8'))
+                rows = db.query(dict_query)
                 for row in rows:
-                    table_schema=""
-                    table_name=""
-                    column_name=""
-                    data_type=""
-                    length=""
+                    table_schema = ""
+                    table_name = ""
+                    column_name = ""
+                    data_type = ""
+                    length = ""
 
-                    table_schema=row[0]
-                    table_name=row[1].rjust(pad_size," ")
-                    column_name=row[2].rjust(pad_size," ")
-                    data_type=row[3].rjust(pad_size," ")
+                    table_schema = row[0]
+                    table_name = row[1].rjust(pad_size, " ")
+                    column_name = row[2].rjust(pad_size, " ")
+                    data_type = row[3].rjust(pad_size, " ")
                     if row[4] is not None:
-                        length=str(row[4])
-                    length=length.rjust(6," ")
-                    #table.append([table_schema,table_name,column_name,data_type,length])
-                    #table.append(row)
-                    table.append([table_schema,table_name,column_name,column_name,data_type,length])
-                    #line=table_schema+"|"+table_name+"|"+old_column_name+"|"+column_name+"|"+data_type+"|"+length+"\n"
+                        length = str(row[4])
+                    length = length.rjust(6, " ")
+                    # table.append([table_schema,table_name,column_name,data_type,length])
+                    # table.append(row)
+                    table.append([table_schema, table_name, column_name, column_name, data_type, length])
+                    # line=table_schema+"|"+table_name+"|"+old_column_name+"|"+column_name+"|"+data_type+"|"+length+"\n"
 
-
-                f.write(bytes(make_markdown_table(table),'UTF-8'))
-        #print(make_markdown_table(table))
-
+                f.write(bytes(make_markdown_table(table), 'UTF-8'))
+        # print(make_markdown_table(table))
 
 
 def print_postgres_table(db, folder=None, targetschema=None):
@@ -168,14 +271,13 @@ def print_postgres_table(db, folder=None, targetschema=None):
     import sqlalchemy
     import os
     from sqlalchemy.dialects import postgresql
-    import subprocess 
-    
+    import subprocess
+
     con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
     # print dir(meta.tables)
     folder_table = folder + "/postgrestables/"
 
     os.makedirs(folder_table)
- 
 
     sqitch = []
     table_count = 0
@@ -184,22 +286,22 @@ def print_postgres_table(db, folder=None, targetschema=None):
         table_count += 1
         filename = t.name.lower() + ".sql"
         basefilename = t.name.lower()
-        out=None
+        out = None
         try:
-            out=subprocess.check_output(["pg_dump","--schema-only","enforce","-t","{}.{}".format(db.dbschema, t.name)])
+            out = subprocess.check_output(["pg_dump", "--schema-only", "enforce", "-t", "{}.{}".format(db.dbschema, t.name)])
     #"pg_dump -U nguyenhu enforce -t  public.temp_fl_enforcement_matters_rpt --schema-only"
-            #print(out)
+            # print(out)
         except subprocess.CalledProcessError as e:
             print(e)
-        
+
         logging.debug("Generating Postgres Syntax Table: {}".format(t.name.lower()))
-        
 
         with open(folder_table + filename, "wb") as f:
-            f.write(out)    
+            f.write(out)
             f.write(bytes("\n"))
 
     print("Total Tables:{}".format(table_count))
+
 
 def print_create_table_upsert(db, folder=None, targetschema=None):
     import os
@@ -221,7 +323,6 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
         os.makedirs(folder_verify)
     except:
         pass
-
 
     sqitch = []
     table_count = 0
@@ -293,7 +394,7 @@ def print_table_dict(db, folder=None, targetschema=None):
     print("Total Tables:{}".format(table_count))
 
 
-def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
+def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     import migrate_utils as mig
     import sqlalchemy
     import os
@@ -320,22 +421,21 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
     tables = []
 
     if targetschema is None:
-        dbschema=db.dbschema
+        dbschema = db.dbschema
 
     else:
         dbschema = targetschema
 
-
     # for n, t in meta.tables.iteritems():
     for n, t in meta.tables.items():
         table_count += 1
- 
+
         if file_prefix is not None:
-            filename = file_prefix+t.name.lower() + ".sql"
+            filename = file_prefix + t.name.lower() + ".sql"
             fqn = file_prefix
         else:
-            filename = t.name.lower() + ".sql" 
-            fqn=""
+            filename = t.name.lower() + ".sql"
+            fqn = ""
         basefilename = t.name.lower()
         #print(type(n), n, t.name)
         table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
@@ -344,7 +444,7 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
         createsql = mig.convert_sql_snake_case(str(stmt), column_list)
         logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
 
-        line = ("\nsqitch add tables/{}{} -n \"Adding {}\" ".format(fqn,basefilename, filename))
+        line = ("\nsqitch add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
 
         sqitch.append(line)
         if targetschema is not None:
@@ -365,7 +465,7 @@ def print_create_table(db, folder=None, targetschema=None,file_prefix=None):
                 f.write(bytes(i["sql"]))
 
             drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
-            print(dbschema,"-----db---")
+            print(dbschema, "-----db---")
             v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
                 dbschema, i["table"])
             verify = "BEGIN;\n" + v_str

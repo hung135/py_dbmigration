@@ -50,7 +50,8 @@ class Connection:
         con = sqlalchemy.create_engine(url)
 
         # We then bind the connection to MetaData()
-        meta = sqlalchemy.MetaData(bind=con, reflect=True, schema=self.dbschema)
+        #print('connecting schema:', schema)
+        meta = sqlalchemy.MetaData(bind=con, reflect=True, schema=schema)
 
         return con, meta
 
@@ -175,17 +176,17 @@ class Connection:
         if self._commit:
             self._cur.execute("commit")
 
-    def vacuum(self,dbschema=None, table_name=None):
+    def vacuum(self, dbschema=None, table_name=None):
         """ Default to commit after every transaction
                 Will check instance variable to decide if a commit is needed
         """
-        if table_name is None or table_name=='':
+        if table_name is None or table_name == '':
             self._cur.execute("vacuum")
             logging.debug("Vacuuming Schema")
 
         else:
             logging.debug("Vacuuming Table:{0}".format(table_name))
-            self._cur.execute("vacuum {0}.{1}".format(dbschema,table_name))
+            self._cur.execute("vacuum {0}.{1}".format(dbschema, table_name))
 
     def execute(self, sqlstring, debug=False):
 
@@ -205,22 +206,22 @@ class Connection:
 
         self.commit()
 
-    def truncate_table(self,dbschema, table_name):
+    def truncate_table(self, dbschema, table_name):
         logging.debug(
             "Truncating Table: \n\tHost:{0}\n\tDatabase:{1}\n\tTablename:{2}".format(self._host, self._database_name,
-                table_name))
-        self._cur.execute('TRUNCATE table {0}.{1}'.format(dbschema,table_name))
+                                                                                     table_name))
+        self._cur.execute('TRUNCATE table {0}.{1}'.format(dbschema, table_name))
 
         self.commit()
-        self.vacuum(dbschema,table_name)
+        self.vacuum(dbschema, table_name)
 
     def update(self, sqlstring):
         self._cur.execute(sqlstring)
         self.commit()
 
-    def drop_table(self, schema,table_name):
-        logging.debug("Dropping Table(if Exists): {0}.{1}".format(schema,table_name))
-        self._cur.execute('Drop table if exists {0}.{1}'.format(schema,table_name))
+    def drop_table(self, schema, table_name):
+        logging.debug("Dropping Table(if Exists): {0}.{1}".format(schema, table_name))
+        self._cur.execute('Drop table if exists {0}.{1}'.format(schema, table_name))
         self.commit()
 
     def create_table(self, sqlstring):
@@ -273,7 +274,7 @@ class Connection:
         except Exception:
             logging.error(
                 "Error Getting Environment Variables MSSQL:\nUser:{}\nHost:{}\nPort:{}\nDB:{}".format(self._userid,
-                    self._host, self._port, self._database_name))
+                                                                                                      self._host, self._port, self._database_name))
             sys.exit()
 
         if self._port == '':
@@ -374,9 +375,9 @@ class Connection:
                                  created_date=dt.datetime.now())
         '''
         t = dt.datetime.now()
-        
+
         command_text = copy_command_client_side.format(table_name, data_file, file_delimiter, self._database_name,
-            self._host)
+                                                       self._host)
         logging.info("Copy Command STARTED:{0} Time:{1}".format(table_name, t))
         txt_out = commands.getstatusoutput(command_text)
         logging.debug("Copy Command Completed:{0} Time:{1}".format(txt_out, dt.datetime.now()))
@@ -423,16 +424,20 @@ class Connection:
         # print(type(n), n, t.name)
         #print(table_name, "-----------------", dbschema)
         table = sqlalchemy.Table(table_name, meta, autoload=True, autoload_with=con)
-        #print(table)
+        # print(table)
         column_list = [c.name for c in table.columns]
         #print(column_list, "-----------------")
         return list(column_list)
 
     # returns a list of table dict
-    def get_tables(self):
+    def get_tables(self, schema=None):
         import sqlalchemy
+        dbschema = self.dbschema
+        if schema is not None:
+            dbschema = schema
 
-        con, meta = self.connect_sqlalchemy(self.dbschema, self._dbtype)
+        print('---Getting tables info:', dbschema)
+        con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
         # print dir(meta.tables)
 
         table_obj = []
@@ -442,7 +447,7 @@ class Connection:
             # print(type(n), n, t.name)
             table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
             column_list = [c.name for c in table.columns]
-            d = dict({"db": self._database_name, "schema": self.dbschema, "table_name": t.name, "columns": column_list})
+            d = dict({"db": self._database_name, "schema": dbschema, "table_name": t.name, "columns": column_list})
             table_obj.append(d)
 
         return table_obj
