@@ -1,5 +1,50 @@
 import logging
 import re
+import os
+
+
+def dd_lookup_uuid(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
+
+    tables = db.get_tables(schema=schema)
+    create_string = """create table if not exists _tmp_test_{} as select * from {} limit 1"""
+    t_compiled = re.compile(table_name_regex)
+    sql = """
+    insert into census.dd_lookup_uuid( year,table_name,lookup_code,lookup_type)
+     select distinct '{}','{}' , unnest(array[{}]) as col_name, unnest(array[{}])   from {} 
+     on conflict do nothing
+    """
+    sql2 = """
+    insert into census.dd_lookup_uuid(year,table_name,lookup_code,lookup_type)
+     select distinct '{}','{}' , unnest(array[{}]) as col_name,  {} 
+     -- from {} 
+     on conflict do nothing
+    """
+    p = re.compile(col_regex)
+
+    for t in tables:
+        # print(type(t),t)
+        col_base = []
+        col_pivot = []
+        if t_compiled.match(t['table_name']):
+            # print("----",t)
+            #cols= db.get_columns(t,schema)
+            cols = t['columns']
+
+            for col in cols:
+                if p.match(col):
+                    col_pivot.append(col)
+                else:
+                    if col in ['fileid', 'filetype', 'stusab', 'chariter', 'seq']:
+                        col_base.append(col)
+
+            sqlx = sql.format(schema,
+                              t['table_name'], ','.join(col_base), ','.join("'{0}'".format(x) for x in col_base), schema + '.' + t['table_name'])
+            sqlx2 = sql2.format(schema,
+                                t['table_name'], ','.join("'{0}'".format(x) for x in col_pivot), "'stats'", schema + '.' + t['table_name'])
+
+            # print(sqlx)
+            db.execute(sqlx)
+            db.execute(sqlx2)
 
 
 def dd_lookup(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
@@ -39,7 +84,7 @@ def dd_lookup(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep
             sqlx = sql.format(schema,
                               t['table_name'], ','.join(col_base), ','.join("'{0}'".format(x) for x in col_base), schema + '.' + t['table_name'])
             sqlx2 = sql2.format(schema,
-                               t['table_name'], ','.join("'{0}'".format(x) for x in col_pivot), "'stats'", schema + '.' + t['table_name'])
+                                t['table_name'], ','.join("'{0}'".format(x) for x in col_pivot), "'stats'", schema + '.' + t['table_name'])
 
             # print(sqlx)
             db.execute(sqlx)
@@ -56,7 +101,7 @@ def pivot_table(db, schema, table_name_regex, col_regex, cols_to_retain=None, ke
      SELECT cast('{}' as varchar) as year,
      cast('{}' as varchar) as table_name,{} , unnest(array[{}]) as col_name, unnest(array[{}]) as col_val from {} 
     """
-    sql3=""" INSERT into census.seq_data2(dd_chariter,dd_filetype,dd_stusab,dd_seq,dd_stat,stat_val,geoid,logrecno,dd_fileid)
+    sql3 = """ INSERT into census.seq_data2(dd_chariter,dd_filetype,dd_stusab,dd_seq,dd_stat,stat_val,geoid,logrecno,dd_fileid)
     SELECT aa.id,bb.id,cc.id,dd.id,ee.id,col_val,geoid,logrecno,ff.id FROM ({}
     ) AS x
     join census.dd_lookup aa on aa.table_name=x.table_name and aa.year=x.year  and aa.lookup_code=x.chariter and aa.lookup_type='chariter' 
@@ -84,12 +129,12 @@ def pivot_table(db, schema, table_name_regex, col_regex, cols_to_retain=None, ke
                     col_pivot.append(col)
                 else:
                     col_base.append(col)
-            sqlx = sql.format( 
-                              schema, t['table_name'], ','.join(col_base), ','.join("'{0}'".format(x) for x in col_pivot), ','.join(col_pivot), schema + '.' + t['table_name'])
+            sqlx = sql.format(
+                schema, t['table_name'], ','.join(col_base), ','.join("'{0}'".format(x) for x in col_pivot), ','.join(col_pivot), schema + '.' + t['table_name'])
 
             try:
                 print("Executing:", schema, t['table_name'])
-                #print(sql3.format(sqlx))
+                # print(sql3.format(sqlx))
                 db.execute(sql3.format(sqlx))
             except:
                 print("error pivoting table:", schema, t['table_name'])
@@ -357,41 +402,33 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
             f.write(s)
 
 
-def print_table_dict(db, folder=None, targetschema=None):
-    import migrate_utils as mig
-    import sqlalchemy
-    import os
-    from sqlalchemy.dialects import postgresql
+def print_table_dict(db, folder='.', targetschema=None):
+    if targetschema is None:
+        dbschema = db.dbschema
+    else:
+        dbschema = targetschema
 
-    con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
+    postgres_sql = """SELECT distinct case when v.table_name is null then 'Table'
+        else 'View'
+        end  as x,a.table_name,a.column_name,a.data_type,character_maximum_length as length ,is_nullable,a.ordinal_position
+    from information_schema.columns a
+    left outer join  information_schema.views v on a.table_schema=v.table_schema and a.table_name=v.table_name
+    where a.table_schema='{}'   
+    order by 1,2, a.ordinal_position """.format(dbschema)
+
+    rs = db.query(postgres_sql)
+
     # print dir(meta.tables)
-    folder_dict = folder + "/dict/"
-
-    table_count = 0
-
-    tables = []
-
-    # for n, t in meta.tables.iteritems():
-    for n, t in meta.tables.items():
-        table_count += 1
-        filename = t.name.lower() + ".sql"
-        basefilename = t.name.lower()
-        #print(type(n), n, t.name)
-        table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
-        stmt = sqlalchemy.schema.CreateTable(table)
-        column_list = [c.name for c in table.columns]
-        createsql = mig.convert_sql_snake_case(str(stmt), column_list)
-
-        logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
-        line = ("\nsqitch add tables/{} -n \"Adding {}\" ".format(basefilename, filename))
-
-        sqitch.append(line)
-        if targetschema is not None:
-            createsql = createsql.replace(("table " + db.dbschema + ".").lower(), "table " + targetschema + ".")
-        m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
-        tables.append(m)
-
-    print("Total Tables:{}".format(table_count))
+    folder_dict = folder + "/artifacts"
+    try:
+        print("making folder:", folder_dict)
+        os.makedirs(folder_dict)
+    except Exception as e:
+        print("failed making folder:", folder_dict, e)
+    with open(folder_dict + '/table_dictionary.csv', "wb") as f:
+        f.write('TYPE,TABLE_NAME,COLUMN_NAME,DATA_TYPE,LENGTH ,IS_NULLABLE,ORDINAL_POSITION' '\n')
+        for r in rs: 
+            f.write(','.join("{0}".format(x) for x in r)+ '\n')
 
 
 def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
