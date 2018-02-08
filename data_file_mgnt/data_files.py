@@ -354,7 +354,7 @@ class DataFile:
                 log_entry.success = 0
                 error_log_entry.error_code = txt_out[0]
                 error_log_entry.error_message = txt_out[1]
-                error_log_entry.sql_statement = command_text
+                error_log_entry.sql_statement = str(command_text)[:2000]
                 error_log_entry.error_timestamp = dt.datetime.now()
                 t.session.add(error_log_entry)
                 logging.error("Copy Command ERROR Occured: {}".format(txt_out))
