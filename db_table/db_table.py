@@ -4,6 +4,7 @@ from sqlalchemy import MetaData
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
+import sqlalchemy
 
 from .meta_source_file import MetaSourceFiles, MetaBase, LoadStatus, ErrorLog,PublishLog
 
@@ -80,6 +81,8 @@ class RecordKeeper():
     def commit(self):
         try:
             self.session.commit()
+        except sqlalchemy.exc.IntegrityError as e:
+            logging.warning("Duplicate Found: This library will ignore duplicate records")
         except:
             self.session.rollback()
 
