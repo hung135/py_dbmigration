@@ -210,17 +210,18 @@ class DataFile:
         shell_command = """psql -c "copy data_table from '{0}}' WITH DELIMITER AS '{1}' CSV QUOTE AS '"' """
         shell_command.format(file_name, delimiter)
 
-    def reset_meta_table(self, db, option='FAILED'):
+    def reset_meta_table(self, db, option='FAILED',where_clause='1=1'):
         if option == 'ALL':
             db.update("""Update logging.meta_source_files
                 set process_start_dtm=null
                 ,process_end_dtm=null
                 ,current_worker_host=null
                 ,current_worker_host_pid=null
-                """)
+                where 1=1 and {}
+                """.format(where_clause))
         if option == 'FAILED':
             logging.debug("RESET META DATA FAILED IMPORTS:")
-            db.update("""Update logging.meta_source_files
+            db.update("""UPDATE logging.meta_source_files
                 set process_start_dtm=null
                 ,process_end_dtm=null
                 ,current_worker_host=null
@@ -228,7 +229,8 @@ class DataFile:
                 ,last_error_msg=null
                 ,file_process_state='raw'
                 where upper(file_process_state)='FAILED'
-                """)
+                and {}
+                """.format(where_clause))
         if option == 'RAW':
             logging.debug("RESET META DATA RAW IMPORTS:")
             db.update("""Update logging.meta_source_files
@@ -241,7 +243,8 @@ class DataFile:
                 where upper(file_process_state)='RAW'
  
                 and file_type in ('CSV','DATA')
-                """)
+                and {}
+                """.format(where_clause))
         if option == 'DATA':
             logging.debug("RESET META DATA   IMPORTS:")
             db.update("""Update logging.meta_source_files
@@ -252,7 +255,8 @@ class DataFile:
                 ,last_error_msg=null
                 ,file_process_state='raw'
                 where  file_type in ('CSV','DATA')
-                """)
+                and {}
+                """.format(where_clause))
         db.commit()
 
     def walk_dir(self, DestinationDB, level=0):
@@ -353,7 +357,7 @@ class DataFile:
                 # flagging each data item we want to log durring an error
                 log_entry.success = 0
                 error_log_entry.error_code = txt_out[0]
-                error_log_entry.error_message = txt_out[1]
+                error_log_entry.error_message = str(txt_out[1])[:256]
                 error_log_entry.sql_statement = str(command_text)[:2000]
                 error_log_entry.error_timestamp = dt.datetime.now()
                 t.session.add(error_log_entry)
@@ -813,6 +817,7 @@ class DataFile:
                 if x is not None:
                     logging.debug("Matched A Table Mapping:{}".format(self.curr_src_working_file))
                     # Data files has to have atleast 2 rows 1 for Header 1 for data.
+                    print("----------matchtable")
                     min_row = 0
                     if x.has_header:
                         min_row = 1
@@ -840,6 +845,7 @@ class DataFile:
                     if not self.curr_file_success:
                         vacuum = False
                     print("--------Process Error: ",process_error)
+                    print("--------Process Error File: ",x.full_file_name)
                     if process_error=='':
                         process_error=None
                     df.finish_work(db, process_error=process_error, dest=x, vacuum=vacuum)

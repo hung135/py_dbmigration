@@ -47,7 +47,7 @@ class Connection:
             url = url.format(self._userid, self._password, self._host, self._port, self._database_name)
         # con=self._connect_mssql()
         # The return value of create_engine() is our connection object
-        con = sqlalchemy.create_engine(url)
+        con = sqlalchemy.create_engine(url,connect_args={"application_name":self.appname})
 
         # We then bind the connection to MetaData()
         #print('connecting schema:', schema)
@@ -255,11 +255,11 @@ class Connection:
         if self._port == '':
             self._port = 5432
         conn = psycopg2.connect(dbname=self._database_name, user=self._userid, password=self._password, port=self._port,
-                                host=self._host)
+                                host=self._host,application_name=self.appname)
         conn.set_client_encoding('UNICODE')
         return conn
 
-    def _connect_mssql(self):
+    def _connect_mssql(self,appname='py_dbutils'):
         import pymssql
 
         try:
@@ -282,7 +282,7 @@ class Connection:
 
         conn = pymssql.connect(server=self._host, user=self._userid, password=self._password,
                                database=self._database_name, host=self._host, port=self._port, conn_properties=None,
-                               timeout=0, login_timeout=60, charset='UTF-8', as_dict=False, appname=None,
+                               timeout=0, login_timeout=60, charset='UTF-8', as_dict=False, appname=appname,
                                autocommit=self._commit, tds_version='7.1')
 
         return conn
@@ -300,11 +300,12 @@ class Connection:
         pass
 
     def __init__(self, dbschema, commit=True, password=None, userid=None, host=None, port=None, database=None,
-                 dbtype='POSTGRES'):
+                 dbtype='POSTGRES',appname='py_dbutils'):
         """ Default to commit after every transaction
         """
         self._commit = commit
         self.dbschema = dbschema
+        self.appname=appname
         if database is not None:
             self._database_name = database
         if port is not None:
