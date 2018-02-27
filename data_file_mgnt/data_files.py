@@ -691,7 +691,7 @@ class DataFile:
                     current_worker_host='{1}', current_worker_host_pid={2}, process_start_dtm=now()
                     where(file_path ||file_name) in (select file_path ||file_name
                         from {0}.meta_source_files where current_worker_host is null order by
-                        file_size asc, file_name_data desc ,file_type asc limit 1)
+                        id asc, file_size asc, file_name_data desc ,file_type asc limit 1)
                     """).format(db_table.MetaSourceFiles.DbSchema, self.host, self.curr_pid))
 
         row = t.get_record(db_table.MetaSourceFiles.current_worker_host == self.host,
@@ -787,15 +787,19 @@ class DataFile:
             full_file_name = self.source_file_path + '/' + self.curr_src_working_file
             if self.work_file_type in ('DATA', 'CSV'):
                 # check the current file against our list of regex to see if it matches any table mapping
+
                 x = get_mapped_table(self.curr_src_working_file, datafiles)
-                if x is not None and x.insert_option == 'Truncate':
+                #logging.debug("Getting Mapped table:{}\n{}".format(self.curr_src_working_file, x))
+                if x is None:
+                    logging.error("No Table Mapping Found Breaking Out:{}".format(self.curr_src_working_file))
+                    break
+                elif x.insert_option == 'Truncate':
                     db.truncate_table(x.schema_name, x.table_name)
                     print("Truncating Data:{}.{}".format(x.schema_name,x.table_name))
                 else:
                     print("Appending  Data:{}.{}".format(x.schema_name,x.table_name))
                 logging.debug("DATA-File:{}".format(self.curr_src_working_file))
-                if x is None:
-                    break
+
                 # use the line below if we need to stamp the data file w/ a column that has additional data
                 x.full_file_name = full_file_name
                 if x.append_file_id:

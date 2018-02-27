@@ -51,9 +51,12 @@ class PublishLog(MetaBase):
     publish_status = Column(c.String)
     schema = Column(c.String)
     table_name = Column(c.String)
+
     user_name = Column(c.String)
     message = Column(c.String)
     row_counts = Column(c.BigInteger)
+    file_name = Column(c.String)
+    file_path = Column(c.String)
 
 
 class ErrorLog(MetaBase):

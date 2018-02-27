@@ -401,8 +401,34 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
         with open(folder + "/sqitchplanadd_upsert.bash", "a") as f:
             f.write(s)
 
+# prints csv file in artifacts directory for each table in a dbschema
+def print_result_html_table(db,query,column_header):
+    result=db.query(query)
+    html_header=""
+    for col in column_header:
+        html_header+="<th  data-sort=""string"">"+col+"</th>\n"
+    html="""<table>
+    <thead>
+      <tr>
+        {}
+      </tr>
+    </thead>
+    <tbody>""".format(html_header)
+    for row in result: 
+        tb_row="\n<tr>"
+        for col in row:
+            #print(col,type(col))
+            tb_row+="\t\t<td>"+str(col)+"</td>\n"
+        tb_row+="</tr>\n"
 
+        html+=tb_row
+    html+="</tbody></table>"
+
+    return html
+
+# prints csv file in artifacts directory for each table in a dbschema
 def print_table_dict(db, folder='.', targetschema=None):
+
     if targetschema is None:
         dbschema = db.dbschema
     else:
