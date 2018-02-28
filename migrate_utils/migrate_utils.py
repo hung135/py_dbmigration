@@ -1,7 +1,7 @@
 import logging
 import re
 import os
-
+import datetime
 
 def dd_lookup_uuid(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
 
@@ -402,11 +402,14 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
             f.write(s)
 
 # prints csv file in artifacts directory for each table in a dbschema
-def print_result_html_table(db,query,column_header):
+def print_result_html_table(db,query,column_header,sortable_columns=None):
     result=db.query(query)
     html_header=""
-    for col in column_header:
-        html_header+="<th  data-sort=""string"">"+col+"</th>\n"
+    for i,col in enumerate(column_header):
+        if i in sortable_columns:
+            html_header+="<th data-sort=\"string\">"+col+"</th>\n"
+        else:
+            html_header+="<th>"+col+"</th>\n"
     html="""<table>
     <thead>
       <tr>
@@ -565,3 +568,113 @@ def reset_migration(db):
     #     db.drop_schema("sqitch")
     #     db.drop_schema("logging")
     #     db.drop_schema("util")
+
+
+
+def make_html_meta_source_files(db,full_file_path,html_head):
+
+
+    col_header = """file_id,
+      file_name,
+      file_path,  
+      file_type,
+      file_process_state,
+      database_table,
+      process_start_dtm,
+      process_end_dtm,
+      current_worker_host, 
+      rows_inserted,
+      file_size,
+      total_rows, 
+      total_files_processed,
+      last_error_msg """
+
+    sql = """SELECT id,file_name,
+      replace(file_path,'/home/dtwork/dw/file_transfers',''), 
+      file_type,
+      file_process_state,
+      database_table,
+      process_start_dtm,
+      process_end_dtm,
+      current_worker_host, 
+      rows_inserted, 
+      file_size,
+      total_rows, 
+      total_files_processed,
+      last_error_msg  from logging.meta_source_files"""
+
+
+    title=" <h1>Rad Data File Log </h1>"
+    formatted_html = print_result_html_table(db, sql, col_header.split(','),sortable_columns=[1,2,3,4,5,6,7,8,9,10])
+
+    html=html_head + (str(datetime.datetime.now())+title+
+                formatted_html +
+                "\n</body></html>")
+
+
+    # gets all files that were attempted to be published that yield a failure or no records
+
+    with open(full_file_path, 'w') as f:
+        f.write(html)
+    os.chmod(full_file_path, 0o666)
+
+
+def make_html_publish_error(db,full_file_path,html_head):
+
+    col_header = """
+    file_id,
+    file_name,
+    file_path """
+
+    sql = """SELECT distinct y.data_id as file_id,file_name,file_path
+                        from (SELECT data_id  from logging.publish_log group by data_id
+                        having count(*)>1 and max(row_counts)=0) x, logging.publish_log y
+                        where x.data_id=y.data_id"""
+    title=" <h1>Publish Error Log </h1>"
+    formatted_html = print_result_html_table(db, sql, col_header.split(','),sortable_columns=[1,2,3,4,5,6])
+
+    html=html_head + (str(datetime.datetime.now())+title+
+                formatted_html +
+                "\n</body></html>")
+
+
+    # gets all files that were attempted to be published that yield a failure or no records
+
+    with open(full_file_path, 'w') as f:
+        f.write(html)
+    os.chmod(full_file_path, 0o666)
+
+
+def make_html_publish_log(db,full_file_path,html_head):
+
+    col_header = """
+        data_id  ,
+      publish_start_time  ,
+      publish_end_time  ,
+      table_name   , 
+      row_counts  ,
+      file_name  ,
+      file_path,
+       message     """
+
+    sql = """SELECT data_id  ,
+      publish_start_time  ,
+      publish_end_time  ,
+      table_name   , 
+      row_counts  ,
+      file_name  ,
+      file_path,
+       message  from logging.publish_log where row_counts>0"""
+    title=" <h1>Publish Log </h1>"
+    formatted_html = print_result_html_table(db, sql, col_header.split(','),sortable_columns=[1,2,3,4,5,6])
+
+    html=html_head + (str(datetime.datetime.now())+title+
+                formatted_html +
+                "\n</body></html>")
+
+
+    # gets all files that were attempted to be published that yield a failure or no records
+
+    with open(full_file_path, 'w') as f:
+        f.write(html)
+    os.chmod(full_file_path, 0o666)
