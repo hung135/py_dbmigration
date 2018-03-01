@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Logs</title>
+
+	<style type="text/css" class="init">
+
+	tfoot input {
+		width: 100%;
+		padding: 3px;
+		box-sizing: border-box;
+	}
+
+	</style>
+
+	<script type="text/javascript" language="javascript" src="https://code.jquery.com/jquery-1.12.4.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" language="javascript" src="../resources/demo.js"></script>
+	<script type="text/javascript" class="init">
+
+
+$(document).ready(function() {
+	// Setup - add a text input to each footer cell
+	$('#example tfoot th').each( function () {
+		var title = $(this).text();
+		$(this).html( '<input type="text" placeholder="Search '+title+'" />' );
+	} );
+
+	// DataTable
+	var table = $('#example').DataTable();
+
+	// Apply the search
+	table.columns().every( function () {
+		var that = this;
+
+		$( 'input', this.footer() ).on( 'keyup change', function () {
+			if ( that.search() !== this.value ) {
+				that
+					.search( this.value )
+					.draw();
+			}
+		} );
+	} );
+} );
+
+	</script>
+</head>
+<body class="wide comments example">
+	<a name="top" id="top"></a>
+
+	<div class="fw-container">
+
+		<div class="fw-nav">
+
+
+		</div>
+		<div class="fw-body">
+			<div class="content">
+				<h1 class="page_title">$H_PAGE_TITLE</h1>
+				<div class="info">
+					<p>$P_PAGE_DESCRIPTION
+				</div>
+				<table id="example" class="display" cellspacing="0" width="100%">
+					<thead>
+						<tr>
+							$TH_COLUMNS
+						</tr>
+					</thead>
+					<tfoot>
+						<tr>
+							$TH_COLUMNS
+						</tr>
+					</tfoot>
+					<tbody>
+						$TR_DATA
+
+					</tbody>
+				</table>
+
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+	</div>
+
+</body>
+</html>
