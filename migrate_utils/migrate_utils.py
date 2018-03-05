@@ -3,6 +3,7 @@ import re
 import os
 import datetime
 
+
 def dd_lookup_uuid(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
 
     tables = db.get_tables(schema=schema)
@@ -195,7 +196,8 @@ def convert_sql_snake_case(string, column_list):
         newfield = newfield.replace(" ", "_")
         newfield = newfield.replace("(", "_")
         newfield = newfield.replace(")", "_")
-        newfield = newfield.replace('COLLATE \"SQL_Latin1_General_CP1_CI_AS\"', "")
+        newfield = newfield.replace(
+            'COLLATE \"SQL_Latin1_General_CP1_CI_AS\"', "")
 
         string = string.replace(i, newfield)
 
@@ -278,8 +280,10 @@ def appdend_to_readme(db, folder=None, targetschema=None):
     dict_query = """select table_schema,table_name,column_name,data_type,character_maximum_length
                 from information_schema.columns a 
                 where table_schema='enforce' order by table_name,ordinal_position"""
-    header = ["table_schema" + "|" + "table_name" + "|" + "column_name" + "|" + "data_type" + "|", "length"]
-    header = ["table_schema", "table_name", "old_column_name", "column_name", "data_type", "length"]
+    header = ["table_schema" + "|" + "table_name" + "|" +
+              "column_name" + "|" + "data_type" + "|", "length"]
+    header = ["table_schema", "table_name", "old_column_name",
+              "column_name", "data_type", "length"]
     pad_size = 30
     table = [header]
     with open(folder + "/README.md", "wb") as f:
@@ -304,7 +308,8 @@ def appdend_to_readme(db, folder=None, targetschema=None):
                     length = length.rjust(6, " ")
                     # table.append([table_schema,table_name,column_name,data_type,length])
                     # table.append(row)
-                    table.append([table_schema, table_name, column_name, column_name, data_type, length])
+                    table.append([table_schema, table_name,
+                                  column_name, column_name, data_type, length])
                     # line=table_schema+"|"+table_name+"|"+old_column_name+"|"+column_name+"|"+data_type+"|"+length+"\n"
 
                 f.write(bytes(make_markdown_table(table), 'UTF-8'))
@@ -333,13 +338,15 @@ def print_postgres_table(db, folder=None, targetschema=None):
         basefilename = t.name.lower()
         out = None
         try:
-            out = subprocess.check_output(["pg_dump", "--schema-only", "enforce", "-t", "{}.{}".format(db.dbschema, t.name)])
+            out = subprocess.check_output(
+                ["pg_dump", "--schema-only", "enforce", "-t", "{}.{}".format(db.dbschema, t.name)])
     #"pg_dump -U nguyenhu enforce -t  public.temp_fl_enforcement_matters_rpt --schema-only"
             # print(out)
         except subprocess.CalledProcessError as e:
             print(e)
 
-        logging.debug("Generating Postgres Syntax Table: {}".format(t.name.lower()))
+        logging.debug(
+            "Generating Postgres Syntax Table: {}".format(t.name.lower()))
 
         with open(folder_table + filename, "wb") as f:
             f.write(out)
@@ -376,9 +383,11 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
         table_count += 1
         filename = t.name.lower() + "_upsert.sql"
         basefilename = t.name.lower()
-        rows = db.query("call {}.generateUpsert_style_functions('{}','{}')".format(db._database_name, db.dbschema, t.name))
+        rows = db.query("call {}.generateUpsert_style_functions('{}','{}')".format(
+            db._database_name, db.dbschema, t.name))
         logging.debug("Generating Upsert for Table: {}".format(t.name.lower()))
-        line = ("\nsqitch add functions/{} -n \"Adding {}\" ".format(basefilename + "_upsert", filename))
+        line = (
+            "\nsqitch add functions/{} -n \"Adding {}\" ".format(basefilename + "_upsert", filename))
 
         sqitch.append(line)
         with open(folder_deploy + filename, "wb") as f:
@@ -386,7 +395,8 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
                 f.write(bytes(line[0]))
                 f.write(bytes("\n"))
 
-        drop = "DROP FUNCTION IF EXISTS {}.{};".format(db.dbschema, basefilename + "_upsert();")
+        drop = "DROP FUNCTION IF EXISTS {}.{};".format(
+            db.dbschema, basefilename + "_upsert();")
         with open(folder_revert + filename, "wb") as f:
             f.write(bytes(drop))
             f.write(bytes("\n"))
@@ -396,40 +406,85 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
             f.write(bytes("\n"))
     print("Total Tables:{}".format(table_count))
     with open(folder + "/sqitchplanadd_upsert.bash", "wb") as f:
-        f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table_upsert()"))
+        f.write(bytes(
+            "# This is Auto Generated from migrate_utils.py print_create_table_upsert()"))
     for s in sqitch:
         with open(folder + "/sqitchplanadd_upsert.bash", "a") as f:
             f.write(s)
 
 # prints csv file in artifacts directory for each table in a dbschema
-def print_result_html_table(db,query,column_header,sortable_columns=None):
-    result=db.query(query)
-    html_header=""
-    for i,col in enumerate(column_header):
+
+
+def print_result_json(db, query, column_header):
+    import json
+    result = db.query(query)
+    html_header = ""
+    html_data = ""
+    for i, col in enumerate(column_header):
+        html_header += "<th>" + col + "</th>\n"
+    rows=[]
+    for row in result:
+        x=[]
+        for col in row:
+            x.append(str(col))
+        rows.append(x)
+        
+    a={"data":rows}
+
+    return json.dumps(a)
+
+   
+
+
+def print_result_html_tr_th(db, query, column_header):
+    result = db.query(query)
+    html_header = ""
+    html_data = ""
+    for i, col in enumerate(column_header):
+        html_header += "<th>" + col + "</th>\n"
+
+    for row in result:
+        tb_row = "\n<tr>"
+        for col in row:
+            # print(col,type(col))
+            tb_row += "\t\t<td>" + str(col) + "</td>\n"
+        tb_row += "</tr>\n"
+
+        html_data += tb_row
+
+    return html_data, html_header
+
+
+def print_result_html_table(db, query, column_header, sortable_columns=None):
+    result = db.query(query)
+    html_header = ""
+    for i, col in enumerate(column_header):
         if i in sortable_columns:
-            html_header+="<th data-sort=\"string\">"+col+"</th>\n"
+            html_header += "<th data-sort=\"string\">" + col + "</th>\n"
         else:
-            html_header+="<th>"+col+"</th>\n"
-    html="""<table>
+            html_header += "<th>" + col + "</th>\n"
+    html = """<table>
     <thead>
       <tr>
         {}
       </tr>
     </thead>
     <tbody>""".format(html_header)
-    for row in result: 
-        tb_row="\n<tr>"
+    for row in result:
+        tb_row = "\n<tr>"
         for col in row:
-            #print(col,type(col))
-            tb_row+="\t\t<td>"+str(col)+"</td>\n"
-        tb_row+="</tr>\n"
+            # print(col,type(col))
+            tb_row += "\t\t<td>" + str(col) + "</td>\n"
+        tb_row += "</tr>\n"
 
-        html+=tb_row
-    html+="</tbody></table>"
+        html += tb_row
+    html += "</tbody></table>"
 
     return html
 
 # prints csv file in artifacts directory for each table in a dbschema
+
+
 def print_table_dict(db, folder='.', targetschema=None):
 
     if targetschema is None:
@@ -455,9 +510,10 @@ def print_table_dict(db, folder='.', targetschema=None):
     except Exception as e:
         print("failed making folder:", folder_dict, e)
     with open(folder_dict + '/table_dictionary.csv', "wb") as f:
-        f.write('TYPE,TABLE_NAME,COLUMN_NAME,DATA_TYPE,LENGTH ,IS_NULLABLE,ORDINAL_POSITION' '\n')
-        for r in rs: 
-            f.write(','.join("{0}".format(x) for x in r)+ '\n')
+        f.write(
+            'TYPE,TABLE_NAME,COLUMN_NAME,DATA_TYPE,LENGTH ,IS_NULLABLE,ORDINAL_POSITION' '\n')
+        for r in rs:
+            f.write(','.join("{0}".format(x) for x in r) + '\n')
 
 
 def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
@@ -504,17 +560,21 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
             fqn = ""
         basefilename = t.name.lower()
         #print(type(n), n, t.name)
-        table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
+        table = sqlalchemy.Table(
+            t.name, meta, autoload=True, autoload_with=con)
         stmt = sqlalchemy.schema.CreateTable(table)
         column_list = [c.name for c in table.columns]
         createsql = mig.convert_sql_snake_case(str(stmt), column_list)
-        logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
+        logging.debug(
+            "Generating Create Statement for Table: {}".format(t.name.lower()))
 
-        line = ("\nsqitch add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
+        line = ("\nsqitch add tables/{}{} -n \"Adding {}\" ".format(fqn,
+                                                                    basefilename, filename))
 
         sqitch.append(line)
         if targetschema is not None:
-            createsql = createsql.replace(("table " + db.dbschema + ".").lower(), "table " + targetschema + ".")
+            createsql = createsql.replace(
+                ("table " + db.dbschema + ".").lower(), "table " + targetschema + ".")
         m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
         tables.append(m)
 
@@ -530,7 +590,8 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
             with open(folder_deploy + i["filename"], "wb") as f:
                 f.write(bytes(i["sql"]))
 
-            drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
+            drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i[
+                                                                  "table"])
             print(dbschema, "-----db---")
             v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
                 dbschema, i["table"])
@@ -544,7 +605,8 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
                 f.write(bytes("ROLLBACK;\n"))
 
         with open(folder + "sqitchplanadd_table.bash", "wb") as f:
-            f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table()"))
+            f.write(
+                bytes("# This is Auto Generated from migrate_utils.py print_create_table()"))
         for s in sqitch:
             with open(folder + "sqitchplanadd_table.bash", "a") as f:
                 f.write(s)
@@ -570,9 +632,7 @@ def reset_migration(db):
     #     db.drop_schema("util")
 
 
-
-def make_html_meta_source_files(db,full_file_path,html_head):
-
+def make_html_meta_source_files(db, full_file_path, html_head):
 
     col_header = """file_id,
       file_name,
@@ -603,23 +663,23 @@ def make_html_meta_source_files(db,full_file_path,html_head):
       total_files_processed,
       last_error_msg  from logging.meta_source_files"""
 
+    title = " <h1>Rad Data File Log </h1>"
+    formatted_html = print_result_html_table(db, sql, col_header.split(
+        ','), sortable_columns=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
-    title=" <h1>Rad Data File Log </h1>"
-    formatted_html = print_result_html_table(db, sql, col_header.split(','),sortable_columns=[1,2,3,4,5,6,7,8,9,10])
+    html = html_head + (str(datetime.datetime.now()) + title +
+                        formatted_html +
+                        "\n</body></html>")
 
-    html=html_head + (str(datetime.datetime.now())+title+
-                formatted_html +
-                "\n</body></html>")
-
-
-    # gets all files that were attempted to be published that yield a failure or no records
+    # gets all files that were attempted to be published that yield a failure
+    # or no records
 
     with open(full_file_path, 'w') as f:
         f.write(html)
     os.chmod(full_file_path, 0o666)
 
 
-def make_html_publish_error(db,full_file_path,html_head):
+def make_html_publish_error(db, full_file_path, html_head):
 
     col_header = """
     file_id,
@@ -630,22 +690,23 @@ def make_html_publish_error(db,full_file_path,html_head):
                         from (SELECT data_id  from logging.publish_log group by data_id
                         having count(*)>1 and max(row_counts)=0) x, logging.publish_log y
                         where x.data_id=y.data_id"""
-    title=" <h1>Publish Error Log </h1>"
-    formatted_html = print_result_html_table(db, sql, col_header.split(','),sortable_columns=[1,2,3,4,5,6])
+    title = " <h1>Publish Error Log </h1>"
+    formatted_html = print_result_html_table(
+        db, sql, col_header.split(','), sortable_columns=[1, 2, 3, 4, 5, 6])
 
-    html=html_head + (str(datetime.datetime.now())+title+
-                formatted_html +
-                "\n</body></html>")
+    html = html_head + (str(datetime.datetime.now()) + title +
+                        formatted_html +
+                        "\n</body></html>")
 
-
-    # gets all files that were attempted to be published that yield a failure or no records
+    # gets all files that were attempted to be published that yield a failure
+    # or no records
 
     with open(full_file_path, 'w') as f:
         f.write(html)
     os.chmod(full_file_path, 0o666)
 
 
-def make_html_publish_log(db,full_file_path,html_head):
+def make_html_publish_log(db, full_file_path, html_head):
 
     col_header = """
         data_id  ,
@@ -665,15 +726,16 @@ def make_html_publish_log(db,full_file_path,html_head):
       file_name  ,
       file_path,
        message  from logging.publish_log where row_counts>0"""
-    title=" <h1>Publish Log </h1>"
-    formatted_html = print_result_html_table(db, sql, col_header.split(','),sortable_columns=[1,2,3,4,5,6])
+    title = " <h1>Publish Log </h1>"
+    formatted_html = print_result_html_table(
+        db, sql, col_header.split(','), sortable_columns=[1, 2, 3, 4, 5, 6])
 
-    html=html_head + (str(datetime.datetime.now())+title+
-                formatted_html +
-                "\n</body></html>")
+    html = html_head + (str(datetime.datetime.now()) + title +
+                        formatted_html +
+                        "\n</body></html>")
 
-
-    # gets all files that were attempted to be published that yield a failure or no records
+    # gets all files that were attempted to be published that yield a failure
+    # or no records
 
     with open(full_file_path, 'w') as f:
         f.write(html)
