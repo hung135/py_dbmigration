@@ -1,1 +1,1 @@
-from .data_files import DataFile, DestinationDB
+import data_files

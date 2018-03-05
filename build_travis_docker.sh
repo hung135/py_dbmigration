@@ -43,8 +43,6 @@ docker rm travis-debug -f
 # under Running a Container Based Docker Image Locally #
 #docker run --name travis-debug -dit travisci/ci-garnet:packer-1512502276-986baf0 /sbin/init
 #mount local dir
-mkdir travis
-pwd
 docker run --name travis-debug -v /home/docker/foo/:/home/travis/builds/ -v /home/docker/foo2/:/home/travis/.travis/  -dit travisci/ci-garnet:packer-1512502276-986baf0 /sbin/init
 
 

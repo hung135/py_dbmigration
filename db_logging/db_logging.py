@@ -1,7 +1,7 @@
 import os
 # import logging
 # import datetime
-import py_dbmigration.db_utils
+import db_utils
 import datetime as dt
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
