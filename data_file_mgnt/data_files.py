@@ -1,7 +1,7 @@
 import re
 import os
 import glob
-from py_dbmigration import zip_utils
+import zip_utils
 import socket
 import logging
 import hashlib
@@ -9,9 +9,9 @@ import commands
 import time
 import datetime as dt
 import pandas as pd
-from py_dbmigration import db_logging as lg
+import db_logging as lg
 import reflection as msf
-from py_dbmigration import db_table
+import db_table
 import sys
 from subprocess import call
 

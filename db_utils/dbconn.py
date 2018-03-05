@@ -1,5 +1,5 @@
 import logging
-from py_dbmigration import db_logging
+import db_logging
 import os
 #import subprocess as commands
 import commands
