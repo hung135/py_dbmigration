@@ -1,11 +1,12 @@
 import unittest
 
-import db_utils
+import db_utils.dbconn as db_utils
 
 
 class TestDBConn(unittest.TestCase):
     def test_init(self):
         print("Testing Began DB connection PostGres:")
+
         db = db_utils.Connection(host='localhost',userid='postgres', dbschema='stg', dbtype='POSTGRES')
         print(db.query('select 1'))
 
