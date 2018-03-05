@@ -2,7 +2,7 @@ psycopg2
 pandas
 sqlalchemy
 xlrd
-pymssql
+#pymssql
 pymysql
 openpyxl
 xlsxwriter
