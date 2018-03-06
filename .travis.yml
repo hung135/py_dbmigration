@@ -14,9 +14,12 @@ before_script:
   - psql -c 'drop schema if exists coin_test;' -U postgres
   - psql -c 'create database travis_ci_test;' -U postgres
   - psql -c 'create schema coin_test;' -U postgres
+  - psql -c "CREATE USER tester WITH PASSWORD 'test';" -U postgres
+  - echo "USE mysql;\nUPDATE user SET password=PASSWORD('test') WHERE user='root';\nFLUSH PRIVILEGES;\n" | mysql -u root
 before_install:
   - sudo apt-get update
   - sudo apt-get install python-requests -y
+
 after_script:
-  - psql -c 'drop schema coin_test;' -U postgres
+  - psql -c 'drop schema logging;' -U postgres
   - psql -c 'drop database travis_ci_test;' -U postgres

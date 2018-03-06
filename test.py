@@ -14,10 +14,10 @@ class Test_db_utils_postgres(unittest.TestCase):
     host = 'localhost'
     #host = '192.168.99.100'
     database = 'postgres'
-    userid = 'postgres'
+    userid = 'tester'
     dbtype = 'POSTGRES'
     schema = 'logging'
-    password = ''
+    password = 'test'
     port = 5432
     db = db_utils.Connection(host=host,
                              userid=userid,
