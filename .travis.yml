@@ -11,10 +11,13 @@ addons:
   postgresql: "9.6"
 before_script:
   - psql -c 'drop database if exists travis_ci_test;' -U postgres
-  - psql -c 'drop schema if exists coin_test;' -U postgres
+  - psql -c 'drop schema if exists logging;' -U postgres
   - psql -c 'create database travis_ci_test;' -U postgres
-  - psql -c 'create schema coin_test;' -U postgres
+  - psql -c 'create schema logging;' -U postgres
   - psql -c "CREATE USER tester WITH PASSWORD 'test';" -U postgres
+  - psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA logging TO tester;" -U postgres
+
+
   - echo "USE mysql;\nUPDATE user SET password=PASSWORD('test') WHERE user='root';\nFLUSH PRIVILEGES;\n" | mysql -u root
 before_install:
   - sudo apt-get update

@@ -56,7 +56,7 @@ class Test_db_utils_postgres(unittest.TestCase):
         print("Dropping schema:")
         self.db.execute("drop schema {} ".format(self.schema))
 
-class Test_db_utils(unittest.TestCase):
+class Test_db_utils_mysql(unittest.TestCase):
     host = 'localhost'
     #host = '192.168.99.100'
     database = 'mysql'
