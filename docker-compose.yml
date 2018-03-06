@@ -4,14 +4,15 @@ services:
   postgres:
     image: postgres
     environment:
-      POSTGRES_USER: postgres
-      PGDATA: /data/postgres
+      - POSTGRES_USER:'foo'
+      - POSTGRES_PASSWORD:'foobar'
+      - POSTGRES_DB:'test'
     ports:
       - "5432:5432"
     restart: unless-stopped
-  mysql:
-    image: mysql
-    ports:
-      - 3306:3306
-    environment:
-      MYSQL_ROOT_PASSWORD: "test"
+#  mysql:
+#    image: mysql
+#    ports:
+#      - 3306:3306
+#    environment:
+#      MYSQL_ROOT_PASSWORD: "test"

@@ -498,6 +498,21 @@ class Connection:
             table_obj.append(d)
 
         return table_obj
+    # given a table name we return the a list of columns that are part of the primary key
+    def get_primary_keys(self,table_name):
+        sql="""SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
+            FROM   pg_index i
+            JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                     AND a.attnum = ANY(i.indkey)
+            WHERE  i.indrelid = '{}'::regclass
+            AND    i.indisprimary;""".format(table_name)
+        result=self.query(sql)
+        field_list=[]
+        for r in result:
+            field_name,data_type=r
+            field_list.append(field_name)
+        return field_list
+
 
     def print_table_info(self, table_name, dbschema):
         Base = automap_base()

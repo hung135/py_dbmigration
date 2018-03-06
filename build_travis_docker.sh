@@ -10,6 +10,10 @@ export G=2000
 export GIT_HOST="https://github.cfpb.gov/"
 export GIT_PROJECT_PATH="nguyenhu/py_dbmigration"
 
+
+
+#docker-machine create default  --virtualbox-cpu-count "4"   --virtualbox-disk-size "100000"   --virtualbox-memory "4096"
+
 diskutil unmount $PROJECT_PATH/$WORKDIR
 diskutil unmount $PROJECT_PATH/$WORKDIR2
 
@@ -42,9 +46,24 @@ docker rm travis-debug -f
 # this is for a python build find yours Here: https://docs.travis-ci.com/user/common-build-problems/
 # under Running a Container Based Docker Image Locally #
 #docker run --name travis-debug -dit travisci/ci-garnet:packer-1512502276-986baf0 /sbin/init
+#android	travisci/ci-amethyst:packer-1512508255-986baf0
+#erlang	travisci/ci-amethyst:packer-1512508255-986baf0
+#haskell	travisci/ci-amethyst:packer-1512508255-986baf0
+#perl	travisci/ci-amethyst:packer-1512508255-986baf0
+#default	travisci/ci-garnet:packer-1512502276-986baf0
+#go	travisci/ci-garnet:packer-1512502276-986baf0
+#jvm	travisci/ci-garnet:packer-1512502276-986baf0
+#node_js	travisci/ci-garnet:packer-1512502276-986baf0
+#php	travisci/ci-garnet:packer-1512502276-986baf0
+#python	travisci/ci-garnet:packer-1512502276-986baf0
+#ruby	travisci/ci-garnet:packer-1512502276-986baf0
 #mount local dir
-docker run --name travis-debug -v /home/docker/foo/:/home/travis/builds/ -v /home/docker/foo2/:/home/travis/.travis/  -dit travisci/ci-garnet:packer-1512502276-986baf0 /sbin/init
 
+#docker run --name travis-debug -v /home/docker/foo/:/home/travis/builds/ -v /home/docker/foo2/:/home/travis/.travis/  -dit travisci/ci-garnet:packer-1512502276-986baf0 /sbin/init
+docker run --name travis-debug -v /home/docker/foo/:/home/travis/builds/ -v /home/docker/foo2/:/home/travis/.travis/  -dit travisci/ci-garnet:packer-1515445631-7dfb2e1 /sbin/init
+
+
+docker exec --user travis travis-debug /bin/bash -c "sudo apt-get update -y"
 
 docker exec --user travis travis-debug /bin/bash -c "
 export BRANCH=master;
