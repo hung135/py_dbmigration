@@ -4,6 +4,8 @@ sqlalchemy
 xlrd
 #pymssql
 pymysql
+
+#mysql-connector
 openpyxl
 xlsxwriter
 requests

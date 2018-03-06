@@ -1,5 +1,4 @@
 import logging
-import db_logging
 import os
 #import subprocess as commands
 import commands
@@ -31,7 +30,7 @@ class Connection:
         '''Returns a connection and a metadata object'''
         # We connect with the help of the PostgreSQL URL
         # postgresql://federer:grandestslam@localhost:5432/tennis
-        url = ""
+        self.url = ""
         if db is None and self._dbtype is None:
             db = "POSTGRES"
         else:
@@ -40,14 +39,25 @@ class Connection:
             schema = self.dbschema
 
         if db.upper() == "POSTGRES":
-            url = 'postgresql://{}:{}@{}:{}/{}'
-            url = url.format(self._userid, self._password, self._host, self._port, self._database_name)
+            self.url = 'postgresql://{}:{}@{}:{}/{}'
+            self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
+
+            con = sqlalchemy.create_engine(self.url, connect_args={"application_name": self.appname})
+            
         if db.upper() == "MSSQL":
-            url = 'mssql+pymssql://{}:{}@{}:{}/{}'
-            url = url.format(self._userid, self._password, self._host, self._port, self._database_name)
+            self.url = 'mssql+pymssql://{}:{}@{}:{}/{}'
+            self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
+        if db.upper() == "MYSQL":
+            #'mysql+pymysql://root:test@192.168.99.100:3306/mysql'
+            self.url = "mysql+pymysql://{}:{}@{}:{}/{}"
+            self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
+
+            print("------",self.url)
+            con = sqlalchemy.create_engine(self.url)
+            print("zzzzzz")
         # con=self._connect_mssql()
         # The return value of create_engine() is our connection object
-        con = sqlalchemy.create_engine(url,connect_args={"application_name":self.appname})
+
 
         # We then bind the connection to MetaData()
         #print('connecting schema:', schema)
@@ -288,9 +298,15 @@ class Connection:
         return conn
 
     def _connect_mysql(self):
+        print("Connecting to mysql:")
+        #import mysql.connector
         import pymysql
-        conn = pymysql.connect(host=self._host, port=self._port, user=self._userid, passwd=self._password,
-                               db=self._database_name)
+
+        conn = pymysql.connect(user=self._userid, password=self._password,
+                                      host=self._host,
+                                      database=self._database_name)
+
+        print("coneected")
         return conn
 
     def _connect_oracle(self):
@@ -328,6 +344,7 @@ class Connection:
         if self._dbtype == 'ORACLE':
             self._conn = self._connect_oracle()
         self._cur = self._conn.cursor()
+        self.url = None  # db url
         logging.debug("DB Connected To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
 
     def __del__(self):
@@ -392,9 +409,8 @@ class Connection:
         return i[1]
 
     def get_conn_url(self):
-        url = 'postgresql://{}:{}@{}:{}/{}'
-        url = url.format(self._userid, self._password, self._host, self._port, self._database_name)
-        return url
+
+        return self.url
 
     # this one breaks w/ sqlserver
     def get_table_list(self, dbschema=None):
