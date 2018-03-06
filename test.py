@@ -54,7 +54,7 @@ class Test_db_utils_postgres(unittest.TestCase):
     def test_zz_clean(self):
         print '# In function:', sys._getframe().f_code.co_name
         print("Dropping schema:")
-        self.db.execute("drop schema {} ".format(self.schema))
+        self.db.execute("drop schema {} cascade".format(self.schema))
 
 class Test_db_utils_mysql(unittest.TestCase):
     host = 'localhost'
