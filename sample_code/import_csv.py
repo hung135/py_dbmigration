@@ -4,7 +4,6 @@ import db_utils
 import data_file_mgnt as dfm
 import pprint
 
-
 import logging
 
 logging.basicConfig(level='DEBUG')
@@ -24,16 +23,13 @@ db.truncate_table("logging.load_status")
 # regex = re.compile(r"^\d\d[1][2:3]q\d\.zip$", re.IGNORECASE)
 
 FILE_REGEX = r"^ComplianceAnalysis.*tar.gz$"
-COMPRESSED_FILE_TYPE = 'gzip'
-FILE_REGEX = r"^.*.csv$"
-COMPRESSED_FILE_TYPE = 'DATA'
 
+FILE_REGEX = r"^.*.csv$"
 file_path = '/home/dtwork/dw/file_transfers/compliance/allCSVs.zip/'
 FILE_ID_REGEX = r"\d\d\d\d\d\d\d\d"
-
 FILE_ID_REGEX = None
 df = dfm.DataFile(file_path, writable_path, FILE_REGEX, db, FILE_ID_REGEX,
-                  file_type=COMPRESSED_FILE_TYPE, compressed_file_type=COMPRESSED_FILE_TYPE)
+                  file_type=dfm.DataFile.FILE_TYPE_CSV)
 """
     Creating object to define the data file wee need to process and which table they need to be imported into
     DEFINE ALL FILE PATTERN AND MAPP TO OBJECT BELOW
@@ -124,15 +120,14 @@ datafiles.append(dfm.DestinationDB('client_add_warehouse_export', r'^CLIENT_ADDR
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
 datafiles.append(dfm.DestinationDB('client', r'^CLIENT-.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
 
-#df.reset_meta_table(db, 'ALL')
+# df.reset_meta_table(db, 'ALL')
 # df.do_work(db,datafiles,COMPRESSED_FILE_TYPE)
 
 
 FILE_REGEX = r"XFull.*\d\d\d\d\d.zip$"
-COMPRESSED_FILE_TYPE = 'zip'
+
 FILE_ID_REGEX = r"\d\d\d\d\d\d\d\d"
-df2 = dfm.DataFile(file_path, writable_path, FILE_REGEX, db, FILE_ID_REGEX,
-                   COMPRESSED_FILE_TYPE, compressed_file_type=COMPRESSED_FILE_TYPE)
+df2 = dfm.DataFile(file_path, writable_path, FILE_REGEX, db, FILE_ID_REGEX,dfm.DataFile.FILE_TYPE_ZIP)
 """
 # implmented folder regex to machine file to database table
 datafiles.append(dfm.DestinationDB('full_multi', r'.*fees.csv', DELIMITER,
@@ -145,19 +140,19 @@ datafiles.append(dfm.DestinationDB('full_single', r'.*uploaded.csv', DELIMITER,
                                    COLUMN_LIST, SCHEMA, has_header=True, folder_regex=r'.*singl.*'))
 
 """
-#df.reset_meta_table(db, 'ALL')
+# df.reset_meta_table(db, 'ALL')
 
-#df2.reset_meta_table(db, 'FAILED')
+# df2.reset_meta_table(db, 'FAILED')
 # only need one of the instance to do work
 
-#df.do_work(db, datafiles, cleanup=False, limit_rows=None,import_type='Pandas')
-
+# df.do_work(db, datafiles, cleanup=False, limit_rows=None,import_type='Pandas')
+assert isinstance(datafiles, list)
+assert isinstance(datafiles[0], dfm.DestinationDB)
 df.do_work(db, datafiles, cleanup=False, limit_rows=None, import_type='CopyCommand')
 
 # pprint.pprint(db.get_tables_row_count('stg'))
-#df.reset_meta_table(db, 'ALL')
-#df2.reset_meta_table(db, 'ALL')
-
+# df.reset_meta_table(db, 'ALL')
+# df2.reset_meta_table(db, 'ALL')
 
 
 """

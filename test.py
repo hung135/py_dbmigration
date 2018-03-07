@@ -1,7 +1,8 @@
 import unittest
 
-import db_utils.dbconn as db_utils
+import db_utils
 import data_file_mgnt.data_files as dfm
+import migrate_utils as migu
 from data_file_mgnt.data_files import *
 
 import db_table
@@ -17,7 +18,7 @@ class Test_db_utils_postgres(unittest.TestCase):
     schema = 'bk_mpo'
     password = ''
     port = 5432
-    db = db_utils.Connection(host=host, userid=userid, database=database, dbschema=schema, password=password,
+    db = db_utils.dbconn.Connection(host=host, userid=userid, database=database, dbschema=schema, password=password,
                              dbtype=dbtype, port=port)
 
     def test_01_init(self):
@@ -39,13 +40,22 @@ class Test_db_utils_postgres(unittest.TestCase):
         print("-------", self.db.query('select count(*) from logging.meta_source_files;'))
 
     def test_04_data_file(self):
+
+
         print '# In function:', sys._getframe().f_code.co_name
-        datafiles = [dfm.DestinationDB('account', r'^d.*.txt', '', None, 'logging', has_header=True)]
+        #datafiles = dfm.DataFile([dfm.DestinationDB('account', r'^d.*.txt', '', None, 'logging', has_header=True)]
+
         print("Files Found:", self.db.query("select * from logging.meta_source_files"))
+
+        # Test file insert routine
+        #migu.insert_each_line( './sample_code/test_data.csv', './sample_code/new_file_test_data_no_head.csv', '666', ',', None, append_crc=True)
+        #migu.insert_each_line('./sample_code/test_data.csv', './sample_code/new_file_test_data_has_head.csv', '666', ',', 'id,crc,field1, field2, field33', append_crc=True)
+        #migu.insert_each_line( './sample_code/test_data.csv', './sample_code/new_file_test_data_no_head.csv', '666', ',', None, append_crc=False)
+        #migu.insert_each_line('./sample_code/test_data.csv', './sample_code/new_file_test_data_has_head.csv', '666', ',', 'id,crc,field1, field2, field33', append_crc=False)
 
     def test_zz_clean(self):
         print '# In function:', sys._getframe().f_code.co_name
-        print("Dropping schema:")
+
         #self.db.execute("drop schema {} cascade".format(self.schema))
 
     def test_05_upsert(self):

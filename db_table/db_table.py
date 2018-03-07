@@ -1,10 +1,11 @@
 import logging
 import pprint
 from sqlalchemy import MetaData
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import sqlalchemy
+
 from sqlalchemy.schema import CreateSchema
 import sqlalchemy
+import db_utils
 
 from .meta_source_file import MetaSourceFiles, MetaBase, LoadStatus, ErrorLog, PublishLog
 
@@ -14,7 +15,12 @@ class RecordKeeper():
     table = None
 
     def __init__(self, db, table_def=None, DbSchema_overide=None):
+        # type: (dbutils.conn, str, str) -> object
+        """
 
+        :rtype: 
+        """
+        assert isinstance(db, db_utils.dbconn.Connection)
         if table_def is None:
             self.table = MetaSourceFiles
         else:
@@ -26,12 +32,13 @@ class RecordKeeper():
             self.table.__table_args__['schema'] = self.table.DbSchema
         # call class method to make sure url attribute is set
         db.connect_sqlalchemy(db.dbschema, db._dbtype)
-        self.engine = create_engine(db.url)
+
+        self.engine = sqlalchemy.create_engine(db.url)
         try:
             self.engine.execute(CreateSchema(self.table.DbSchema))
             logging.debug("Creating Database Schema: {}".format(self.table.DbSchema))
         except:
-            #logging.debug("Schema Already Exists No need to create:")
+            # logging.debug("Schema Already Exists No need to create:")
             pass
         # print("----tb2----",self.table.__table_args__,type(self.table.__table_args__))
 
@@ -39,7 +46,8 @@ class RecordKeeper():
         MetaBase.metadata.create_all(bind=self.engine)
 
         # create session
-        Session = sessionmaker()
+
+        Session = sqlalchemy.orm.sessionmaker()
         Session.configure(bind=self.engine)
         self.session = Session()
 
@@ -87,5 +95,5 @@ class RecordKeeper():
             self.session.close()
             logging.debug("Closing db_table Session")
         except Exception as e:
-            logging.error("Error Occured Closing db_table Session: {}",e)
-            #print(e)
+            logging.error("Error Occured Closing db_table Session: {}", e)
+            # print(e)

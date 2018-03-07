@@ -1,2 +1,2 @@
-import data_files
+from data_files import *
 

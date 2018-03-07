@@ -4,6 +4,54 @@ import os
 import datetime
 
 
+# function that will append the file id passed in to every row in a data file.
+# also adding fucntion to generate a checksum of that row for later use
+def insert_into_file(file, newfile, text_append, delimiter, header_name=None, has_header=True, append_crc=None):
+    # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
+    # print(f"------{newfile}-xxxx")
+    logging.debug("Appending File ID to File:{}".format(newfile))
+    insert_each_line(file, newfile, text_append, delimiter, header_name, has_header, append_crc=None)
+    # return fullpath to new file
+    return newfile
+
+
+# function that will append data to a data file
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, header_to_add=None, append_crc=False):
+    import os
+    import errno
+    import hashlib
+
+    if not os.path.exists(os.path.dirname(newfile)):
+        try:
+            os.makedirs(os.path.dirname(newfile))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
+    with open(newfile, 'w') as outfile:
+        with open(orgfile, 'r') as src_file:
+
+            # making version of very similar logic so we don't have to check for append_cc on each row to do checksum
+            if header_to_add is not None:
+                outfile.write(header_to_add + '\n')
+            if append_crc:
+
+                for ii, line in enumerate(src_file):
+                    if ii == 0:
+
+                        outfile.write(pre_pend_data + delimiter + hashlib.md5(line).hexdigest() + delimiter + line)
+                    else:
+                        outfile.write(pre_pend_data + delimiter + hashlib.md5(line).hexdigest() + delimiter + line)
+            else:
+
+                for ii, line in enumerate(src_file):
+                    if ii == 0:
+
+                        outfile.write(pre_pend_data + delimiter + line)
+                    else:
+                        outfile.write(pre_pend_data + delimiter + line)
+
+
 def dd_lookup_uuid(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
     tables = db.get_tables(schema=schema)
     create_string = """create table if not exists _tmp_test_{} as select * from {} limit 1"""
@@ -709,15 +757,15 @@ def print_postgres_upsert(db, table_name, source_schema):
 
     columns = db.get_table_columns(table_name)
     z = ""
-    for i,col in enumerate(columns):
-        if i==0:
-            z+= col +' = excluded.'+col +'\n\t\t'
+    for i, col in enumerate(columns):
+        if i == 0:
+            z += col + ' = excluded.' + col + '\n\t\t'
         else:
-            z +=','+col + ' = excluded.' + col + '\n\t\t'
+            z += ',' + col + ' = excluded.' + col + '\n\t\t'
     primary_keys = db.get_primary_keys(db.dbschema + '.' + table_name)
 
     sql_template = """INSERT into {} ({})\nSELECT {} \nFROM {} \nON CONFLICT ({}) \nDO UPDATE SET \n{};""".format(
         db.dbschema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
-                              source_schema + '.'+ table_name,','.join(primary_keys),z )
+        source_schema + '.' + table_name, ','.join(primary_keys), z)
 
     print(sql_template)
