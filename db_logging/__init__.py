@@ -1,1 +1,1 @@
-import db_logging
+from . import db_logging

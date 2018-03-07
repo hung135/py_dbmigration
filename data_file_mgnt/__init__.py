@@ -1,2 +1,2 @@
-from data_files import *
+from . import data_files
 

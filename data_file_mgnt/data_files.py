@@ -72,8 +72,8 @@ class DestinationDB:
         self.parent_file_id = parent_file_id
         self.insert_option = insert_option
         self.encoding = encoding
-        self.total_files
-        0
+        self.total_files=0
+
 
 
 def get_mapped_table(file_name, dest):
