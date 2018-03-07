@@ -11,7 +11,7 @@ import datetime as dt
 import pandas as pd
 import db_logging as lg
 
-import db_table
+from db_table import *
 import db_utils
 import sys
 
@@ -137,13 +137,14 @@ class DataFile:
         self.total_data_file_count = 0
 
         # take each pattern and walks the directory
-        for DestinationDB in file_pattern_list:
+        for destdb_obj in file_pattern_list:
 
-            self.DestinationDB = self.walk_dir(DestinationDB, level=1)
-
+            self.DestinationDB = self.walk_dir(destdb_obj, level=1)
+            print("--xxxxx--",self.DestinationDB.file_list)
             self.DestinationDB.parent_file_id = self.meta_source_file_id
 
-            logging.debug(self.DestinationDB.files_list)
+            logging.debug(self.DestinationDB.file_list)
+
 
             if len(list(self.DestinationDB.file_list)) > 0:
                 # print(self.DestinationDB.file_list, "----Match-----",self.DestinationDB.regex)

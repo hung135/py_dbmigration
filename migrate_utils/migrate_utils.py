@@ -751,21 +751,24 @@ def make_html_publish_log(db, full_file_path, html_head):
     os.chmod(full_file_path, 0o666)
 
 
-def print_postgres_upsert(db, table_name, source_schema):
+def print_postgres_upsert(db, table_name, source_schema,trg_schema=None):
     import db_utils.dbconn
     assert isinstance(db, db_utils.dbconn.Connection)
-
-    columns = db.get_table_columns(table_name)
+    if trg_schema is None:
+        schema=db.dbschema
+    else:
+        schema=trg_schema
+    columns = db.get_table_columns(table_name,schema)
     z = ""
     for i, col in enumerate(columns):
         if i == 0:
             z += col + ' = excluded.' + col + '\n\t\t'
         else:
             z += ',' + col + ' = excluded.' + col + '\n\t\t'
-    primary_keys = db.get_primary_keys(db.dbschema + '.' + table_name)
+    primary_keys = db.get_primary_keys(schema + '.' + table_name)
 
     sql_template = """INSERT into {} ({})\nSELECT {} \nFROM {} \nON CONFLICT ({}) \nDO UPDATE SET \n{};""".format(
-        db.dbschema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
+        schema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
         source_schema + '.' + table_name, ','.join(primary_keys), z)
 
     print(sql_template)

@@ -157,10 +157,15 @@ class Connection:
                     f.write(createsql + ";")
         print("Total Tables:{}".format(table_count))
 
-    def get_table_columns(self, table_name):
+    def get_table_columns(self, table_name,trg_schema=None):
+
         import sqlalchemy
+        if trg_schema is None:
+            schema = self.dbschema
+        else:
+            schema = trg_schema
         con, meta = self.connect_sqlalchemy()
-        table = sqlalchemy.Table(table_name, meta, schema=self.dbschema, autoload=True, autoload_with=con)
+        table = sqlalchemy.Table(table_name, meta, schema=schema, autoload=True, autoload_with=con)
         return [c.name for c in table.columns]
 
     def query(self, sqlstring):
