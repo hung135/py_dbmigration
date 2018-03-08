@@ -2,21 +2,21 @@ import unittest
 
 import db_utils
 import data_file_mgnt.data_files as dfm
-import migrate_utils as migu
+from  migrate_utils import *
 from data_file_mgnt.data_files import *
 
-import db_table
+from db_table import *
 import sys
 
 
 class Test_db_utils_postgres(unittest.TestCase):
     host = 'localhost'
-    host = '192.168.99.101'
+    host = '192.168.99.100'
     database = 'postgres'
-    userid = 'postgres'
+    userid = 'docker'
     dbtype = 'POSTGRES'
     schema = 'bk_mpo'
-    password = ''
+    password = 'docker'
     port = 5432
     db = db_utils.dbconn.Connection(host=host, userid=userid, database=database, dbschema=schema, password=password,
                              dbtype=dbtype, port=port)
@@ -45,6 +45,12 @@ class Test_db_utils_postgres(unittest.TestCase):
         print '# In function:', sys._getframe().f_code.co_name
         #datafiles = dfm.DataFile([dfm.DestinationDB('account', r'^d.*.txt', '', None, 'logging', has_header=True)]
 
+
+
+        datafiles = [dfm.DestinationDB('CSV', file_regex=r".*", file_path=".", parent_file_id=0)]
+        df = dfm.DataFile("./_test_idr/", self.db, datafiles, parent_file_id=0)
+
+
         print("Files Found:", self.db.query("select * from logging.meta_source_files"))
 
         # Test file insert routine
@@ -63,9 +69,11 @@ class Test_db_utils_postgres(unittest.TestCase):
                 select pk_a,a from table_a
                 on conflict ({}) do update set b=excluded.b;"""
         import migrate_utils as migu
-        migu.print_postgres_upsert(self.db,'loan','stg')
-        self.db.get_primary_keys('bk_mpo.loan')
+        migu.migrate_utils.print_postgres_upsert(self.db,'meta_source_files','stg','logging')
+        self.db.get_primary_keys('logging.meta_source_files')
 
+    def test_06_migrate_utils(self):
+        migrate_utils.generate_data_sample(self.db,'meta_source_files','logging','_sample_data/testfile.csv',line_count=100)
 
 
 if __name__ == '__main__':

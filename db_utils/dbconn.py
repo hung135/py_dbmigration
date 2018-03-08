@@ -157,6 +157,19 @@ class Connection:
                     f.write(createsql + ";")
         print("Total Tables:{}".format(table_count))
 
+    def get_table_column_types(self, table_name,trg_schema=None):
+
+        import sqlalchemy
+        if trg_schema is None:
+            schema = self.dbschema
+        else:
+            schema = trg_schema
+        con, meta = self.connect_sqlalchemy()
+        table = sqlalchemy.Table(table_name, meta, schema=schema, autoload=True, autoload_with=con)
+
+
+        return [(c.name,c.type) for c in table.columns]
+
     def get_table_columns(self, table_name,trg_schema=None):
 
         import sqlalchemy
@@ -166,6 +179,8 @@ class Connection:
             schema = trg_schema
         con, meta = self.connect_sqlalchemy()
         table = sqlalchemy.Table(table_name, meta, schema=schema, autoload=True, autoload_with=con)
+
+
         return [c.name for c in table.columns]
 
     def query(self, sqlstring):
@@ -448,6 +463,7 @@ class Connection:
         table = sqlalchemy.Table(table_name, meta, autoload=True, autoload_with=con)
         # print(table)
         column_list = [c.name for c in table.columns]
+
         #print(column_list, "-----------------")
         return list(column_list)
 

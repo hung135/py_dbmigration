@@ -751,6 +751,58 @@ def make_html_publish_log(db, full_file_path, html_head):
     os.chmod(full_file_path, 0o666)
 
 
+# given a columna_name,type tubple return a data word for that type
+def gen_data(col):
+    import random
+    import string
+    import datetime
+    from lorem.text import TextLorem
+    from random_words import RandomWords
+
+
+    if ('INT' in str(col[1])):
+        #print("----", str(col[1]),"".join([random.choice(string.digits) for i in xrange(2)]))
+        data = "".join([random.choice(string.digits) for i in xrange(2)])
+
+    elif ('TIMESTAMP' in str(col[1])):
+            data = str(datetime.datetime.now())
+    else:
+        #data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+        rw = RandomWords()
+        data=rw.random_word()
+
+    return data
+
+# generate data base on columns in a given table
+
+def generate_data_sample(db, table_name, source_schema,file_name,line_count=10):
+
+
+
+    columns = db.get_table_column_types(table_name, source_schema)
+    line=''
+
+    import os
+    print("-----",os.path.abspath(file_name))
+    print("-----", os.path.basename(file_name))
+    print("-----", os.path.dirname(file_name))
+    if not os.path.exists(os.path.dirname(file_name)):
+        os.mknod(os.makedirs(os.path.dirname(file_name),776,True))
+    with open(os.path.abspath(file_name),'w') as f:
+        for x in range(line_count):
+            line=''
+            for i,c in enumerate(columns):
+                if (i==0):
+                    line+= gen_data(c)
+                else:
+                    line += "," + gen_data(c)
+
+            print(x,line)
+            f.write(line+'\n')
+
+
+
+
 def print_postgres_upsert(db, table_name, source_schema,trg_schema=None):
     import db_utils.dbconn
     assert isinstance(db, db_utils.dbconn.Connection)
