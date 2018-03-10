@@ -6,17 +6,17 @@ import datetime
 
 # function that will append the file id passed in to every row in a data file.
 # also adding fucntion to generate a checksum of that row for later use
-def insert_into_file(file, newfile, text_append, delimiter, header_name=None, has_header=True, append_crc=None):
+def insert_into_file(file, newfile, text_append, delimiter, has_header=True, append_file_id=True, append_crc=False):
     # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
     # print(f"------{newfile}-xxxx")
     logging.debug("Appending File ID to File:{}".format(newfile))
-    insert_each_line(file, newfile, text_append, delimiter, header_name, has_header, append_crc=None)
+    insert_each_line(file, newfile, text_append, delimiter, has_header, append_crc)
     # return fullpath to new file
     return newfile
 
 
 # function that will append data to a data file
-def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, header_to_add=None, append_crc=False):
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True, append_crc=False):
     import os
     import errno
     import hashlib
@@ -28,30 +28,32 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, header_to_add=N
             if exc.errno != errno.EEXIST:
                 raise
 
+    header_to_add = 'file_id'
+    if append_crc:
+        header_to_add += delimiter + 'crc'
+
     with open(newfile, 'w') as outfile:
         with open(orgfile, 'r') as src_file:
 
             # making version of very similar logic so we don't have to check for append_cc on each row to do checksum
-            if header_to_add is not None:
-                outfile.write(header_to_add + '\n')
-            if append_crc:
+            # take care of the header first
+            # if the file doesn't have a header and we have a header added it
 
+            if append_crc:
                 for ii, line in enumerate(src_file):
                     if ii == 0:
-
-                        outfile.write(pre_pend_data + delimiter + hashlib.md5(line).hexdigest() + delimiter + line)
+                        outfile.write(header_to_add + delimiter + line)
                     else:
                         outfile.write(pre_pend_data + delimiter + hashlib.md5(line).hexdigest() + delimiter + line)
             else:
-
                 for ii, line in enumerate(src_file):
                     if ii == 0:
-
-                        outfile.write(pre_pend_data + delimiter + line)
+                        outfile.write(header_to_add + delimiter + line)
                     else:
                         outfile.write(pre_pend_data + delimiter + line)
 
 
+# playing with census stuff...WIP
 def dd_lookup_uuid(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
     tables = db.get_tables(schema=schema)
     create_string = """create table if not exists _tmp_test_{} as select * from {} limit 1"""
@@ -328,7 +330,7 @@ def appdend_to_readme(db, folder=None, targetschema=None):
     table = [header]
     with open(folder + "/README.md", "wb") as f:
         for line in content:
-            f.write(bytes(line, 'UTF-8'))
+            f.write(bytes(line))
             if line[:25] == dictionary[:25]:
                 # f.write(bytes(header,'UTF-8'))
                 rows = db.query(dict_query)
@@ -351,7 +353,7 @@ def appdend_to_readme(db, folder=None, targetschema=None):
                     table.append([table_schema, table_name, column_name, column_name, data_type,
                                   length])  # line=table_schema+"|"+table_name+"|"+old_column_name+"|"+column_name+"|"+data_type+"|"+length+"\n"
 
-                f.write(bytes(make_markdown_table(table), 'UTF-8'))  # print(make_markdown_table(table))
+                f.write(bytes(make_markdown_table(table)))  # print(make_markdown_table(table))
 
 
 def print_postgres_table(db, folder=None, targetschema=None):
@@ -755,62 +757,223 @@ def make_html_publish_log(db, full_file_path, html_head):
 def gen_data(col):
     import random
     import string
+    import sqlalchemy
     import datetime
+    import operator
     from lorem.text import TextLorem
-    from random_words import RandomWords
+    from random_words import lorem_ipsum, RandomWords
+    assert isinstance(col, sqlalchemy.Column)
 
+    # print(col.type,col.type.python_type)
+    if (str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']):
+        # print("----", str(col[1]),"".join([random.choice(string.digits) for i in xrange(2)]))
+        data = random.randint(1, 2000)
+    elif ('PRECISION' in str(col.type)
+          or 'NUMERIC' in str(col.type)):
+        # print("----", str(col[1]),"".join([random.choice(string.digits) for i in xrange(2)]))
+        data = random.randrange(1, 100)
 
-    if ('INT' in str(col[1])):
-        #print("----", str(col[1]),"".join([random.choice(string.digits) for i in xrange(2)]))
-        data = "".join([random.choice(string.digits) for i in xrange(2)])
-
-    elif ('TIMESTAMP' in str(col[1])):
-            data = str(datetime.datetime.now())
-    else:
-        #data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+    elif ('TIMESTAMP' in str(col.type)):
+        data = str(datetime.datetime.now())
+    elif ('TEXT' in str(col.type)):
+        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+        limit = min([100])
+        if limit == 0:
+            limit = 1
+        word_count = random.randint(1, limit)
         rw = RandomWords()
-        data=rw.random_word()
+        data = ' '.join(rw.random_words(count=word_count))
+        data = data.replace('p ', r'\"')
+        data = '"' + data.replace('r ', '\n') + '"'
 
-    return data
+    elif ('CHAR' in str(col.type) or 'TEXxxT' in str(col.type)):
+        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+        limit = min([5, operator.div(col.type.length, 5)])
+        if limit == 0:
+            limit = 1
+        word_count = random.randint(1, limit)
+        rw = RandomWords()
+        data = ' '.join(rw.random_words(count=word_count))
+    else:
+        print("New DataType", str(col.type))
+        data = random.randint(1, 32000)
+
+    return str(data)
+#a function that takes in a column and look at its dataype and return a function to generate random data
+# that can be activated later to not have to iterate through this logic each time
+def get_func(col):
+    import random
+    import string
+    import sqlalchemy
+    import datetime
+    import operator
+    from lorem.text import TextLorem
+    from random_words import lorem_ipsum, RandomWords
+    #assert isinstance(col, sqlalchemy.Column)
+
+
+    if (str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']):
+        def gen_data():
+            return random.randint(1, 2000)
+        return gen_data
+    elif ('PRECISION' in str(col.type)
+          or 'NUMERIC' in str(col.type)):
+        def gen_data():
+            return random.randrange(1, 100)
+        return gen_data
+
+
+    elif ('TIMESTAMP' in str(col.type)):
+        def gen_data():
+            return str(datetime.datetime.now())
+        return gen_data
+    elif ('TEXT' in str(col.type)):
+        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+
+        def gen_data():
+            limit = min([100])
+            if limit == 0:
+                limit = 1
+            word_count = random.randint(1, limit)
+            rw = RandomWords()
+            data = ' '.join(rw.random_words(count=word_count))
+            data = data.replace('p ', r'\"')
+            data = '"' + data.replace('r ', '\n') + '"'
+            return data
+        return gen_data
+
+    elif ('CHAR' in str(col.type) ):
+        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+
+        def gen_data():
+            limit = min([5, operator.div(col.length, 5)])
+            if limit == 0:
+                limit = 1
+            word_count = random.randint(1, limit)
+            rw = RandomWords()
+            data = ' '.join(rw.random_words(count=word_count))
+            return data
+        return gen_data
+    else:
+
+        def gen_data():
+
+            return  random.randint(1, 32000)
+
+        return gen_data
+
+    return None
 
 # generate data base on columns in a given table
+def generate_data_sample(db, table_name, source_schema, file_name, line_count=10,
+                         ignore_auto_inc_column=True):
+    columns1 = db.get_all_columns_schema(source_schema,table_name)
+    func_list = []
+    column_names=[]
+    for c in columns1:
+        #print(c.autoincrement,"-------------")
+        if c.autoincrement =='NO' and c.column_name not in ['file_id', 'crc']:
+            #setattr(c,'randfunc',get_func(c))
+            func_list.append(get_func(c))
 
-def generate_data_sample(db, table_name, source_schema,file_name,line_count=10):
+            column_names.append(c.column_name)
 
 
-
-    columns = db.get_table_column_types(table_name, source_schema)
-    line=''
-
-    import os
-    print("-----",os.path.abspath(file_name))
-    print("-----", os.path.basename(file_name))
-    print("-----", os.path.dirname(file_name))
     if not os.path.exists(os.path.dirname(file_name)):
-        os.mknod(os.makedirs(os.path.dirname(file_name),776,True))
-    with open(os.path.abspath(file_name),'w') as f:
+        os.makedirs(os.path.dirname(file_name), mode=777)
+
+    with open(os.path.abspath(file_name), 'w') as f:
         for x in range(line_count):
-            line=''
-            for i,c in enumerate(columns):
-                if (i==0):
-                    line+= gen_data(c)
+            line = ''
+            if x == 0:
+                header = ','.join([c for c in column_names])
+                print("-------",header)
+                f.write(header + '\n')
+            for i, c in enumerate(func_list):
+                if (i == 0):
+                    line += str(c())
+                else:
+                    line += "," + str(c())
+
+            # print(x, line)
+            f.write(line + '\n')
+
+def generate_data_sample_org(db, table_name, source_schema, file_name, line_count=10,
+                         ignore_auto_inc_column=True):
+    columns1 = db.get_all_columns_schema(source_schema,table_name)
+    columns = []
+    for c in columns1:
+        if c.autoincrement is False and c.name not in ['file_id', 'crc']:
+            setattr(c,'randfunc',get_func(c))
+            columns.append(c)
+
+    if not os.path.exists(os.path.dirname(file_name)):
+        os.makedirs(os.path.dirname(file_name), mode=776)
+
+    with open(os.path.abspath(file_name), 'w') as f:
+        for x in range(line_count):
+            line = ''
+            if x == 0:
+                header = ','.join([c.name for c in columns])
+                print(header)
+                f.write(header + '\n')
+            for i, c in enumerate(columns):
+                if (i == 0):
+                    line += gen_data(c)
                 else:
                     line += "," + gen_data(c)
 
-            print(x,line)
-            f.write(line+'\n')
+            # print(x, line)
+            f.write(line + '\n')
+
+# zip up directory
+# stolen from stack over flow
+def zipdir(directory, target_file_name):
+    import zipfile
+    zf = zipfile.ZipFile(target_file_name, "w")
+    for dirname, subdirs, files in os.walk(directory):
+        zf.write(dirname)
+        for filename in files:
+            zf.write(os.path.join(dirname, filename))
+    zf.close()
 
 
+# Now we can iterate through all tables in db and make sample data for each table
+def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', line_count=10,
+                                    ignore_auto_inc_column=True,
+                                    zip_file_name=None):
+    from db_utils import dbconn
+
+    assert isinstance(db, dbconn.Connection)
+    print("Dumping: {}".format(source_schema))
+    if source_schema is None:
+        source_schema = db.dbschema
+    # tbs = db.get_table_list(source_schema)
+    tbs = db.get_table_list_via_query(source_schema)
+
+    if not os.path.exists(os.path.dirname(data_directory)):
+        os.makedirs(os.path.dirname(data_directory), mode=777)
+    print("Dumping data for scheam: {}".format(source_schema))
+    for table_name in tbs:
+        print("Generating Sample Data for Table:", table_name)
+        file_name = os.path.join(data_directory, table_name + '.csv')
+        generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column)
+    if zip_file_name is not None:
+        zip_directory = os.path.dirname(zip_file_name)
+        if not os.path.exists(zip_directory):
+            os.makedirs(zip_directory)
+        zipdir(data_directory, os.path.abspath(zip_file_name))
 
 
-def print_postgres_upsert(db, table_name, source_schema,trg_schema=None):
+def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
     import db_utils.dbconn
     assert isinstance(db, db_utils.dbconn.Connection)
     if trg_schema is None:
-        schema=db.dbschema
+        schema = db.dbschema
     else:
-        schema=trg_schema
-    columns = db.get_table_columns(table_name,schema)
+        schema = trg_schema
+        print("-----", table_name, schema)
+    columns = db.get_table_columns(table_name, schema)
     z = ""
     for i, col in enumerate(columns):
         if i == 0:
@@ -823,4 +986,19 @@ def print_postgres_upsert(db, table_name, source_schema,trg_schema=None):
         schema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
         source_schema + '.' + table_name, ','.join(primary_keys), z)
 
-    print(sql_template)
+    return sql_template
+
+
+# decorator function to time a function
+def timer(f):
+    def wrapper(*args, **kwargs):
+        start_time = datetime.datetime.now()
+        print(f.func_name, "Start Time:", start_time)
+        x = f(*args, **kwargs)
+        end_time = datetime.datetime.now()
+        # print(f.func_name,"End Time: ", datetime.datetime.now())
+        print(f.func_name, "Ended, Duration Time: ", str(end_time - start_time))
+
+        return x
+
+    return wrapper

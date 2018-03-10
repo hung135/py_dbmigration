@@ -1,11 +1,11 @@
 import logging
 import os
-#import subprocess as commands
+# import subprocess as commands
 import commands
 import sys
 import datetime as dt
 from sqlalchemy.ext.automap import automap_base
-
+import migrate_utils
 
 # Decorator function to log and time how long a function took to run
 
@@ -43,24 +43,23 @@ class Connection:
             self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
 
             con = sqlalchemy.create_engine(self.url, connect_args={"application_name": self.appname})
-            
+
         if db.upper() == "MSSQL":
             self.url = 'mssql+pymssql://{}:{}@{}:{}/{}'
             self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
         if db.upper() == "MYSQL":
-            #'mysql+pymysql://root:test@192.168.99.100:3306/mysql'
+            # 'mysql+pymysql://root:test@192.168.99.100:3306/mysql'
             self.url = "mysql+pymysql://{}:{}@{}:{}/{}"
             self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
 
-            print("------",self.url)
+            print("------", self.url)
             con = sqlalchemy.create_engine(self.url)
             print("zzzzzz")
         # con=self._connect_mssql()
         # The return value of create_engine() is our connection object
 
-
         # We then bind the connection to MetaData()
-        #print('connecting schema:', schema)
+        # print('connecting schema:', schema)
         meta = sqlalchemy.MetaData(bind=con, reflect=True, schema=schema)
 
         return con, meta
@@ -88,7 +87,6 @@ class Connection:
             # print(type(z),filename)
             i = 0
             with open(full_file_path, "wb") as f:
-                print(bytes("Dumping to CSV: {}".format(t), "utf-8"))
                 for df in z:
                     i += 1
 
@@ -157,7 +155,7 @@ class Connection:
                     f.write(createsql + ";")
         print("Total Tables:{}".format(table_count))
 
-    def get_table_column_types(self, table_name,trg_schema=None):
+    def get_table_column_types(self, table_name, trg_schema=None):
 
         import sqlalchemy
         if trg_schema is None:
@@ -167,10 +165,9 @@ class Connection:
         con, meta = self.connect_sqlalchemy()
         table = sqlalchemy.Table(table_name, meta, schema=schema, autoload=True, autoload_with=con)
 
+        return table.columns
 
-        return [(c.name,c.type) for c in table.columns]
-
-    def get_table_columns(self, table_name,trg_schema=None):
+    def get_table_columns(self, table_name, trg_schema=None):
 
         import sqlalchemy
         if trg_schema is None:
@@ -179,7 +176,6 @@ class Connection:
             schema = trg_schema
         con, meta = self.connect_sqlalchemy()
         table = sqlalchemy.Table(table_name, meta, schema=schema, autoload=True, autoload_with=con)
-
 
         return [c.name for c in table.columns]
 
@@ -285,11 +281,11 @@ class Connection:
         if self._port == '':
             self._port = 5432
         conn = psycopg2.connect(dbname=self._database_name, user=self._userid, password=self._password, port=self._port,
-                                host=self._host,application_name=self.appname)
+                                host=self._host, application_name=self.appname)
         conn.set_client_encoding('UNICODE')
         return conn
 
-    def _connect_mssql(self,appname='py_dbutils'):
+    def _connect_mssql(self, appname='py_dbutils'):
         import pymssql
 
         try:
@@ -304,7 +300,9 @@ class Connection:
         except Exception:
             logging.error(
                 "Error Getting Environment Variables MSSQL:\nUser:{}\nHost:{}\nPort:{}\nDB:{}".format(self._userid,
-                                                                                                      self._host, self._port, self._database_name))
+                                                                                                      self._host,
+                                                                                                      self._port,
+                                                                                                      self._database_name))
             sys.exit()
 
         if self._port == '':
@@ -319,12 +317,12 @@ class Connection:
 
     def _connect_mysql(self):
         print("Connecting to mysql:")
-        #import mysql.connector
+        # import mysql.connector
         import pymysql
 
         conn = pymysql.connect(user=self._userid, password=self._password,
-                                      host=self._host,
-                                      database=self._database_name)
+                               host=self._host,
+                               database=self._database_name)
 
         print("coneected")
         return conn
@@ -336,12 +334,12 @@ class Connection:
         pass
 
     def __init__(self, dbschema, commit=True, password=None, userid=None, host=None, port=None, database=None,
-                 dbtype='POSTGRES',appname='py_dbutils'):
+                 dbtype='POSTGRES', appname='py_dbutils'):
         """ Default to commit after every transaction
         """
         self._commit = commit
         self.dbschema = dbschema
-        self.appname=appname
+        self.appname = appname
         if database is not None:
             self._database_name = database
         if port is not None:
@@ -402,7 +400,7 @@ class Connection:
 
     def import_file_client_side(self, full_file_path, table_name, file_delimiter):
         copy_command_client_side = """psql --dbname={3} --host={4} -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
-        #t = db_logging.db_logging.DbLogging(self)
+        # t = db_logging.db_logging.DbLogging(self)
         data_file = full_file_path
         '''error_log_entry = t.ErrorLog(program_unit=sys.argv[0], error_code=None, error_message=None,
         #    error_timestamp=None, user_name=self._userid, sql_statement='')
@@ -432,8 +430,40 @@ class Connection:
 
         return self.url
 
+    #@migrate_utils.static_func.timer
+    def get_table_list_via_query(self,dbschema):
+        sql="""SELECT table_name FROM information_schema.tables a
+            WHERE table_schema='{}' and table_type='BASE TABLE'""".format(dbschema)
+        result_set=self.query(sql)
+        return [r[0] for  r in result_set]
+
+    #@migrate_utils.static_func.timer
+    def get_all_columns_schema(self,dbschema,table_name):
+        #print("----- wuh")
+        sql="""SELECT table_name,column_name,upper(data_type) as type, 
+        is_identity,
+        character_maximum_length 
+        FROM information_schema.columns
+        WHERE table_schema = '{}'
+        AND table_name   = '{}'
+        order by table_name,ordinal_position""".format(dbschema,table_name)
+        result_set=self.query(sql)
+        table=[]
+        for table_name, column, type,autoincrement,length in result_set:
+            class data: pass
+            data.table_name=table_name
+            data.column_name=column
+            data.type=type
+            data.autoincrement=autoincrement
+            data.length = length
+            #print(data.table_name,"xxxxxxx")
+            table.append(data)
+
+        return table
+
     # this one breaks w/ sqlserver
     def get_table_list(self, dbschema=None):
+        print("getting schema: {}".format(dbschema))
         Base = automap_base()
 
         # from sqlalchemy.orm import Session
@@ -454,17 +484,8 @@ class Connection:
         import sqlalchemy
 
         con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
-        # print dir(meta.tables)
-
-        # print(n, t.name)
-
-        # print(type(n), n, t.name)
-        #print(table_name, "-----------------", dbschema)
         table = sqlalchemy.Table(table_name, meta, autoload=True, autoload_with=con)
-        # print(table)
         column_list = [c.name for c in table.columns]
-
-        #print(column_list, "-----------------")
         return list(column_list)
 
     # returns a list of table dict
@@ -474,15 +495,10 @@ class Connection:
         if schema is not None:
             dbschema = schema
 
-        print('---Getting tables info:', dbschema)
         con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
-        # print dir(meta.tables)
 
         table_obj = []
         for n, t in meta.tables.items():
-            # print(n, t.name)
-
-            # print(type(n), n, t.name)
             table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
             column_list = [c.name for c in table.columns]
             d = dict({"db": self._database_name, "schema": dbschema, "table_name": t.name, "columns": column_list})
@@ -519,21 +535,21 @@ class Connection:
             table_obj.append(d)
 
         return table_obj
+
     # given a table name we return the a list of columns that are part of the primary key
-    def get_primary_keys(self,table_name):
-        sql="""SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
+    def get_primary_keys(self, table_name):
+        sql = """SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
             FROM   pg_index i
             JOIN   pg_attribute a ON a.attrelid = i.indrelid
                      AND a.attnum = ANY(i.indkey)
             WHERE  i.indrelid = '{}'::regclass
             AND    i.indisprimary;""".format(table_name)
-        result=self.query(sql)
-        field_list=[]
+        result = self.query(sql)
+        field_list = []
         for r in result:
-            field_name,data_type=r
+            field_name, data_type = r
             field_list.append(field_name)
         return field_list
-
 
     def print_table_info(self, table_name, dbschema):
         Base = automap_base()

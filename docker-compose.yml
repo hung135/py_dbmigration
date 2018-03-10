@@ -4,8 +4,8 @@ services:
   postgres:
     image: postgres
     environment:
-      - POSTGRES_USER:'foo'
-      - POSTGRES_PASSWORD:'foobar'
+      - POSTGRES_USER:'docker'
+      - POSTGRES_PASSWORD:'docker'
       - POSTGRES_DB:'test'
     ports:
       - "5432:5432"

@@ -9,18 +9,19 @@ class object:
     pass
 
 
-def extract_file(source_file, writeable_path, skip=False, zip_type='zip',skip_ifexists=True):
+def extract_file(source_file, writeable_path, skip=False, zip_type='zip',skip_ifexists=False):
     namelist = []
     """
     returns list of file names and path
     """
     dir_exist=os.path.isdir(writeable_path)
-    
+
     if skip_ifexists and dir_exist:
-        logging.debug("Extract Target Directory Exists and Skip=True")
+        logging.debug("Extract Target Directory Exists and Skip=True:\nSkipping to Save Time")
     else:
         zip_type=zip_type.lower()
-        
+
+
         if zip_type == 'zip':
             logging.info("Extracting Zip File:{0}".format(source_file))
             file = zipfile.ZipFile(source_file)

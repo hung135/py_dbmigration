@@ -64,7 +64,7 @@ class ErrorLog(MetaBase):
     __tablename__ = 'error_log'
     __table_args__ = {"schema": DbSchema}
     id = Column(c.Integer, primary_key=True)
-
+    file_id = Column(c.Integer)
     error_code = Column(c.String(256))
     error_log_id = Column(c.String(256))
     error_message = Column(c.String(256))
