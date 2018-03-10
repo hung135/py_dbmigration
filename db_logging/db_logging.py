@@ -2,7 +2,7 @@ import os
 # import logging
 # import datetime
 import db_utils
-import datetime as dt
+import datetime
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
@@ -18,11 +18,11 @@ class DbLogging:
     program_unit = "SetMe"
     program_unit_type_code = "SetMe"
     file_path = "SetMe"
-    created_date = dt.datetime.now()
+    created_date = datetime.datetime.now()
     created_by = "SetMe"
     success = "1"
-    start_date = dt.datetime.now()
-    end_date = dt.datetime.now()
+    start_date = datetime.datetime.now()
+    end_date = datetime.datetime.now()
     previous_record_count = 0
     records_inserted = 0
     records_deleted = 0
@@ -33,7 +33,7 @@ class DbLogging:
     error_code = None
     error_log_id = None
     error_message = None
-    error_timestamp = dt.datetime.now()
+    error_timestamp = datetime.datetime.now()
     metadata = None
     prepare = None
     # program_unit=None

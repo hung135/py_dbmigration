@@ -39,6 +39,17 @@ class MetaSourceFiles(MetaBase):
     database_table = Column(c.String(256), nullable=True)
     parent_file_id = Column(c.Integer, default=0)
 
+class TableFilesRegex(MetaBase):
+    DbSchema = 'logging'
+    __tablename__ = 'table_file_regex'
+    __table_args__ = {"schema": DbSchema}
+    regex = Column(c.String(256), primary_key=True, nullable=False)
+    db_schema = Column(c.String(256),   nullable=False)
+    table_name = Column(c.String(256),   nullable=False)
+    last_update_time = Column(c.DateTime)
+    active = Column(c.Boolean, default='True')
+
+
 
 class PublishLog(MetaBase):
     DbSchema = 'logging'

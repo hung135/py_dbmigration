@@ -24,6 +24,7 @@ class Connection:
     last_row_count = 0
     dbschema = None
 
+    @migrate_utils.static_func.timer
     def connect_sqlalchemy(self, schema=None, db=None):
         import sqlalchemy
         # import pymssql
@@ -405,19 +406,19 @@ class Connection:
         '''error_log_entry = t.ErrorLog(program_unit=sys.argv[0], error_code=None, error_message=None,
         #    error_timestamp=None, user_name=self._userid, sql_statement='')
         #log_entry = t.LoadStatus(table_name=table_name, program_unit=sys.argv[0], program_unit_type_code='python',
-                                 file_path=data_file, records_inserted=0, success=1, start_date=dt.datetime.now(),
-                                 end_date=dt.datetime.now(), previous_record_count=0, current_record_count=0,
+                                 file_path=data_file, records_inserted=0, success=1, start_date=datetime.datetime.now(),
+                                 end_date=datetime.datetime.now(), previous_record_count=0, current_record_count=0,
                                  records_updated=0, records_deleted=0, created_by=self._userid,
-                                 created_date=dt.datetime.now())
+                                 created_date=datetime.datetime.now())
         '''
-        t = dt.datetime.now()
+        t = datetime.datetime.now()
 
         command_text = copy_command_client_side.format(table_name, data_file, file_delimiter, self._database_name,
                                                        self._host)
         logging.info("Copy Command STARTED:{0} Time:{1}".format(table_name, t))
         txt_out = commands.getstatusoutput(command_text)
-        logging.debug("Copy Command Completed:{0} Time:{1}".format(txt_out, dt.datetime.now()))
-        logging.info("Total Time:{0} ".format(dt.datetime.now() - t))
+        logging.debug("Copy Command Completed:{0} Time:{1}".format(txt_out, datetime.datetime.now()))
+        logging.info("Total Time:{0} ".format(datetime.datetime.now() - t))
 
         if txt_out[0] > 0:
             raise Exception
@@ -462,6 +463,7 @@ class Connection:
         return table
 
     # this one breaks w/ sqlserver
+    @migrate_utils.static_func.timer
     def get_table_list(self, dbschema=None):
         print("getting schema: {}".format(dbschema))
         Base = automap_base()
@@ -480,6 +482,7 @@ class Connection:
             l.append(t)
         return l
 
+    @migrate_utils.static_func.timer
     def get_columns(self, table_name, dbschema):
         import sqlalchemy
 
@@ -489,6 +492,7 @@ class Connection:
         return list(column_list)
 
     # returns a list of table dict
+    @migrate_utils.static_func.timer
     def get_tables(self, schema=None):
         import sqlalchemy
         dbschema = self.dbschema
@@ -506,6 +510,7 @@ class Connection:
 
         return table_obj
 
+    @migrate_utils.static_func.timer
     def get_table_row_count_fast(self, table_name, schema=None):
         x = 0
         if self.dbtype == 'POSTGRES':

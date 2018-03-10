@@ -6,34 +6,37 @@ import sqlalchemy
 from sqlalchemy.schema import CreateSchema
 import sqlalchemy
 import db_utils
+import migrate_utils
 
-from .meta_source_file import MetaSourceFiles, MetaBase, LoadStatus, ErrorLog, PublishLog
+from .db_table_def import *
 
 
 class RecordKeeper():
     db_url = None
     table = None
 
-    def __init__(self, db, table_def=None, DbSchema_overide=None):
+
+    def __init__(self, db, table_def=None):
         # type: (dbutils.conn, str, str) -> object
         """
 
         :rtype: 
         """
+
         assert isinstance(db, db_utils.dbconn.Connection)
         if table_def is None:
             self.table = MetaSourceFiles
         else:
             self.table = table_def
 
-        if DbSchema_overide is not None:
-            # pprint.pprint((self.table.__dict__))
-            self.table.DbSchema = DbSchema_overide
-            self.table.__table_args__['schema'] = self.table.DbSchema
+        schema="logging"
+
         # call class method to make sure url attribute is set
-        db.connect_sqlalchemy(db.dbschema, db._dbtype)
+
+        db.connect_sqlalchemy(schema, db._dbtype)
 
         self.engine = sqlalchemy.create_engine(db.url)
+
         try:
             self.engine.execute(CreateSchema(self.table.DbSchema))
             logging.debug("Creating Database Schema: {}".format(self.table.DbSchema))

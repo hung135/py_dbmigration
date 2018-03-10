@@ -4,8 +4,23 @@ import os
 import datetime
 
 
+# decorator function to time a function
+def timer(f):
+    def wrapper(*args, **kwargs):
+        start_time = datetime.datetime.now()
+        print(f.func_name, "Start Time:", start_time)
+        x = f(*args, **kwargs)
+        end_time = datetime.datetime.now()
+        # print(f.func_name,"End Time: ", datetime.datetime.now())
+        print(f.func_name, "Ended, Duration Time: ", str(end_time - start_time))
+
+        return x
+
+    return wrapper
+
 # function that will append the file id passed in to every row in a data file.
 # also adding fucntion to generate a checksum of that row for later use
+@timer
 def insert_into_file(file, newfile, text_append, delimiter, has_header=True, append_file_id=True, append_crc=False):
     # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
     # print(f"------{newfile}-xxxx")
@@ -887,7 +902,7 @@ def generate_data_sample(db, table_name, source_schema, file_name, line_count=10
             line = ''
             if x == 0:
                 header = ','.join([c for c in column_names])
-                print("-------",header)
+
                 f.write(header + '\n')
             for i, c in enumerate(func_list):
                 if (i == 0):
@@ -941,7 +956,7 @@ def zipdir(directory, target_file_name):
 # Now we can iterate through all tables in db and make sample data for each table
 def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', line_count=10,
                                     ignore_auto_inc_column=True,
-                                    zip_file_name=None):
+                                    zip_file_name=None,num_tables=None):
     from db_utils import dbconn
 
     assert isinstance(db, dbconn.Connection)
@@ -954,10 +969,13 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
     if not os.path.exists(os.path.dirname(data_directory)):
         os.makedirs(os.path.dirname(data_directory), mode=777)
     print("Dumping data for scheam: {}".format(source_schema))
-    for table_name in tbs:
-        print("Generating Sample Data for Table:", table_name)
-        file_name = os.path.join(data_directory, table_name + '.csv')
-        generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column)
+
+    for i, table_name in enumerate(tbs):
+        if (num_tables is not None and i<num_tables):
+            print("Generating Sample Data for Table:", table_name)
+            file_name = os.path.join(data_directory, table_name + '.csv')
+            generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column)
+
     if zip_file_name is not None:
         zip_directory = os.path.dirname(zip_file_name)
         if not os.path.exists(zip_directory):
@@ -989,16 +1007,4 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
     return sql_template
 
 
-# decorator function to time a function
-def timer(f):
-    def wrapper(*args, **kwargs):
-        start_time = datetime.datetime.now()
-        print(f.func_name, "Start Time:", start_time)
-        x = f(*args, **kwargs)
-        end_time = datetime.datetime.now()
-        # print(f.func_name,"End Time: ", datetime.datetime.now())
-        print(f.func_name, "Ended, Duration Time: ", str(end_time - start_time))
 
-        return x
-
-    return wrapper
