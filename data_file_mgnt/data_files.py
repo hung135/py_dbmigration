@@ -310,7 +310,7 @@ class DataFile:
 
         files_list = []
         ii = 0
- 
+
         for root, subdirs, files in os.walk(file_path, topdown=True):
             if ii < level:
                 for x in files:
