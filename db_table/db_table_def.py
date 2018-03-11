@@ -39,15 +39,29 @@ class MetaSourceFiles(MetaBase):
     database_table = Column(c.String(256), nullable=True)
     parent_file_id = Column(c.Integer, default=0)
 
+
+# table to store regex for data files to be imported into a table
 class TableFilesRegex(MetaBase):
     DbSchema = 'logging'
     __tablename__ = 'table_file_regex'
     __table_args__ = {"schema": DbSchema}
     regex = Column(c.String(256), primary_key=True, nullable=False)
+    delimiter = Column(c.String(16), nullable=False)
     db_schema = Column(c.String(256),   nullable=False)
     table_name = Column(c.String(256),   nullable=False)
     last_update_time = Column(c.DateTime)
-    active = Column(c.Boolean, default='True')
+    active = Column(c.Boolean, default=True)
+
+# table to store regex for directories and data files to search inorder to inventory into meta_source_files
+class DirFilesRegex(MetaBase):
+    DbSchema = 'logging'
+    __tablename__ = 'dir_file_regex'
+    __table_args__ = {"schema": DbSchema}
+    regex = Column(c.String(256), primary_key=True, nullable=False)
+    directory = Column(c.String(512), nullable=False)
+    table_name = Column(c.String(256),   nullable=False)
+    last_update_time = Column(c.DateTime)
+    active = Column(c.Boolean, default=True)
 
 
 

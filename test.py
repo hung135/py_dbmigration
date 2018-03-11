@@ -17,7 +17,7 @@ class Test_db_utils_postgres():
     DBPASSWORD = 'docker'
     DBPORT = 5432
     SAMPLE_DATA_LINE_COUNT = 30
-    SAMPLE_DATA_TOTAL_TABLES = 10  # None will get all tables
+    SAMPLE_DATA_TOTAL_TABLES = 100  # None will get all tables
     CLEAN_PREV = True
     GENERATE_SAMPLE_DATA = True
 
@@ -54,7 +54,7 @@ class Test_db_utils_postgres():
     def test_02_record_keeper(self):
         print '# In function:', sys._getframe().f_code.co_name
 
-        t = db_table.db_table_func.RecordKeeper(self.db)
+        t = db_table.db_table_func.RecordKeeper(self.db,db_table.db_table_def.MetaSourceFiles)
         row = db_table.db_table_def.MetaSourceFiles(file_path='.', file_name='abc', file_name_data='',
                                        file_type='ZIP', parent_file_id=0)
         t.add_record(row, commit=True)
@@ -119,7 +119,7 @@ class Test_db_utils_postgres():
                                  parent_file_id=0)
         assert isinstance(df, data_files.DataFile)
         result_set = self.db.query("select * from logging.meta_source_files")
-        self.assertGreater(len(result_set), 0, "No files Found: Check Regex Logic")
+       # self.assertGreater(len(result_set), 0, "No files Found: Check Regex Logic")
 
         df.do_work(self.db, cleanup=False, limit_rows=None, import_type='Pandas')
 
@@ -128,4 +128,4 @@ class Test_db_utils_postgres():
 
 
 x=Test_db_utils_postgres()
-x.test_00_init()
+x.test_08_walkdir_data_file()

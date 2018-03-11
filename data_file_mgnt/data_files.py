@@ -142,7 +142,8 @@ class DataFile:
         self.processed_file_count = 0
         self.total_data_file_count = 0
         self.foi_list = foi_list
-        self.table_file_regex = self.get_table_file_regex_from_db(db, foi_list)
+        #self.table_file_regex = \
+        #self.put_foi_to_db(db, foi_list)
 
         # take each pattern and walks the directory
         for files_of_interest in self.foi_list:
@@ -166,11 +167,11 @@ class DataFile:
                             self.FilesOfInterest.file_type, self.FilesOfInterest.file_path, self.FilesOfInterest.regex))
 
     @migrate_utils.static_func.timer
-    def get_table_file_regex_from_db(self, db, foi_list):
+    def put_foi_to_db(self, db, foi_list):
         tfr = []
         assert isinstance(db, db_utils.dbconn.Connection)
         assert isinstance(foi_list, list)
-        t = db_table.db_table_func.RecordKeeper(db)
+        t = db_table.db_table_func.RecordKeeper(db,db_table.db_table_def.MetaSourceFiles)
         for foi in foi_list:
             if foi.regex is not None and foi.table_name is not None:
                 row = db_table.db_table_def.TableFilesRegex(
@@ -206,7 +207,7 @@ class DataFile:
 
     def insert_working_files(self, db, file_of_interest_obj, parent_file_id=0):
         assert isinstance(file_of_interest_obj, FilesOfInterest)
-        t = db_table.db_table_func.RecordKeeper(db)
+        t = db_table.db_table_func.RecordKeeper(db,db_table.db_table_def.MetaSourceFiles)
         id_regex = file_of_interest_obj.file_name_data_regex
         # print("------insertworkingfile")
 
@@ -480,7 +481,7 @@ class DataFile:
             table_name = foi.table_name
             counter = 0
             if lowercase:
-                table_name = str.lower(table_name)
+                table_name = str.lower(str(table_name))
             try:
                 logging.debug("Pandas Reading FROM File: {0}".format(foi.current_working_abs_file_name))
 
@@ -508,7 +509,7 @@ class DataFile:
                                          index=False,
 
                                          index_label=names)
-                    # print("xxxxxxxx",x)
+
                 if counter == 0:
                     self.rows_inserted = counter * chunk_size
                 else:
@@ -525,7 +526,7 @@ class DataFile:
                 status = "Error Inserting File"
                 delta = ''
                 try:
-                    cols_tb = db.get_table_columns(str.lower(foi.table_name))
+                    cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
                     delta = diff_list(dataframe.columns.tolist(), cols_tb)
                 except Exception as e:
                     # i for get wtf i was doing here...
@@ -552,7 +553,7 @@ class DataFile:
 
                 # self.Dblogger.insert_Errorlog(table_name=dest.table_name,program_unit="FileImport",  # #  # program_unit_type_code="Pandas",file_path=full_file_path,success=self.curr_file_success,  # # error_timestamp=datetime.now())
 
-            logging.debug("Pandas Insert Completed: {0}->{1}".format(self.curr_src_working_file, full_file_path))
+            logging.info("Pandas Insert Completed: {0}->{1}".format(self.curr_src_working_file, full_file_path))
 
         return status
 
@@ -638,20 +639,22 @@ class DataFile:
     def finish_work(self, db, process_error=None, file_of_interest=None, vacuum=True):
 
         assert isinstance(db, db_utils.dbconn.Connection)
-        t = db_table.db_table_func.RecordKeeper(db)
+        t = db_table.db_table_func.RecordKeeper(db,db_table.db_table_def.MetaSourceFiles)
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
         row.process_end_dtm = datetime.datetime.now()
 
         if self.curr_file_success:
             row.file_process_state = 'Processed'
             if file_of_interest is not None:
-                print(file_of_interest)
+
                 row.database_table = ".".join([str(file_of_interest.schema_name), str(file_of_interest.table_name)])
             row.rows_inserted = self.rows_inserted
-        if process_error is not None and process_error != '':
-            row.last_error_msg = str(process_error)
+        elif process_error is not None and process_error != '':
+            row.last_error_msg = str(process_error)[:2000]
             row.file_process_state = 'Failed'
             row.rows_inserted = 0
+        else:
+            row.file_process_state = 'uknown err'
 
         if vacuum and file_of_interest is not None and process_error is None:
             db.vacuum(file_of_interest.schema_name, file_of_interest.table_name)
@@ -665,8 +668,8 @@ class DataFile:
         assert isinstance(self.foi_list, list)
         self.processed_file_count = 0
         self.total_data_file_count = 0
-
-        t = db_table.db_table_func.RecordKeeper(db)
+        self.curr_file_success = True # reset status of file
+        t = db_table.db_table_func.RecordKeeper(db,db_table.db_table_def.MetaSourceFiles)
 
         # to ensure we lock 1 row to avoid race conditions
         t.engine.execute(("""
@@ -735,7 +738,7 @@ class DataFile:
     def extract_file(self, db, full_file_path, abs_writable_path):
 
         self.files = zip_utils.unzipper.extract_file(full_file_path, abs_writable_path, False, self.work_file_type)
-        t = db_table.db_table_func.RecordKeeper(db)
+        t = db_table.db_table_func.RecordKeeper(db,db_table.db_table_def.MetaSourceFiles)
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
         self.total_files = len(self.files)
         # print('---------------------\n', abs_writable_path, self.meta_source_file_id, self.files)
