@@ -69,8 +69,8 @@ class DbLogging:
             if key == "sql_statement":
                 value = str(value)[:2000]
             setattr(x, key, value)
-        #self.session.add(x)
-        #self.session.commit()
+        self.session.add(x)
+        self.session.commit()
         return x
 
     def fill_defaults(self, ptable):

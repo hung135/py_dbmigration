@@ -18,6 +18,7 @@ def timer(f):
 
     return wrapper
 
+
 # function that will append the file id passed in to every row in a data file.
 # also adding fucntion to generate a checksum of that row for later use
 @timer
@@ -814,7 +815,9 @@ def gen_data(col):
         data = random.randint(1, 32000)
 
     return str(data)
-#a function that takes in a column and look at its dataype and return a function to generate random data
+
+
+# a function that takes in a column and look at its dataype and return a function to generate random data
 # that can be activated later to not have to iterate through this logic each time
 def get_func(col):
     import random
@@ -824,23 +827,25 @@ def get_func(col):
     import operator
     from lorem.text import TextLorem
     from random_words import lorem_ipsum, RandomWords
-    #assert isinstance(col, sqlalchemy.Column)
-
+    # assert isinstance(col, sqlalchemy.Column)
 
     if (str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']):
         def gen_data():
             return random.randint(1, 2000)
+
         return gen_data
     elif ('PRECISION' in str(col.type)
           or 'NUMERIC' in str(col.type)):
         def gen_data():
             return random.randrange(1, 100)
+
         return gen_data
 
 
     elif ('TIMESTAMP' in str(col.type)):
         def gen_data():
             return str(datetime.datetime.now())
+
         return gen_data
     elif ('TEXT' in str(col.type)):
         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
@@ -855,44 +860,50 @@ def get_func(col):
             data = data.replace('p ', r'\"')
             data = '"' + data.replace('r ', '\n') + '"'
             return data
+
         return gen_data
 
-    elif ('CHAR' in str(col.type) ):
+    elif ('CHAR' in str(col.type)):
         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
 
         def gen_data():
-            limit = min([5, operator.div(col.length, 5)])
-            if limit == 0:
-                limit = 1
-            word_count = random.randint(1, limit)
-            rw = RandomWords()
-            data = ' '.join(rw.random_words(count=word_count))
+            limit = min([3, operator.div(col.length, 5)])
+            if col.length < 20:
+                data = ''.join(random.choice(string.letters) for x in range(col.length))
+
+            else:
+                word_count = random.randint(1, limit)
+                rw = RandomWords()
+                data = ' '.join(rw.random_words(count=word_count))
+                if (len(data) > col.length):
+                    print("get_func:", len(data), col.length, limit, data)
             return data
+
         return gen_data
     else:
 
         def gen_data():
 
-            return  random.randint(1, 32000)
+            return random.randint(1, 32000)
 
         return gen_data
 
     return None
 
+
 # generate data base on columns in a given table
 def generate_data_sample(db, table_name, source_schema, file_name, line_count=10,
                          ignore_auto_inc_column=True):
-    columns1 = db.get_all_columns_schema(source_schema,table_name)
+    columns1 = db.get_all_columns_schema(source_schema, table_name)
     func_list = []
-    column_names=[]
+    column_names = []
     for c in columns1:
-        #print(c.autoincrement,"-------------")
-        if c.autoincrement =='NO' and c.column_name not in ['file_id', 'crc']:
-            #setattr(c,'randfunc',get_func(c))
+        # print(c.autoincrement,"-------------")
+        if c.autoincrement == 'NO' and c.column_name not in ['file_id', 'crc']:
+            # setattr(c,'randfunc',get_func(c))
             func_list.append(get_func(c))
 
             column_names.append(c.column_name)
-
 
     if not os.path.exists(os.path.dirname(file_name)):
         os.makedirs(os.path.dirname(file_name), mode=777)
@@ -913,33 +924,6 @@ def generate_data_sample(db, table_name, source_schema, file_name, line_count=10
             # print(x, line)
             f.write(line + '\n')
 
-def generate_data_sample_org(db, table_name, source_schema, file_name, line_count=10,
-                         ignore_auto_inc_column=True):
-    columns1 = db.get_all_columns_schema(source_schema,table_name)
-    columns = []
-    for c in columns1:
-        if c.autoincrement is False and c.name not in ['file_id', 'crc']:
-            setattr(c,'randfunc',get_func(c))
-            columns.append(c)
-
-    if not os.path.exists(os.path.dirname(file_name)):
-        os.makedirs(os.path.dirname(file_name), mode=776)
-
-    with open(os.path.abspath(file_name), 'w') as f:
-        for x in range(line_count):
-            line = ''
-            if x == 0:
-                header = ','.join([c.name for c in columns])
-                print(header)
-                f.write(header + '\n')
-            for i, c in enumerate(columns):
-                if (i == 0):
-                    line += gen_data(c)
-                else:
-                    line += "," + gen_data(c)
-
-            # print(x, line)
-            f.write(line + '\n')
 
 # zip up directory
 # stolen from stack over flow
@@ -956,7 +940,7 @@ def zipdir(directory, target_file_name):
 # Now we can iterate through all tables in db and make sample data for each table
 def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', line_count=10,
                                     ignore_auto_inc_column=True,
-                                    zip_file_name=None,num_tables=None):
+                                    zip_file_name=None, num_tables=None):
     from db_utils import dbconn
 
     assert isinstance(db, dbconn.Connection)
@@ -971,7 +955,7 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
     print("Dumping data for scheam: {}".format(source_schema))
 
     for i, table_name in enumerate(tbs):
-        if (num_tables is not None and i<num_tables):
+        if (num_tables is not None and i < num_tables):
             print("Generating Sample Data for Table:", table_name)
             file_name = os.path.join(data_directory, table_name + '.csv')
             generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column)
@@ -990,7 +974,7 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
         schema = db.dbschema
     else:
         schema = trg_schema
-        print("-----", table_name, schema)
+
     columns = db.get_table_columns(table_name, schema)
     z = ""
     for i, col in enumerate(columns):
@@ -1007,4 +991,30 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
     return sql_template
 
 
+@timer
+def count_csv(full_file_path):
+    import pandas
+    count_size = 0
+    starttime = datetime.datetime.now()
 
+    logging.debug("Counting File: {}".format(datetime.datetime.now()))
+    chunksize = 10 ** 5
+    chunk = None
+    for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize)):
+        # just run through the file to get number of chucks
+        pass
+    # count the last chunk and added to the (total chunks * i-1) to get exact total
+    if i > 0:
+        count_size = len(chunk) + (i - 1) * chunksize
+    else:
+        count_size = len(chunk)
+    logging.debug("File Row Count:{0}".format(count_size))
+    return count_size
+
+
+def count_file_lines_wc(self, file):
+    import commands
+    command_output = commands.getstatusoutput("wc -l '{}'".format(file))
+    logging.debug("FileName:{0} RowCount:{1}".format(file, command_output))
+
+    return command_output

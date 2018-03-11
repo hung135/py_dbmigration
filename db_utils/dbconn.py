@@ -7,31 +7,72 @@ import datetime as dt
 from sqlalchemy.ext.automap import automap_base
 import migrate_utils
 
+
 # Decorator function to log and time how long a function took to run
 
 class Connection:
-    _conn = None
-    _cur = None
-    _password = None
-    _userid = None
-    _sslmode = None
-    _host = None
-    _port = 5432
-    _database_name = None
-    _commit = True
-    _dbtype = None
-    _db_url = None
-    last_row_count = 0
-    dbschema = None
+    # _conn = None this need to be instance
+    # _cur = None
+    # _password = None
+    # _userid = None
+    # _sslmode = None
+    # _host = None
+    # _port = 5432
+    # _database_name = None
+    # _commit = True
+    # _dbtype = None
+    # _db_url = None
+    # last_row_count = 0
+    # dbschema = None
+    #_sqlalchemy_con = None this needs to be instance
+    #_sqlalchemy_meta = None this needs to be instance
 
-    @migrate_utils.static_func.timer
+    def __init__(self, dbschema, commit=True, password=None, userid=None, host=None, port=None, database=None,
+                 dbtype='POSTGRES', appname='py_dbutils'):
+        """ Default to commit after every transaction
+        """
+
+        self._commit = commit
+        self.dbschema = dbschema
+        self.appname = appname
+        if database is not None:
+            self._database_name = database
+        if port is not None:
+            self._port = port
+        if userid is not None:
+            self._userid = userid
+        if password is not None:
+            self._password = password
+        if host is not None:
+            self._host = host
+        self._sslmode = None
+
+        logging.debug("DB Connecting To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
+        self._dbtype = dbtype.upper()
+        if self._dbtype == 'POSTGRES':
+            self._conn = self._connect_postgres
+        if self._dbtype == 'MSSQL':
+            self._conn = self._connect_mssql()
+        if self._dbtype == 'MYSQL':
+            self._conn = self._connect_mysql()
+        if self._dbtype == 'ORACLE':
+            self._conn = self._connect_oracle()
+        self._cur = self._conn.cursor()
+        self.url = None  # db url
+        logging.debug("DB Connected To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
+
+        self._sqlalchemy_con = None
+        self._sqlalchemy_meta = {}
+
+
+    #@migrate_utils.static_func.timer
     def connect_sqlalchemy(self, schema=None, db=None):
         import sqlalchemy
         # import pymssql
         '''Returns a connection and a metadata object'''
         # We connect with the help of the PostgreSQL URL
         # postgresql://federer:grandestslam@localhost:5432/tennis
-        self.url = ""
+
         if db is None and self._dbtype is None:
             db = "POSTGRES"
         else:
@@ -39,31 +80,34 @@ class Connection:
         if schema is None:
             schema = self.dbschema
 
-        if db.upper() == "POSTGRES":
-            self.url = 'postgresql://{}:{}@{}:{}/{}'
-            self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
+        if self._sqlalchemy_con is None or self._sqlalchemy_meta.get(schema,None) is None:
 
-            con = sqlalchemy.create_engine(self.url, connect_args={"application_name": self.appname})
 
-        if db.upper() == "MSSQL":
-            self.url = 'mssql+pymssql://{}:{}@{}:{}/{}'
-            self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
-        if db.upper() == "MYSQL":
-            # 'mysql+pymysql://root:test@192.168.99.100:3306/mysql'
-            self.url = "mysql+pymysql://{}:{}@{}:{}/{}"
-            self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
+            if db.upper() == "POSTGRES":
+                self.url = 'postgresql://{}:{}@{}:{}/{}'
+                self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
 
-            print("------", self.url)
-            con = sqlalchemy.create_engine(self.url)
-            print("zzzzzz")
-        # con=self._connect_mssql()
-        # The return value of create_engine() is our connection object
+                if self._sqlalchemy_con is None:
+                    self._sqlalchemy_con = sqlalchemy.create_engine(self.url,
+                                                                    connect_args={"application_name": self.appname})
+            if db.upper() == "MSSQL":
+                self.url = 'mssql+pymssql://{}:{}@{}:{}/{}'
+                self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
+            if db.upper() == "MYSQL":
+                # 'mysql+pymysql://root:test@192.168.99.100:3306/mysql'
+                self.url = "mysql+pymysql://{}:{}@{}:{}/{}"
+                self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
+                self._sqlalchemy_con = sqlalchemy.create_engine(self.url)
 
-        # We then bind the connection to MetaData()
-        # print('connecting schema:', schema)
-        meta = sqlalchemy.MetaData(bind=con, reflect=True, schema=schema)
+            # con=self._connect_mssql()
+            # The return value of create_engine() is our connection object
 
-        return con, meta
+            # We then bind the connection to MetaData()
+            # print('connecting schema:', schema)
+            if self._sqlalchemy_meta.get(schema,None) is None:
+                self._sqlalchemy_meta[schema] = sqlalchemy.MetaData(bind=self._sqlalchemy_con, reflect=True, schema=schema)
+
+        return self._sqlalchemy_con, self._sqlalchemy_meta[schema]
 
     def print_drop_tables(self):
 
@@ -258,6 +302,7 @@ class Connection:
         else:
             raise Exception('create tables functions allowed')
 
+    @property
     def _connect_postgres(self):
         import psycopg2
 
@@ -275,8 +320,8 @@ class Connection:
             if self._database_name is None:
                 self._database_name = os.getenv('PGDATABASE', 'postgres')
 
-        except:
-            logging.error(Exception)
+        except Exception as e:
+            logging.error(e)
             sys.exit()
 
         if self._port == '':
@@ -334,37 +379,6 @@ class Connection:
     def _connect_ldap(self):
         pass
 
-    def __init__(self, dbschema, commit=True, password=None, userid=None, host=None, port=None, database=None,
-                 dbtype='POSTGRES', appname='py_dbutils'):
-        """ Default to commit after every transaction
-        """
-        self._commit = commit
-        self.dbschema = dbschema
-        self.appname = appname
-        if database is not None:
-            self._database_name = database
-        if port is not None:
-            self._port = port
-        if userid is not None:
-            self._userid = userid
-        if password is not None:
-            self._password = password
-        if host is not None:
-            self._host = host
-
-        logging.debug("DB Connecting To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
-        self._dbtype = dbtype.upper()
-        if self._dbtype == 'POSTGRES':
-            self._conn = self._connect_postgres()
-        if self._dbtype == 'MSSQL':
-            self._conn = self._connect_mssql()
-        if self._dbtype == 'MYSQL':
-            self._conn = self._connect_mysql()
-        if self._dbtype == 'ORACLE':
-            self._conn = self._connect_oracle()
-        self._cur = self._conn.cursor()
-        self.url = None  # db url
-        logging.debug("DB Connected To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
 
     def __del__(self):
         try:
@@ -431,33 +445,34 @@ class Connection:
 
         return self.url
 
-    #@migrate_utils.static_func.timer
-    def get_table_list_via_query(self,dbschema):
-        sql="""SELECT table_name FROM information_schema.tables a
+    # @migrate_utils.static_func.timer
+    def get_table_list_via_query(self, dbschema):
+        sql = """SELECT table_name FROM information_schema.tables a
             WHERE table_schema='{}' and table_type='BASE TABLE'""".format(dbschema)
-        result_set=self.query(sql)
-        return [r[0] for  r in result_set]
+        result_set = self.query(sql)
+        return [r[0] for r in result_set]
 
-    #@migrate_utils.static_func.timer
-    def get_all_columns_schema(self,dbschema,table_name):
-        #print("----- wuh")
-        sql="""SELECT table_name,column_name,upper(data_type) as type, 
+    # @migrate_utils.static_func.timer
+    def get_all_columns_schema(self, dbschema, table_name):
+        # print("----- wuh")
+        sql = """SELECT table_name,column_name,upper(data_type) as type, 
         is_identity,
         character_maximum_length 
         FROM information_schema.columns
         WHERE table_schema = '{}'
         AND table_name   = '{}'
-        order by table_name,ordinal_position""".format(dbschema,table_name)
-        result_set=self.query(sql)
-        table=[]
-        for table_name, column, type,autoincrement,length in result_set:
+        order by table_name,ordinal_position""".format(dbschema, table_name)
+        result_set = self.query(sql)
+        table = []
+        for table_name, column, type, autoincrement, length in result_set:
             class data: pass
-            data.table_name=table_name
-            data.column_name=column
-            data.type=type
-            data.autoincrement=autoincrement
+
+            data.table_name = table_name
+            data.column_name = column
+            data.type = type
+            data.autoincrement = autoincrement
             data.length = length
-            #print(data.table_name,"xxxxxxx")
+            # print(data.table_name,"xxxxxxx")
             table.append(data)
 
         return table
@@ -482,7 +497,7 @@ class Connection:
             l.append(t)
         return l
 
-    @migrate_utils.static_func.timer
+    #@migrate_utils.static_func.timer
     def get_columns(self, table_name, dbschema):
         import sqlalchemy
 
@@ -492,7 +507,7 @@ class Connection:
         return list(column_list)
 
     # returns a list of table dict
-    @migrate_utils.static_func.timer
+    #@migrate_utils.static_func.timer
     def get_tables(self, schema=None):
         import sqlalchemy
         dbschema = self.dbschema

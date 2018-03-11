@@ -7,7 +7,7 @@ from migrate_utils import *
 import db_table
 
 
-class Test_db_utils_postgres(unittest.TestCase):
+class Test_db_utils_postgres():
     HOST = 'localhost'
     HOST = '192.168.99.100'
     DATABASE = 'postgres'
@@ -17,7 +17,7 @@ class Test_db_utils_postgres(unittest.TestCase):
     DBPASSWORD = 'docker'
     DBPORT = 5432
     SAMPLE_DATA_LINE_COUNT = 30
-    SAMPLE_DATA_TOTAL_TABLES = 5  # None will get all tables
+    SAMPLE_DATA_TOTAL_TABLES = 10  # None will get all tables
     CLEAN_PREV = True
     GENERATE_SAMPLE_DATA = True
 
@@ -127,5 +127,5 @@ class Test_db_utils_postgres(unittest.TestCase):
         # df.walk_dir(uz)
 
 
-if __name__ == '__main__':
-    unittest.main()
+x=Test_db_utils_postgres()
+x.test_00_init()
