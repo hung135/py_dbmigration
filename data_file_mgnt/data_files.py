@@ -683,7 +683,7 @@ class DataFile:
                 # matches any table mapping
 
                 foi = get_mapped_table(self.curr_src_working_file, self.foi_list)
-                foi.header_added = False
+
                 # logging.debug("Getting Mapped table:{}\n{}".format(self.curr_src_working_file, x))
                 if foi is not None:
 
@@ -707,7 +707,7 @@ class DataFile:
                         foi.current_working_abs_file_name_appended = os.path.join(self.working_path, "appended/",
                                                                                   self.curr_src_working_file)
 
-                        foi.header_added = migrate_utils.static_func.insert_into_file(foi.current_working_abs_file_name,
+                        new_file_name,foi.header_added = migrate_utils.static_func.insert_into_file(foi.current_working_abs_file_name,
                                                                                       foi.current_working_abs_file_name_appended,
                                                                                       str(self.meta_source_file_id),
                                                                                       foi.file_delimiter,
