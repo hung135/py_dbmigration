@@ -21,22 +21,24 @@ def timer(f):
 
 # function that will append the file id passed in to every row in a data file.
 # also adding fucntion to generate a checksum of that row for later use
-#@timer
-def insert_into_file(file, newfile, text_append, delimiter, has_header=True, append_file_id=True, append_crc=False,db=None,table_name=None):
+# @timer
+def insert_into_file(file, newfile, text_append, delimiter, has_header=True, append_file_id=True, append_crc=False,
+                     db=None, table_name=None):
     # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
-    header_added=False
-    logging.debug("Appending File ID to File:{}".format(newfile))
-    header_added=insert_each_line(file, newfile, text_append, delimiter, has_header, append_crc,db,table_name)
+    header_added = False
+    # logging.debug("Appending File ID to File:{}".format(newfile))
+    header_added = insert_each_line(file, newfile, text_append, delimiter, has_header, append_crc, db, table_name)
     # return fullpath to new file
-    return newfile,header_added
+    return newfile, header_added
 
 
 # function that will append data to a data file
-def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True, append_crc=False,db=None,table_name=None):
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True, append_crc=False, db=None,
+                     table_name=None):
     import os
     import errno
     import hashlib
-    header_added=False
+    header_added = False
     if not os.path.exists(os.path.dirname(newfile)):
         try:
             os.makedirs(os.path.dirname(newfile))
@@ -53,19 +55,19 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
 
     if has_header is False and db is not None:
         import db_utils
-        assert isinstance(db,db_utils.dbconn.Connection)
-        columns=db.get_columns(table_name,db.dbschema)
+        assert isinstance(db, db_utils.dbconn.Connection)
+        columns = db.get_columns(table_name, db.dbschema)
         for col in columns:
-            if col not in ['file_id','crc']:
+            if col not in ['file_id', 'crc']:
                 column_list.append(col)
 
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and has_header is set to false
         # this will assure file_id and crc will always be at the front of the file
-        if has_header is False and db is not None and len(column_list)>2:
+        if has_header is False and db is not None and len(column_list) > 2:
             column_list = delimiter.join(column_list)
-            outfile.write(column_list+'\n')
-            header_added=True
+            outfile.write(column_list + '\n')
+            header_added = True
 
         with open(orgfile, 'r') as src_file:
 
@@ -74,19 +76,24 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             # if the file doesn't have a header and we have a header added it
 
             if append_crc:
-                logging.info("Creating CRC for Every Row: {}".format(newfile))
+
                 for ii, line in enumerate(src_file):
-                    if ii == 0 and has_header:
-                        outfile.write(header_to_add + delimiter + line)
+                    if ii == 0:
+                        logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
+                        if has_header:
+                            outfile.write(header_to_add + delimiter + line)
                     else:
                         outfile.write(pre_pend_data + delimiter + hashlib.md5(line).hexdigest() + delimiter + line)
             else:
                 for ii, line in enumerate(src_file):
-                    if ii == 0 and has_header:
-                        outfile.write(header_to_add + delimiter + line)
+                    if ii == 0:
+                        logging.info("Creating file_id for Every Row: {}".format(newfile))
+                        if has_header:
+                            outfile.write(header_to_add + delimiter + line)
                     else:
                         outfile.write(pre_pend_data + delimiter + line)
     return header_added
+
 
 # playing with census stuff...WIP
 def dd_lookup_uuid(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
@@ -1013,7 +1020,7 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
     return sql_template
 
 
-#@timer
+# @timer
 def count_csv(full_file_path):
     import pandas
     count_size = 0
