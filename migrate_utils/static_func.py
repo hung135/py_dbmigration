@@ -68,7 +68,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             column_list = delimiter.join(column_list)
             outfile.write(column_list + '\n')
             header_added = True
-
+            logging.info("\t\t\tFile Header:\n\t\t\t{}".format(column_list))
         with open(orgfile, 'r') as src_file:
 
             # making version of very similar logic so we don't have to check for append_cc on each row to do checksum
