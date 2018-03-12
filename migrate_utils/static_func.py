@@ -24,11 +24,11 @@ def timer(f):
 #@timer
 def insert_into_file(file, newfile, text_append, delimiter, has_header=True, append_file_id=True, append_crc=False,db=None,table_name=None):
     # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
-
+    header_added=False
     logging.debug("Appending File ID to File:{}".format(newfile))
-    insert_each_line(file, newfile, text_append, delimiter, has_header, append_crc,db,table_name)
+    header_added=insert_each_line(file, newfile, text_append, delimiter, has_header, append_crc,db,table_name)
     # return fullpath to new file
-    return newfile
+    return newfile,header_added
 
 
 # function that will append data to a data file
@@ -74,6 +74,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             # if the file doesn't have a header and we have a header added it
 
             if append_crc:
+                logging.info("Creating CRC for Every Row: {}".format(newfile))
                 for ii, line in enumerate(src_file):
                     if ii == 0 and has_header:
                         outfile.write(header_to_add + delimiter + line)
