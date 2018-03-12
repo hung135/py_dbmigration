@@ -20,7 +20,9 @@ class Test_db_utils_postgres(unittest.TestCase):
     SAMPLE_DATA_TOTAL_TABLES = 20  # None will get all tables
     CLEAN_PREV = True
     GENERATE_SAMPLE_DATA = True
+
     SAMPLE_DATA_HAS_HEADER = False
+    GENERATE_SAMPLE_DATA_W_HEADER=False
 
     db = db_utils.dbconn.Connection(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA, password=DBPASSWORD,
                                     dbtype=DBTYPE, port=DBPORT)
@@ -86,7 +88,7 @@ class Test_db_utils_postgres(unittest.TestCase):
                                                                                    'sample_data.zip'),
                                                         num_tables=self.SAMPLE_DATA_TOTAL_TABLES,
                                                         post_fix='2018.csv',
-                                                        include_header=False
+                                                        include_header=self.GENERATE_SAMPLE_DATA_W_HEADER
                                                         )
 
     @static_func.timer

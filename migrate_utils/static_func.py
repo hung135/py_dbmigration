@@ -21,7 +21,7 @@ def timer(f):
 
 # function that will append the file id passed in to every row in a data file.
 # also adding fucntion to generate a checksum of that row for later use
-@timer
+#@timer
 def insert_into_file(file, newfile, text_append, delimiter, has_header=True, append_file_id=True, append_crc=False,db=None,table_name=None):
     # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
 
@@ -51,7 +51,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
         header_to_add += delimiter + 'crc'
         column_list.append('crc')
 
-    if db is not None:
+    if has_header is False and db is not None:
         import db_utils
         assert isinstance(db,db_utils.dbconn.Connection)
         columns=db.get_columns(table_name,db.dbschema)
@@ -894,7 +894,7 @@ def get_func(col):
                 rw = RandomWords()
                 data = ' '.join(rw.random_words(count=word_count))
                 if (len(data) > col.length):
-                    print("get_func:", len(data), col.length, limit, data)
+                    print("get_func: Bada Data Generated", len(data), col.length, limit, data)
             return data
 
         return gen_data
@@ -1012,7 +1012,7 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
     return sql_template
 
 
-@timer
+#@timer
 def count_csv(full_file_path):
     import pandas
     count_size = 0

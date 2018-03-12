@@ -24,8 +24,8 @@ class Connection:
     # _db_url = None
     # last_row_count = 0
     # dbschema = None
-    #_sqlalchemy_con = None this needs to be instance
-    #_sqlalchemy_meta = None this needs to be instance
+    # _sqlalchemy_con = None this needs to be instance
+    # _sqlalchemy_meta = None this needs to be instance
 
     def __init__(self, dbschema, commit=True, password=None, userid=None, host=None, port=None, database=None,
                  dbtype='POSTGRES', appname='py_dbutils'):
@@ -35,16 +35,16 @@ class Connection:
         self._commit = commit
         self.dbschema = dbschema
         self.appname = appname
-        if database is not None:
-            self._database_name = database
-        if port is not None:
-            self._port = port
-        if userid is not None:
-            self._userid = userid
-        if password is not None:
-            self._password = password
-        if host is not None:
-            self._host = host
+
+        self._database_name = database
+
+        self._port = port
+
+        self._userid = userid
+
+        self._password = password
+
+        self._host = host
         self._sslmode = None
 
         logging.debug("DB Connecting To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
@@ -64,8 +64,7 @@ class Connection:
         self._sqlalchemy_con = None
         self._sqlalchemy_meta = {}
 
-
-    #@migrate_utils.static_func.timer
+    # @migrate_utils.static_func.timer
     def connect_sqlalchemy(self, schema=None, db=None):
         import sqlalchemy
         # import pymssql
@@ -80,8 +79,7 @@ class Connection:
         if schema is None:
             schema = self.dbschema
 
-        if self._sqlalchemy_con is None or self._sqlalchemy_meta.get(schema,None) is None:
-
+        if self._sqlalchemy_con is None or self._sqlalchemy_meta.get(schema, None) is None:
 
             if db.upper() == "POSTGRES":
                 self.url = 'postgresql://{}:{}@{}:{}/{}'
@@ -104,8 +102,9 @@ class Connection:
 
             # We then bind the connection to MetaData()
             # print('connecting schema:', schema)
-            if self._sqlalchemy_meta.get(schema,None) is None:
-                self._sqlalchemy_meta[schema] = sqlalchemy.MetaData(bind=self._sqlalchemy_con, reflect=True, schema=schema)
+            if self._sqlalchemy_meta.get(schema, None) is None:
+                self._sqlalchemy_meta[schema] = sqlalchemy.MetaData(bind=self._sqlalchemy_con, reflect=True,
+                                                                    schema=schema)
 
         return self._sqlalchemy_con, self._sqlalchemy_meta[schema]
 
@@ -379,7 +378,6 @@ class Connection:
     def _connect_ldap(self):
         pass
 
-
     def __del__(self):
         try:
             self.commit()
@@ -412,8 +410,6 @@ class Connection:
         i = txt_out[1].split()
         logging.info("Total Rows Dumped: {0}".format(i[1]))
         return i[1]
-
-
 
     def get_conn_url(self):
 
@@ -471,7 +467,7 @@ class Connection:
             l.append(t)
         return l
 
-    #@migrate_utils.static_func.timer
+    # @migrate_utils.static_func.timer
     def get_columns(self, table_name, dbschema):
         """
 
@@ -486,7 +482,7 @@ class Connection:
         return list(column_list)
 
     # returns a list of table dict
-    #@migrate_utils.static_func.timer
+    # @migrate_utils.static_func.timer
     def get_tables(self, schema=None):
         import sqlalchemy
         dbschema = self.dbschema

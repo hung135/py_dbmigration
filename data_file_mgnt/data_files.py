@@ -70,14 +70,14 @@ class FilesOfInterest:
         self.current_working_abs_file_name = None
 
 
-
 def get_mapped_table(file_name, foi_list):
     for i in foi_list:
         if i.table_name is not None:
             assert isinstance(i, FilesOfInterest)
             # print("***FOI.regex:",i.regex,i.table_name,file_name)
             if re.match(i.regex, file_name, re.IGNORECASE):
-                print("\t\t\t*****Found")
+
+                logging.info("\t\t\tinfo-*****found")
                 return i
     return None
 
@@ -143,7 +143,7 @@ class DataFile:
         self.processed_file_count = 0
         self.total_data_file_count = 0
         self.foi_list = foi_list
-        self.rows_inserted = 0 # initialzed in constructor
+        self.rows_inserted = 0  # initialzed in constructor
         # self.table_file_regex = \
         # self.put_foi_to_db(db, foi_list)
 
@@ -390,7 +390,7 @@ class DataFile:
             ###############THERE EXEC COMMAND LOGIC HERE########################################################
 
             if 'ERROR' in txt_out:
-                logging.error(txt_out)
+                logging.error(sys._getframe().f_code.co_name + " : " + txt_out)
                 import_status = 'failed'
 
             logging.debug("Command:{0}".format(command_text))
@@ -432,7 +432,7 @@ class DataFile:
 
     # leveraging pandas libraries to read csv into a dataframe and let pandas
     # insert into database
-    @migrate_utils.static_func.timer
+    #@migrate_utils.static_func.timer
     def import_file_pandas(self, foi, db, lowercase=True, limit_rows=None, chunk_size=10000):
 
         full_file_path = None
@@ -459,7 +459,7 @@ class DataFile:
                 else:
                     header = 0
                     names = ','.join(foi.column_list)
-                logging.error(foi.current_working_abs_file_name)
+                logging.debug(sys._getframe().f_code.co_name + " : " + foi.current_working_abs_file_name)
                 for counter, dataframe in enumerate(
                         pd.read_csv(foi.current_working_abs_file_name, delimiter=foi.file_delimiter, nrows=limit_rows,
                                     quotechar='"', chunksize=chunk_size, header=header)):
@@ -475,7 +475,7 @@ class DataFile:
                                      index=False, index_label=names)
                     ####################################################################################################
                 if counter == 0:
-                    self.rows_inserted = counter * chunk_size+(len(dataframe))
+                    self.rows_inserted = counter * chunk_size + (len(dataframe))
                 else:
                     self.rows_inserted = counter * chunk_size
 
@@ -653,14 +653,14 @@ class DataFile:
         t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
         self.total_files = len(self.files)
-        # print('---------------------\n', abs_writable_path, self.meta_source_file_id, self.files)
+
         row.total_files = self.total_files
         t.commit()
 
         # We walk the tmp dir and add those data files to list of to do
         new_src_dir = abs_writable_path
         logging.debug("WALKING EXTRACTED FILES:\src_dir:{0}\nworking_dir:{1}:".format(new_src_dir, self.working_path))
-        # print("-----",full_writable_path)
+
         file_table_map = [FilesOfInterest('DATA', '', file_path=abs_writable_path, file_name_data_regex=None,
                                           parent_file_id=self.meta_source_file_id)]
 
@@ -683,8 +683,7 @@ class DataFile:
                 # matches any table mapping
 
                 foi = get_mapped_table(self.curr_src_working_file, self.foi_list)
-                foi.header_added=False
-                # print("***---***Data file:",self.meta_source_file_id)
+                foi.header_added = False
                 # logging.debug("Getting Mapped table:{}\n{}".format(self.curr_src_working_file, x))
                 if foi is not None:
 
@@ -693,9 +692,10 @@ class DataFile:
 
                     if foi.insert_option == 'Truncate':
                         db.truncate_table(foi.schema_name, foi.table_name)
-                        print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
+                        #print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
                     else:
-                        print("Appending  Data:{}.{}".format(foi.schema_name, foi.table_name))
+                        pass
+                        #print("Appending  Data:{}.{}".format(foi.schema_name, foi.table_name))
                     logging.debug("DATA-File:{}".format(self.curr_src_working_file))
 
                     # use the line below if we need to stamp the data file w/ a
@@ -703,31 +703,30 @@ class DataFile:
                     foi.current_working_abs_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
                     if foi.append_file_id:
                         # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
-                        print(self.working_path, "/appended/", self.curr_src_working_file)
+                        #print(self.working_path, "/appended/", self.curr_src_working_file)
                         foi.current_working_abs_file_name_appended = os.path.join(self.working_path, "appended/",
                                                                                   self.curr_src_working_file)
 
-                        foi.header_added=migrate_utils.static_func.insert_into_file(foi.current_working_abs_file_name,
-                                                                   foi.current_working_abs_file_name_appended,
-                                                                   str(self.meta_source_file_id),
-                                                                   foi.file_delimiter,
-                                                                   foi.has_header,
-                                                                   append_file_id=foi.append_file_id,
-                                                                   append_crc=foi.append_crc,
-                                                                   db=db,
-                                                                   table_name=foi.table_name)
+                        foi.header_added = migrate_utils.static_func.insert_into_file(foi.current_working_abs_file_name,
+                                                                                      foi.current_working_abs_file_name_appended,
+                                                                                      str(self.meta_source_file_id),
+                                                                                      foi.file_delimiter,
+                                                                                      foi.has_header,
+                                                                                      append_file_id=foi.append_file_id,
+                                                                                      append_crc=foi.append_crc,
+                                                                                      db=db,
+                                                                                      table_name=foi.table_name)
                         foi.working_path = os.path.dirname(foi.current_working_abs_file_name_appended)
                         foi.current_working_abs_file_name = foi.current_working_abs_file_name_appended
 
                     if foi.header_added:
-                        foi.has_header=True
+                        foi.has_header = True
                     min_row = 0
                     if foi.has_header:
                         min_row = 1
                     else:
                         try:
                             foi.column_list = db.get_columns(foi.table_name, foi.schema_name)
-
                         except:
                             print(
                                 "No table found: Skipping Column_list")  # x.column_list = db.get_columns(x.table_name, x.schema_name)
