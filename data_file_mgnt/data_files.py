@@ -724,7 +724,7 @@ class DataFile:
                         # print(self.working_path, "/appended/", self.curr_src_working_file)
                         foi.current_working_abs_file_name_appended = os.path.join(self.working_path, "appended/",
                                                                                   self.curr_src_working_file)
-
+                        ################################################################################################
                         new_file_name, header_added, header_list_returned = migrate_utils.static_func.insert_into_file(
                             foi.current_working_abs_file_name,
                             foi.current_working_abs_file_name_appended,
@@ -735,6 +735,7 @@ class DataFile:
                             append_crc=foi.append_crc,
                             db=db,
                             table_name=foi.table_name)
+                        ################################################################################################
                         foi.working_path = os.path.dirname(foi.current_working_abs_file_name_appended)
                         foi.current_working_abs_file_name = foi.current_working_abs_file_name_appended
                     foi.header_added = header_added

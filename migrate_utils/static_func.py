@@ -40,6 +40,8 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
     import hashlib
     header_added = False
     header_list_to_return = None
+    return_char_unix='\n'
+    return_char_windows='\r\n'
     if not os.path.exists(os.path.dirname(newfile)):
         try:
             os.makedirs(os.path.dirname(newfile))
@@ -67,7 +69,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
         # this will assure file_id and crc will always be at the front of the file
         if has_header is False and db is not None and len(column_list) > 2:
             column_list = delimiter.join(column_list)
-            outfile.write(column_list + '\n')
+            outfile.write(column_list + return_char_windows)
             header_list_to_return=column_list
 
             header_added = True
