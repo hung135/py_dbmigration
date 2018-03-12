@@ -22,33 +22,51 @@ def timer(f):
 # function that will append the file id passed in to every row in a data file.
 # also adding fucntion to generate a checksum of that row for later use
 @timer
-def insert_into_file(file, newfile, text_append, delimiter, has_header=True, append_file_id=True, append_crc=False):
+def insert_into_file(file, newfile, text_append, delimiter, has_header=True, append_file_id=True, append_crc=False,db=None,table_name=None):
     # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
-    # print(f"------{newfile}-xxxx")
+
     logging.debug("Appending File ID to File:{}".format(newfile))
-    insert_each_line(file, newfile, text_append, delimiter, has_header, append_crc)
+    insert_each_line(file, newfile, text_append, delimiter, has_header, append_crc,db,table_name)
     # return fullpath to new file
     return newfile
 
 
 # function that will append data to a data file
-def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True, append_crc=False):
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True, append_crc=False,db=None,table_name=None):
     import os
     import errno
     import hashlib
-
+    header_added=False
     if not os.path.exists(os.path.dirname(newfile)):
         try:
             os.makedirs(os.path.dirname(newfile))
         except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
+    # if db connecion is provided pull the headers from db
 
+    column_list = ['file_id']
     header_to_add = 'file_id'
     if append_crc:
         header_to_add += delimiter + 'crc'
+        column_list.append('crc')
+
+    if db is not None:
+        import db_utils
+        assert isinstance(db,db_utils.dbconn.Connection)
+        columns=db.get_columns(table_name,db.dbschema)
+        for col in columns:
+            if col not in ['file_id','crc']:
+                column_list.append(col)
 
     with open(newfile, 'w') as outfile:
+        # injecting a header because we are given a database connection and has_header is set to false
+        # this will assure file_id and crc will always be at the front of the file
+        if has_header is False and db is not None and len(column_list)>2:
+            column_list = delimiter.join(column_list)
+            outfile.write(column_list+'\n')
+            header_added=True
+
         with open(orgfile, 'r') as src_file:
 
             # making version of very similar logic so we don't have to check for append_cc on each row to do checksum
@@ -57,17 +75,17 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
 
             if append_crc:
                 for ii, line in enumerate(src_file):
-                    if ii == 0:
+                    if ii == 0 and has_header:
                         outfile.write(header_to_add + delimiter + line)
                     else:
                         outfile.write(pre_pend_data + delimiter + hashlib.md5(line).hexdigest() + delimiter + line)
             else:
                 for ii, line in enumerate(src_file):
-                    if ii == 0:
+                    if ii == 0 and has_header:
                         outfile.write(header_to_add + delimiter + line)
                     else:
                         outfile.write(pre_pend_data + delimiter + line)
-
+    return header_added
 
 # playing with census stuff...WIP
 def dd_lookup_uuid(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
@@ -802,7 +820,7 @@ def gen_data(col):
         data = data.replace('p ', r'\"')
         data = '"' + data.replace('r ', '\n') + '"'
 
-    elif ('CHAR' in str(col.type) or 'TEXxxT' in str(col.type)):
+    elif ('CHAR' in str(col.type)):
         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
         limit = min([5, operator.div(col.type.length, 5)])
         if limit == 0:
@@ -893,7 +911,7 @@ def get_func(col):
 
 # generate data base on columns in a given table
 def generate_data_sample(db, table_name, source_schema, file_name, line_count=10,
-                         ignore_auto_inc_column=True):
+                         ignore_auto_inc_column=True, include_header=True):
     columns1 = db.get_all_columns_schema(source_schema, table_name)
     func_list = []
     column_names = []
@@ -913,8 +931,8 @@ def generate_data_sample(db, table_name, source_schema, file_name, line_count=10
             line = ''
             if x == 0:
                 header = ','.join([c for c in column_names])
-
-                f.write(header + '\n')
+                if include_header:
+                    f.write(header + '\n')
             for i, c in enumerate(func_list):
                 if (i == 0):
                     line += str(c())
@@ -940,7 +958,9 @@ def zipdir(directory, target_file_name):
 # Now we can iterate through all tables in db and make sample data for each table
 def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', line_count=10,
                                     ignore_auto_inc_column=True,
-                                    zip_file_name=None, num_tables=None):
+                                    zip_file_name=None, num_tables=None, post_fix='.csv',
+                                    include_header=True
+                                    ):
     from db_utils import dbconn
 
     assert isinstance(db, dbconn.Connection)
@@ -957,8 +977,9 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
     for i, table_name in enumerate(tbs):
         if (num_tables is not None and i < num_tables):
             print("Generating Sample Data for Table:", table_name)
-            file_name = os.path.join(data_directory, table_name + '.csv')
-            generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column)
+            file_name = os.path.join(data_directory, table_name + post_fix)
+            generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column,
+                                 include_header=include_header)
 
     if zip_file_name is not None:
         zip_directory = os.path.dirname(zip_file_name)
@@ -1018,3 +1039,20 @@ def count_file_lines_wc(self, file):
     logging.debug("FileName:{0} RowCount:{1}".format(file, command_output))
 
     return command_output
+
+
+# adds a column to a table in datbase
+def add_column(db, table_name, column_name, data_type, nullable=''):
+    data_type_formatted = ''
+    if data_type == "Integer":
+        data_type_formatted = "INTEGER"
+    elif data_type == "String":
+        data_type_formatted = "VARCHAR(100)"
+    elif data_type == "uuid":
+        data_type_formatted = "UUID"
+
+    base_command = ("ALTER TABLE {table_name} ADD column {column_name} {data_type} {nullable}")
+    sql_command = base_command.format(table_name=table_name, column_name=column_name, data_type=data_type_formatted,
+                                      nullable=nullable)
+    print(sql_command)
+    db.execute(sql_command)

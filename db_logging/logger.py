@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from pprint import pprint
 
 
-class DbLogging:
+class ImportLogger:
     # Reflect each database table we need to use, using metadata
     # LoadStatus=None
     # ErrorLog=None

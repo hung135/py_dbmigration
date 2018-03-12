@@ -21,7 +21,7 @@ class getUrl:
 
 
 db = db_utils.Connection(dbschema='compliance',database='compliance', dbtype='POSTGRES')
-logger=lg.DbLogging(db)
+logger=lg.logger.ImportLogger(db)
 session = requests.session()
 file_list=[]
 file_url=[]

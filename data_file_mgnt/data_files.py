@@ -8,7 +8,7 @@ import commands
 
 import datetime
 import pandas as pd
-import db_logging as lg
+import db_logging
 import db_table.db_table_def
 import db_table.db_table_func
 import db_utils
@@ -68,6 +68,7 @@ class FilesOfInterest:
 
         self.encoding = encoding
         self.current_working_abs_file_name = None
+
 
 
 def get_mapped_table(file_name, foi_list):
@@ -134,16 +135,17 @@ class DataFile:
         self.processed_file_count = None
         self.files = None  # The contents of the zip files for the last file unzipped
         self.curr_pid = os.getpid()
-        self.host = socket.gethostname()  # self.host = socket._LOCALHOST  # self.Dblogger = lg.DbLogging(db)  # self.Dblogger = lg.db_logging.DbLogging(db)
+        self.host = socket.gethostname()
         self.embedded_id = 0
         self.work_file_type = 0
         self.total_files = 0
-        self.rows_inserted = 0
+
         self.processed_file_count = 0
         self.total_data_file_count = 0
         self.foi_list = foi_list
-        #self.table_file_regex = \
-        #self.put_foi_to_db(db, foi_list)
+        self.rows_inserted = 0 # initialzed in constructor
+        # self.table_file_regex = \
+        # self.put_foi_to_db(db, foi_list)
 
         # take each pattern and walks the directory
         for files_of_interest in self.foi_list:
@@ -171,7 +173,7 @@ class DataFile:
         tfr = []
         assert isinstance(db, db_utils.dbconn.Connection)
         assert isinstance(foi_list, list)
-        t = db_table.db_table_func.RecordKeeper(db,db_table.db_table_def.MetaSourceFiles)
+        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
         for foi in foi_list:
             if foi.regex is not None and foi.table_name is not None:
                 row = db_table.db_table_def.TableFilesRegex(
@@ -207,7 +209,7 @@ class DataFile:
 
     def insert_working_files(self, db, file_of_interest_obj, parent_file_id=0):
         assert isinstance(file_of_interest_obj, FilesOfInterest)
-        t = db_table.db_table_func.RecordKeeper(db,db_table.db_table_def.MetaSourceFiles)
+        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
         id_regex = file_of_interest_obj.file_name_data_regex
         # print("------insertworkingfile")
 
@@ -334,11 +336,11 @@ class DataFile:
     # import one file at a time using client side copy command postgres
     # standard return will be sucesscode, rows_inserted,description
     def import_1file_client_side(self, foi, db):
-
+        import_status = 'success'
         error_msg = None
         assert isinstance(foi, FilesOfInterest)
         assert isinstance(db, db_utils.dbconn.Connection)
-
+        self.ImporLogger = db_logging.logger.ImportLogger(db)
         data_file = foi.current_working_abs_file_name
 
         self.rows_inserted = 0
@@ -347,18 +349,7 @@ class DataFile:
 
             # logging.debug("Into Import:{0}".format(dest.table_name))
             # if re.match(dest.regex, dest.full_file_name):
-            t = lg.db_logging.DbLogging(db)
 
-            # data_file = self.source_file_path + self.curr_src_working_file
-            error_log_entry = t.ErrorLog(program_unit=sys.argv[0], error_code=None,
-                                         error_message='Inside Function import_1file_client_side', error_timestamp=None,
-                                         user_name=db._userid, sql_statement='')
-
-            log_entry = t.LoadStatus(table_name=foi.table_name, program_unit=sys.argv[0],
-                                     program_unit_type_code='python', file_path=data_file, records_inserted=0,
-                                     success=1, start_date=datetime.datetime.now(), end_date=datetime.datetime.now(),
-                                     previous_record_count=0, current_record_count=0, records_updated=0,
-                                     records_deleted=0, created_by=db._userid, created_date=datetime.datetime.now())
             copy_string = None
             if foi.column_list is not None:
 
@@ -392,66 +383,40 @@ class DataFile:
                 foi.encoding,
                 copy_command_connection_flags)
 
-
-
-
             logging.info("Copy Command STARTED:{0}".format(foi.table_name))
             # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
-            bash_error_code,txt_out = commands.getstatusoutput(command_text)
+            bash_error_code, txt_out = commands.getstatusoutput(command_text)
             ###############THERE EXEC COMMAND LOGIC HERE########################################################
 
-
             if 'ERROR' in txt_out:
-                logging.info("ERROR running Copy Copy Command")
                 logging.error(txt_out)
+                import_status = 'failed'
 
-            logging.info("Command:{0}".format(command_text))
-
-            logging.info("OUTPUT:{0} ".format(txt_out))
+            logging.debug("Command:{0}".format(command_text))
+            logging.debug("OUTPUT:{0} ".format(txt_out))
 
             # if txt_out[0] > 0 and not ('ERROR' in txt_out[1]):
             if int(bash_error_code) > 0:
                 # self.flag_bad_file(db, self.source_file_path, self.curr_src_working_file, txt_out[1])
                 self.curr_file_success = False
-                # flagging each data item we want to log durring an error
-                log_entry.success = 0
-                error_log_entry.error_code = bash_error_code
-                error_log_entry.error_message = str(txt_out)[:256]
-                error_log_entry.sql_statement = str(command_text)[:2000]
-                error_log_entry.error_timestamp = datetime.datetime.now()
-                t.session.add(error_log_entry)
-                logging.error("Copy Command ERROR Occured: {}".format(txt_out))
-                error_msg = txt_out
+                error_msg = str(txt_out)[:2000]
+                error_code = bash_error_code
+                sql_statement = str(command_text)[:2000]
 
             else:
                 self.processed_file_count += 1
                 i = txt_out.split()
-                # flagging the logging entry
-                log_entry.end_date = datetime.datetime.now()
-
                 self.rows_inserted = i[1]
-                log_entry.records_inserted = i[1]
-                logging.info("Copy Command Completed: {0}".format(data_file))
-                t.session.add(log_entry)
-            try:
-                t.session.commit()
-            except Exception as e:
-
-                logging.error("Error Occured In Client Side CLI import", e)
-                error_msg = e
-            else:
-                pass
-            finally:
-                t.session.close()
 
         else:
             logging.debug("Regex Not Match Skipping:{0}".format(foi.table_name))
-        return error_msg
-
-    """
-    Test the currentworking file againsts the regex passted in
-    """
+        status_dict = {}
+        status_dict['rows_inserted'] = self.rows_inserted
+        status_dict['import_status'] = import_status
+        status_dict['error_msg'] = error_msg
+        status_dict['additional_info'] = sql_statement
+        return status_dict
 
     def match_regex(self, regex, folder_regex=None):
         t = False
@@ -469,12 +434,14 @@ class DataFile:
     # insert into database
     @migrate_utils.static_func.timer
     def import_file_pandas(self, foi, db, lowercase=True, limit_rows=None, chunk_size=10000):
-        self.Dblogger = lg.db_logging.DbLogging(db)
+
         full_file_path = None
         self.rows_inserted = 0
-        status = ''
+        import_status = 'success'
+        additional_info = None
         header = 'infer'
         names = None
+        error_msg = None
         if db is not None:
             sqlalchemy_conn, meta = db.connect_sqlalchemy()
 
@@ -483,7 +450,6 @@ class DataFile:
             if lowercase:
                 table_name = str.lower(str(table_name))
             try:
-                logging.debug("Pandas Reading FROM File: {0}".format(foi.current_working_abs_file_name))
 
                 if limit_rows is not None:
                     logging.debug("Pandas Read Limit SET: {0}:ROWS".format(limit_rows))
@@ -493,99 +459,46 @@ class DataFile:
                 else:
                     header = 0
                     names = ','.join(foi.column_list)
-
+                logging.error(foi.current_working_abs_file_name)
                 for counter, dataframe in enumerate(
                         pd.read_csv(foi.current_working_abs_file_name, delimiter=foi.file_delimiter, nrows=limit_rows,
                                     quotechar='"', chunksize=chunk_size, header=header)):
-                    # print(dataframe)
+
                     if not foi.has_header:
                         dataframe.columns = map(str,
                                                 foi.column_list)  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
                     logging.debug(
                         "Pandas Insert Into DB: {0}->{1}-->Records:{2}".format(foi.schema_name, foi.table_name,
                                                                                counter * chunk_size))
-
-                    x = dataframe.to_sql(table_name, sqlalchemy_conn, schema=foi.schema_name, if_exists='append',
-                                         index=False,
-
-                                         index_label=names)
-
+                    ####################################################################################################
+                    dataframe.to_sql(table_name, sqlalchemy_conn, schema=foi.schema_name, if_exists='append',
+                                     index=False, index_label=names)
+                    ####################################################################################################
                 if counter == 0:
-                    self.rows_inserted = counter * chunk_size
+                    self.rows_inserted = counter * chunk_size+(len(dataframe))
                 else:
                     self.rows_inserted = counter * chunk_size
 
-                self.Dblogger.insert_LoadStatus(table_name=foi.table_name, program_unit="FileImport",
-                                                program_unit_type_code="Pandas",
-                                                file_path=foi.current_working_abs_file_name,
-                                                success=int(self.curr_file_success))
+
             except Exception as e:
-                # status=str(e)
 
-                # logging.error(str(e))
-                status = "Error Inserting File"
-                delta = ''
-                try:
-                    cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
-                    delta = diff_list(dataframe.columns.tolist(), cols_tb)
-                except Exception as e:
-                    # i for get wtf i was doing here...
-                    logging.debug('Error Inserting File: {}'.format(e))
-                # delta = diff_list(dataframe.columns.tolist(), cols_tb)
+                cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
+                delta = diff_list(dataframe.columns.tolist(), cols_tb)
                 self.curr_file_success = False
-                self.Dblogger.insert_ErrorLog(error_code="Err", error_message=str(e)[:200], program_unit="FileImport",
-                                              user_name=db._userid, sql_statement=full_file_path)
-
                 cols = list(delta)
-
                 if len(cols) > 1:
-                    self.Dblogger.insert_ErrorLog(error_code="Info", error_message="New Columns?",
-                                                  program_unit="FileImport", user_name=db._userid,
-                                                  sql_statement=str(list(delta)))
-                msg = "Error Message: FILE: {} -->Table Name: {} ".format(self.curr_src_working_file, foi.table_name)
-                print(str(e)[:2000])
-                self.Dblogger.insert_ErrorLog(error_code="Info", error_message=msg, program_unit="FileImport",
-                                              user_name=db._userid, sql_statement=str(e)[:2000])
-
+                    cols = str(list(delta))
                 logging.error("ERROR: {0}".format(e))
-                raise e
-                # print (db.get_table_columns(str.lower(dest.table_name)))
+                error_msg = str(e)[:256]
+                import_status = 'failed'
+                additional_info = (','.join(cols) + str(e))[:2000]
 
-                # self.Dblogger.insert_Errorlog(table_name=dest.table_name,program_unit="FileImport",  # #  # program_unit_type_code="Pandas",file_path=full_file_path,success=self.curr_file_success,  # # error_timestamp=datetime.now())
-
-            logging.info("Pandas Insert Completed: {0}->{1}".format(self.curr_src_working_file, full_file_path))
-
-        return status
-
-    def import_files_client_side(self, dest, db):
-        """ this won't be used right now, using copy command instead
-
-        for file in files.list:
-            if re.match(dest.regex, file):
-                print 'Match', files.path+'/'+file
-                import_csv(dest.schema_name, dest.table_name,
-                           files.path+'/'+file, dest.column_list)
-        """
-        # compiled_regex = re.compile(error_regex)
-        if db is not None:
-            for file in self.files.list:
-                if re.match(dest.regex, file, re.IGNORECASE):
-                    full_file_path = self.files.path + file
-
-                    command_text = self.copy_command_client_side.format(dest.schema_name + "." + dest.table_name,
-                                                                        full_file_path, dest.file_delimiter)
-                    logging.debug(command_text)
-                    txt_out = commands.getstatusoutput(command_text)
-                    logging.debug(txt_out)
-                    if txt_out[0] > 0:
-                        self.flag_bad_file(db, self.source_file_path, self.curr_src_working_file, txt_out[1])
-                        self.curr_file_success = False
-                    else:
-                        self.processed_file_count += 1
-                    logging.info("Copy Command Compleated: {0}->{1}".format(self.curr_src_working_file, file))
-                    self.Dblogger.insert_LoadStatus(table_name=dest.table_name, program_unit="FileImport",
-                                                    program_unit_type_code="clientside", file_path=full_file_path,
-                                                    success=self.curr_file_success)
+        status_dict = {}
+        status_dict['rows_inserted'] = self.rows_inserted
+        status_dict['import_status'] = import_status
+        status_dict['error_msg'] = error_msg
+        status_dict['additional_info'] = additional_info
+        return status_dict
 
     def import_files_copy_cmd(self, dest, db):
         """ this won't be used right now, using copy command instead
@@ -639,14 +552,13 @@ class DataFile:
     def finish_work(self, db, process_error=None, file_of_interest=None, vacuum=True):
 
         assert isinstance(db, db_utils.dbconn.Connection)
-        t = db_table.db_table_func.RecordKeeper(db,db_table.db_table_def.MetaSourceFiles)
+        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
         row.process_end_dtm = datetime.datetime.now()
 
         if self.curr_file_success:
             row.file_process_state = 'Processed'
             if file_of_interest is not None:
-
                 row.database_table = ".".join([str(file_of_interest.schema_name), str(file_of_interest.table_name)])
             row.rows_inserted = self.rows_inserted
         elif process_error is not None and process_error != '':
@@ -662,14 +574,14 @@ class DataFile:
 
         return t.session.close
 
-    #@migrate_utils.static_func.timer
+    # @migrate_utils.static_func.timer
     def get_work(self, db):
         assert isinstance(db, db_utils.dbconn.Connection)
         assert isinstance(self.foi_list, list)
         self.processed_file_count = 0
         self.total_data_file_count = 0
-        self.curr_file_success = True # reset status of file
-        t = db_table.db_table_func.RecordKeeper(db,db_table.db_table_def.MetaSourceFiles)
+        self.curr_file_success = True  # reset status of file
+        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
 
         # to ensure we lock 1 row to avoid race conditions
         t.engine.execute(("""
@@ -738,7 +650,7 @@ class DataFile:
     def extract_file(self, db, full_file_path, abs_writable_path):
 
         self.files = zip_utils.unzipper.extract_file(full_file_path, abs_writable_path, False, self.work_file_type)
-        t = db_table.db_table_func.RecordKeeper(db,db_table.db_table_def.MetaSourceFiles)
+        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
         self.total_files = len(self.files)
         # print('---------------------\n', abs_writable_path, self.meta_source_file_id, self.files)
@@ -771,6 +683,7 @@ class DataFile:
                 # matches any table mapping
 
                 foi = get_mapped_table(self.curr_src_working_file, self.foi_list)
+                foi.header_added=False
                 # print("***---***Data file:",self.meta_source_file_id)
                 # logging.debug("Getting Mapped table:{}\n{}".format(self.curr_src_working_file, x))
                 if foi is not None:
@@ -794,16 +707,20 @@ class DataFile:
                         foi.current_working_abs_file_name_appended = os.path.join(self.working_path, "appended/",
                                                                                   self.curr_src_working_file)
 
-                        migrate_utils.static_func.insert_into_file(foi.current_working_abs_file_name,
+                        foi.header_added=migrate_utils.static_func.insert_into_file(foi.current_working_abs_file_name,
                                                                    foi.current_working_abs_file_name_appended,
                                                                    str(self.meta_source_file_id),
                                                                    foi.file_delimiter,
                                                                    foi.has_header,
                                                                    append_file_id=foi.append_file_id,
-                                                                   append_crc=foi.append_crc)
+                                                                   append_crc=foi.append_crc,
+                                                                   db=db,
+                                                                   table_name=foi.table_name)
                         foi.working_path = os.path.dirname(foi.current_working_abs_file_name_appended)
                         foi.current_working_abs_file_name = foi.current_working_abs_file_name_appended
 
+                    if foi.header_added:
+                        foi.has_header=True
                     min_row = 0
                     if foi.has_header:
                         min_row = 1
@@ -821,23 +738,86 @@ class DataFile:
                             try:
 
                                 if import_type == self.IMPORT_VIA_PANDAS:
-                                    logging.debug("Into Pandas")
-                                    process_error = self.import_file_pandas(foi, db, limit_rows=limit_rows,
-                                                                            chunk_size=chunksize)
+
+                                    ####################################################################################
+                                    status_dict = self.import_file_pandas(foi, db, limit_rows=limit_rows,
+                                                                          chunk_size=chunksize)
+                                    ####################################################################################
                                 # only postgres support for now
                                 elif import_type == self.IMPORT_VIA_CLIENT_CLI:
-                                    logging.info("Import Via Copy Command:{}".format(foi.current_working_abs_file_name))
+                                    ####################################################################################
+                                    status_dict = self.import_1file_client_side(foi, db)
+                                    ####################################################################################
 
-                                    process_error = self.import_1file_client_side(foi, db)
-
-                                    logging.info("Copy Command result:{}".format(process_error))
                                 else:
-                                    raise Exception("No Import Method Provided")
-                                pattern_found = True
-                                df.finish_work(db, process_error=process_error, file_of_interest=foi, vacuum=True)
-                            except Exception as e:
-                                df.finish_work(db, process_error=e, file_of_interest=foi, vacuum=False)
+                                    raise Exception(
+                                        "No Import Method Provided: \n{}\n{}".format(
+                                            self.IMPORT_VIA_CLIENT_CLI,
+                                            self.IMPORT_VIA_PANDAS))
 
+                            except Exception as e:
+
+                                logging_handler = db_logging.logger.ImportLogger(db)
+                                error_log_entry = logging_handler.ErrorLog(
+                                    program_unit=sys.argv[0],
+                                    error_code=import_type,
+                                    error_message='Inside Function import_1file_client_side',
+                                    error_timestamp=datetime.datetime.now(),
+                                    user_name=db._userid,
+                                    sql_statement=str(e)[:2000])
+
+                                error_log_entry.error_message = str(e)[:256]
+                                error_log_entry.sql_statement = 'Import process Exception Raised'
+                                error_log_entry.error_timestamp = datetime.datetime.now()
+                                logging_handler.session.add(error_log_entry)
+
+                                logging_handler.session.commit()
+                                logging_handler.session.close()
+
+                            else:
+                                logging_handler = db_logging.logger.ImportLogger(db)
+                                if status_dict['import_status'] == 'success':
+                                    log_entry = logging_handler.LoadStatus(
+                                        table_name=foi.table_name,
+                                        program_unit=sys.argv[0],
+                                        program_unit_type_code='python',
+                                        file_path=foi.current_working_abs_file_name,
+                                        records_inserted=status_dict['rows_inserted'],
+                                        success=1, start_date=datetime.datetime.now(),
+                                        end_date=datetime.datetime.now(),
+                                        previous_record_count=0, current_record_count=0,
+                                        records_updated=0,
+                                        records_deleted=0, created_by=db._userid,
+                                        created_date=datetime.datetime.now())
+                                    logging_handler.session.add(log_entry)
+                                    t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+                                    row = t.get_record(
+                                        db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
+                                    row.rows_inserted = status_dict['rows_inserted']
+                                    t.add_record(row, commit=True)
+                                    t.session.commit()
+                                    t.session.close()
+                                else:
+
+                                    logging_handler = db_logging.logger.ImportLogger(db)
+                                    error_log_entry = logging_handler.ErrorLog(
+                                        program_unit=sys.argv[0],
+                                        error_code=None,
+                                        error_message='Inside Function import_1file_client_side',
+                                        error_timestamp=None,
+                                        user_name=db._userid, sql_statement=status_dict['additional_info'])
+
+                                    error_log_entry.error_message = status_dict['error_msg'][:256]
+                                    error_log_entry.sql_statement = status_dict['additional_info'][:2000]
+                                    error_log_entry.error_timestamp = datetime.datetime.now()
+                                    logging_handler.session.add(error_log_entry)
+
+                                logging_handler.session.commit()
+                                logging_handler.session.close()
+                            finally:
+
+                                df.finish_work(db, process_error=status_dict['error_msg'], file_of_interest=foi,
+                                               vacuum=True)
 
                 # no matching pattern for regext and db_tablename
                 else:

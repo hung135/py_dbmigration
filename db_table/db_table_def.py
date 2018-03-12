@@ -47,10 +47,13 @@ class TableFilesRegex(MetaBase):
     __table_args__ = {"schema": DbSchema}
     regex = Column(c.String(256), primary_key=True, nullable=False)
     delimiter = Column(c.String(16), nullable=False)
-    db_schema = Column(c.String(256),   nullable=False)
-    table_name = Column(c.String(256),   nullable=False)
+    db_schema = Column(c.String(256), nullable=False)
+    table_name = Column(c.String(256), nullable=False)
     last_update_time = Column(c.DateTime)
+    append_crc = Column(c.Boolean, default=True)
+    append_file_id = Column(c.Boolean, default=True)
     active = Column(c.Boolean, default=True)
+
 
 # table to store regex for directories and data files to search inorder to inventory into meta_source_files
 class DirFilesRegex(MetaBase):
@@ -58,11 +61,12 @@ class DirFilesRegex(MetaBase):
     __tablename__ = 'dir_file_regex'
     __table_args__ = {"schema": DbSchema}
     regex = Column(c.String(256), primary_key=True, nullable=False)
+    # to be used to extract data from the directory or file name
+    file_path_data_regex = Column(c.String(256), primary_key=True, nullable=False)
     directory = Column(c.String(512), nullable=False)
-    table_name = Column(c.String(256),   nullable=False)
+    table_name = Column(c.String(256), nullable=False)
     last_update_time = Column(c.DateTime)
     active = Column(c.Boolean, default=True)
-
 
 
 class PublishLog(MetaBase):

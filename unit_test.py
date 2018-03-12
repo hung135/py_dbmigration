@@ -16,10 +16,11 @@ class Test_db_utils_postgres(unittest.TestCase):
     DATA_SCHEMA = 'prey'
     DBPASSWORD = 'docker'
     DBPORT = 5432
-    SAMPLE_DATA_LINE_COUNT = 5
-    SAMPLE_DATA_TOTAL_TABLES = 150  # None will get all tables
+    SAMPLE_DATA_LINE_COUNT = 115
+    SAMPLE_DATA_TOTAL_TABLES = 20  # None will get all tables
     CLEAN_PREV = True
     GENERATE_SAMPLE_DATA = True
+    SAMPLE_DATA_HAS_HEADER = False
 
     db = db_utils.dbconn.Connection(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA, password=DBPASSWORD,
                                     dbtype=DBTYPE, port=DBPORT)
@@ -33,7 +34,10 @@ class Test_db_utils_postgres(unittest.TestCase):
         print '# In function:', sys._getframe().f_code.co_name
         self.db.execute('create schema if not exists {}'.format(
             self.DATA_SCHEMA))  # db.execute('create  database if not exists testing')
-
+        tbl=self.db.get_table_list_via_query('prey')
+        for table in tbl:
+            migrate_utils.static_func.add_column(self.db,'prey.'+table,'crc','uuid')
+            migrate_utils.static_func.add_column(self.db,'prey.'+table,'file_id','Integer')
     # this should run last
     def test_zz_last(self):
         print '# In function:', sys._getframe().f_code.co_name
@@ -80,7 +84,9 @@ class Test_db_utils_postgres(unittest.TestCase):
                                                         line_count=self.SAMPLE_DATA_LINE_COUNT,
                                                         zip_file_name=os.path.join(self.dirs['sample_working_dir'],
                                                                                    'sample_data.zip'),
-                                                        num_tables=self.SAMPLE_DATA_TOTAL_TABLES
+                                                        num_tables=self.SAMPLE_DATA_TOTAL_TABLES,
+                                                        post_fix='2018.csv',
+                                                        include_header=False
                                                         )
 
     @static_func.timer
@@ -89,12 +95,12 @@ class Test_db_utils_postgres(unittest.TestCase):
 
     def test_08_walkdir_data_file(self):
         print '# In function:', sys._getframe().f_code.co_name
-        # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=True)]
+        # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
         print("Truncating Logging Tables:")
 
         self.db.execute("TRUNCATE table logging.meta_source_files, logging.table_file_regex, logging.error_log, logging.load_status RESTART IDENTITY;")
 
-        self.db.execute("""INSERT into logging.table_file_regex SELECT distinct concat(table_name,'.csv'),',',
+        self.db.execute("""INSERT into logging.table_file_regex SELECT distinct concat(table_name,'.*.csv'),',',
         table_schema,table_name,now(),TRUE
         FROM information_schema.columns a
         WHERE table_schema = '{}'""".format(self.DATA_SCHEMA))
@@ -110,10 +116,10 @@ class Test_db_utils_postgres(unittest.TestCase):
         foi_list.append(data_files.FilesOfInterest(
             file_type='CSV', table_name='xref_user_product', file_regex=r'.*xref_user_product.*.csv',
             file_delimiter=',',
-            column_list=None, schema_name=self.DATA_SCHEMA, has_header=True, append_file_id=False, append_crc=False))
+            column_list=None, schema_name=self.DATA_SCHEMA, has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=False, append_crc=False))
         foi_list.append(data_files.FilesOfInterest(
             file_type='CSV', table_name='schema_version', file_regex=r'.*schema_version.*.csv', file_delimiter=',',
-            column_list=None, schema_name=self.DATA_SCHEMA, has_header=True))
+            column_list=None, schema_name=self.DATA_SCHEMA, has_header=self.SAMPLE_DATA_HAS_HEADER))
 
         df = data_files.DataFile(working_path=self.dirs["sample_zip_data_dir"], db=self.db, foi_list=foi_list,
                                  parent_file_id=0)
@@ -134,7 +140,7 @@ class Test_db_utils_postgres(unittest.TestCase):
 
             foi_list.append(data_files.FilesOfInterest(
                 file_type='CSV', table_name=str(r.table_name), file_regex=str(r.regex), file_delimiter=str(r.delimiter),
-                column_list=None, schema_name=str(r.db_schema), has_header=True))
+                column_list=None, schema_name=str(r.db_schema), has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=True,append_crc=True))
 
 
 

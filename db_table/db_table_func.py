@@ -26,13 +26,12 @@ class RecordKeeper():
         assert isinstance(db, db_utils.dbconn.Connection)
 
         key=str(table_def.DbSchema+table_def.__tablename__)
-        print("xxxxxxxx", key, self.engine_dict , len(self.table_dict))
+
         self.table=self.table_dict.get(key,None)
         if self.table is None:
             self.table_dict[key] = table_def
             self.table=self.table_dict[key]
-        print(self.table.__tablename__,"yyyyyyyyyyy")
-        print(type(MetaSourceFiles),type(table_def))
+
         schema=self.table.DbSchema
 
         # call class method to make sure url attribute is set
@@ -42,20 +41,19 @@ class RecordKeeper():
             self.engine_dict['only1'] = sqlalchemy.create_engine(db.url)
             self.engine=self.engine_dict['only1']
 
-            print("xxxxxxxx", key, self.engine )
+
             try:
                 self.engine.execute(CreateSchema(self.table.DbSchema))
                 logging.debug("Creating Database Schema: {}".format(self.table.DbSchema))
             except:
                 # logging.debug("Schema Already Exists No need to create:")
                 pass
-            print("xxxxxxxxcreate all----tb2----",self.table.__table_args__,type(self.table.__table_args__))
 
             # create tables
             ""
             MetaBase.metadata.create_all(bind=self.engine )
         else:
-            print("finnnnnnalllly")
+
             self.engine = self.engine_dict['only1']
         # create session
 
