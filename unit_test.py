@@ -7,6 +7,9 @@ from migrate_utils import *
 import db_table
 
 
+
+
+
 class Test_db_utils_postgres(unittest.TestCase):
     HOST = 'localhost'
     HOST = '192.168.99.100'
@@ -17,7 +20,7 @@ class Test_db_utils_postgres(unittest.TestCase):
     DBPASSWORD = 'docker'
     DBPORT = 5432
     SAMPLE_DATA_LINE_COUNT = 115
-    SAMPLE_DATA_TOTAL_TABLES = 20  # None will get all tables
+    SAMPLE_DATA_TOTAL_TABLES = 3  # None will get all tables
     CLEAN_PREV = True
     GENERATE_SAMPLE_DATA = True
 
@@ -84,7 +87,7 @@ class Test_db_utils_postgres(unittest.TestCase):
             # static_func.generate_data_sample(self.db,'xref_clickwrap_agreement',self.schema,'_sample_data/xref_clickwrap_agreement.csv',line_count=5)
             static_func.generate_data_sample_all_tables(self.db, self.DATA_SCHEMA, self.dirs['sample_data_dir'],
                                                         line_count=self.SAMPLE_DATA_LINE_COUNT,
-                                                        zip_file_name=os.path.join(self.dirs['sample_working_dir'],
+                                                        zip_file_name=os.path.join(self.dirs['sample_zip_data_dir'],
                                                                                    'sample_data.zip'),
                                                         num_tables=self.SAMPLE_DATA_TOTAL_TABLES,
                                                         post_fix='2018.csv',
@@ -123,7 +126,7 @@ class Test_db_utils_postgres(unittest.TestCase):
             file_type='CSV', table_name='schema_version', file_regex=r'.*schema_version.*.csv', file_delimiter=',',
             column_list=None, schema_name=self.DATA_SCHEMA, has_header=self.SAMPLE_DATA_HAS_HEADER))
 
-        df = data_files.DataFile(working_path=self.dirs["sample_zip_data_dir"], db=self.db, foi_list=foi_list,
+        df = data_files.DataFile(working_path=self.dirs["sample_working_dir"], db=self.db, foi_list=foi_list,
                                  parent_file_id=0)
         assert isinstance(df, data_files.DataFile)
         result_set = self.db.query("select * from logging.meta_source_files")
@@ -146,11 +149,10 @@ class Test_db_utils_postgres(unittest.TestCase):
 
 
 
-        df.do_work(self.db, cleanup=False, limit_rows=None, import_type=df.IMPORT_VIA_PANDAS)
+        df.do_work(self.db, cleanup=False, limit_rows=None, import_type=df.IMPORT_VIA_CLIENT_CLI)
 
         # uz=data_files.FilesOfInterest('CSV', file_regex=r".*\.zip", file_path="./_sample_working_dir/", parent_file_id=0)
         # df.walk_dir(uz)
-
 
 if __name__ == '__main__':
     unittest.main()
