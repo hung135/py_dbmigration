@@ -27,9 +27,9 @@ def insert_into_file(file, newfile, text_append, delimiter, has_header=True, app
     # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
     header_added = False
     # logging.debug("Appending File ID to File:{}".format(newfile))
-    header_added = insert_each_line(file, newfile, text_append, delimiter, has_header, append_crc, db, table_name)
+    header_added,header_list_returned = insert_each_line(file, newfile, text_append, delimiter, has_header, append_crc, db, table_name)
     # return fullpath to new file
-    return newfile, header_added
+    return newfile, header_added,header_list_returned
 
 
 # function that will append data to a data file
@@ -39,6 +39,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
     import errno
     import hashlib
     header_added = False
+    header_list_to_return = None
     if not os.path.exists(os.path.dirname(newfile)):
         try:
             os.makedirs(os.path.dirname(newfile))
@@ -67,8 +68,10 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
         if has_header is False and db is not None and len(column_list) > 2:
             column_list = delimiter.join(column_list)
             outfile.write(column_list + '\n')
+            header_list_to_return=column_list
+
             header_added = True
-            logging.info("\t\t\tFile Header:\n\t\t\t{}".format(column_list))
+            logging.info("\t\tFile Header:\n\t\t\t{}".format(column_list))
         with open(orgfile, 'r') as src_file:
 
             # making version of very similar logic so we don't have to check for append_cc on each row to do checksum
@@ -82,6 +85,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
                         logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
                         if has_header:
                             outfile.write(header_to_add + delimiter + line)
+                            header_list_to_return=str(header_to_add + delimiter + line)
                     else:
                         outfile.write(pre_pend_data + delimiter + hashlib.md5(line).hexdigest() + delimiter + line)
             else:
@@ -90,9 +94,11 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
                         logging.info("Creating file_id for Every Row: {}".format(newfile))
                         if has_header:
                             outfile.write(header_to_add + delimiter + line)
+                            header_list_to_return=str(header_to_add + delimiter + line)
                     else:
                         outfile.write(pre_pend_data + delimiter + line)
-    return header_added
+
+    return header_added, header_list_to_return
 
 
 # playing with census stuff...WIP

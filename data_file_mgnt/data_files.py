@@ -3,7 +3,7 @@ import os
 
 import zip_utils
 import socket
-import logging
+
 import commands
 
 import datetime
@@ -15,6 +15,10 @@ import db_utils
 import sys
 
 import migrate_utils.static_func
+import logging as log
+
+logging = log.getLogger()
+logging.setLevel(log.INFO)
 
 
 # given 2 data frame this will find all the records do not exist in the
@@ -76,8 +80,7 @@ def get_mapped_table(file_name, foi_list):
             assert isinstance(i, FilesOfInterest)
             # print("***FOI.regex:",i.regex,i.table_name,file_name)
             if re.match(i.regex, file_name, re.IGNORECASE):
-
-                logging.info("\t\t\tinfo-*****found")
+                logging.info("\t\tFile->Table mapping found: {}".format(i.table_name))
                 return i
     return None
 
@@ -230,9 +233,12 @@ class DataFile:
                         file_id = extracted_id[0]
                 except Exception as e:
                     logging.warning("No Embedded ID Found in FileName: id_REGEX = {}".format(id_regex))
+            full_file_path=os.path.join(file_of_interest_obj.file_path,walked_filed_name)
+            file_name=os.path.basename(full_file_path)
+            file_path=os.path.dirname(full_file_path)
 
-            row = db_table.db_table_def.MetaSourceFiles(file_path=file_of_interest_obj.file_path,
-                                                        file_name=walked_filed_name,
+            row = db_table.db_table_def.MetaSourceFiles(file_path=file_path,
+                                                        file_name=file_name,
                                                         file_name_data=file_id,
                                                         file_type=file_of_interest_obj.file_type,
                                                         parent_file_id=parent_file_id)
@@ -338,6 +344,7 @@ class DataFile:
     def import_1file_client_side(self, foi, db):
         import_status = 'success'
         error_msg = None
+        additional_msg=None
         assert isinstance(foi, FilesOfInterest)
         assert isinstance(db, db_utils.dbconn.Connection)
         self.ImporLogger = db_logging.logger.ImportLogger(db)
@@ -353,16 +360,21 @@ class DataFile:
             copy_string = None
             if foi.column_list is not None:
 
-                copy_string = "{}({})".format(foi.schema_name + "." + foi.table_name, ",".join(
-                    foi.column_list))  # dest.column_list.replace(' ', '').replace('\n',  # '').strip(',')))
+                copy_string = "{}({})".format(foi.schema_name + "." + foi.table_name,
+                                              (foi.header_list_returned))
+                # dest.column_list.replace(' ', '').replace('\n',  # '').strip(',')))
             else:
                 copy_string = foi.schema_name + "." + foi.table_name
             logging.info("Import FROM file into: {}".format(copy_string))
 
-            cols = db.get_columns(foi.table_name, foi.schema_name)
+            cols = foi.header_list_returned
+            # not using this anymore because we don't know what order the file_id and crc columns are set in
+            # that info will be returned from the process that has to append the file_id and crc
+            # the header will be in the correct delimiter format
+            # cols = db.get_columns(foi.table_name, foi.schema_name)
 
             header = ''
-            if foi.has_header:
+            if foi.has_header or foi.header_added:
                 header = 'HEADER,'
             ###############THERE EXEC COMMAND LOGIC HERE########################################################
             envpwd = os.environ.get('PGPASSWORD', None)
@@ -378,12 +390,14 @@ class DataFile:
                 copy_string,
                 data_file,
                 foi.file_delimiter,
-                ",".join(cols),
+                # ",".join(cols),
+                cols,
                 header,
                 foi.encoding,
                 copy_command_connection_flags)
 
             logging.info("Copy Command STARTED:{0}".format(foi.table_name))
+
             # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
             bash_error_code, txt_out = commands.getstatusoutput(command_text)
@@ -393,8 +407,8 @@ class DataFile:
                 logging.error(sys._getframe().f_code.co_name + " : " + txt_out)
                 import_status = 'failed'
 
-            logging.debug("Command:{0}".format(command_text))
-            logging.debug("OUTPUT:{0} ".format(txt_out))
+            logging.info("Command:{0}".format(command_text))
+            logging.info("OUTPUT:{0} ".format(txt_out))
 
             # if txt_out[0] > 0 and not ('ERROR' in txt_out[1]):
             if int(bash_error_code) > 0:
@@ -402,7 +416,7 @@ class DataFile:
                 self.curr_file_success = False
                 error_msg = str(txt_out)[:2000]
                 error_code = bash_error_code
-                sql_statement = str(command_text)[:2000]
+                additional_msg = str(command_text)[:2000]
 
             else:
                 self.processed_file_count += 1
@@ -415,7 +429,11 @@ class DataFile:
         status_dict['rows_inserted'] = self.rows_inserted
         status_dict['import_status'] = import_status
         status_dict['error_msg'] = error_msg
-        status_dict['additional_info'] = sql_statement
+        status_dict['additional_info'] = additional_msg
+
+
+
+
         return status_dict
 
     def match_regex(self, regex, folder_regex=None):
@@ -432,7 +450,7 @@ class DataFile:
 
     # leveraging pandas libraries to read csv into a dataframe and let pandas
     # insert into database
-    #@migrate_utils.static_func.timer
+    # @migrate_utils.static_func.timer
     def import_file_pandas(self, foi, db, lowercase=True, limit_rows=None, chunk_size=10000):
 
         full_file_path = None
@@ -692,10 +710,10 @@ class DataFile:
 
                     if foi.insert_option == 'Truncate':
                         db.truncate_table(foi.schema_name, foi.table_name)
-                        #print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
+                        # print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
                     else:
                         pass
-                        #print("Appending  Data:{}.{}".format(foi.schema_name, foi.table_name))
+                        # print("Appending  Data:{}.{}".format(foi.schema_name, foi.table_name))
                     logging.debug("DATA-File:{}".format(self.curr_src_working_file))
 
                     # use the line below if we need to stamp the data file w/ a
@@ -703,26 +721,27 @@ class DataFile:
                     foi.current_working_abs_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
                     if foi.append_file_id:
                         # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
-                        #print(self.working_path, "/appended/", self.curr_src_working_file)
+                        # print(self.working_path, "/appended/", self.curr_src_working_file)
                         foi.current_working_abs_file_name_appended = os.path.join(self.working_path, "appended/",
                                                                                   self.curr_src_working_file)
 
-                        new_file_name,foi.header_added = migrate_utils.static_func.insert_into_file(foi.current_working_abs_file_name,
-                                                                                      foi.current_working_abs_file_name_appended,
-                                                                                      str(self.meta_source_file_id),
-                                                                                      foi.file_delimiter,
-                                                                                      foi.has_header,
-                                                                                      append_file_id=foi.append_file_id,
-                                                                                      append_crc=foi.append_crc,
-                                                                                      db=db,
-                                                                                      table_name=foi.table_name)
+                        new_file_name, header_added, header_list_returned = migrate_utils.static_func.insert_into_file(
+                            foi.current_working_abs_file_name,
+                            foi.current_working_abs_file_name_appended,
+                            str(self.meta_source_file_id),
+                            foi.file_delimiter,
+                            foi.has_header,
+                            append_file_id=foi.append_file_id,
+                            append_crc=foi.append_crc,
+                            db=db,
+                            table_name=foi.table_name)
                         foi.working_path = os.path.dirname(foi.current_working_abs_file_name_appended)
                         foi.current_working_abs_file_name = foi.current_working_abs_file_name_appended
+                    foi.header_added = header_added
+                    foi.header_list_returned = header_list_returned
 
-                    if foi.header_added:
-                        foi.has_header = True
                     min_row = 0
-                    if foi.has_header:
+                    if foi.has_header or foi.header_added:
                         min_row = 1
                     else:
                         try:
