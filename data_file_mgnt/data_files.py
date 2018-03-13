@@ -73,6 +73,8 @@ class FilesOfInterest:
         self.encoding = encoding
         self.current_working_abs_file_name = None
         self.limit_rows = limit_rows
+        self.header_list_returned = None
+        self.header_added = None
 
 
 def get_mapped_table(file_name, foi_list):
@@ -357,18 +359,20 @@ class DataFile:
 
             # logging.debug("Into Import:{0}".format(dest.table_name))
             # if re.match(dest.regex, dest.full_file_name):
+            cols = (foi.column_list)
+            if foi.header_list_returned is not None:
+                cols = ','.join(foi.header_list_returned)
+            print("xxxx",type(foi.header_list_returned),type(foi.column_list))
 
             copy_string = None
             if foi.column_list is not None:
 
-                copy_string = "{}({})".format(foi.schema_name + "." + foi.table_name,
-                                              (foi.file_delimiter.join(foi.header_list_returned)))
+                copy_string = "{}({})".format(foi.schema_name + "." + foi.table_name,cols)
                 # dest.column_list.replace(' ', '').replace('\n',  # '').strip(',')))
             else:
                 copy_string = foi.schema_name + "." + foi.table_name
             logging.info("Import FROM file into: {}".format(copy_string))
 
-            cols = foi.file_delimiter.join(foi.header_list_returned)
             # not using this anymore because we don't know what order the file_id and crc columns are set in
             # that info will be returned from the process that has to append the file_id and crc
             # the header will be in the correct delimiter format
@@ -475,8 +479,12 @@ class DataFile:
                 else:
                     header = 0
                     #names = ','.join(foi.column_list)
-                    names = ','.join(foi.header_list_returned)
-                    names = foi.header_list_returned
+                    #names = ','.join(foi.header_list_returned)
+                    if foi.header_list_returned is not None:
+                        names = foi.header_list_returned
+                    else:
+                        names = foi.column_list
+
 
                 logging.debug(sys._getframe().f_code.co_name + " : " + foi.current_working_abs_file_name)
                 for counter, dataframe in enumerate(
@@ -486,7 +494,7 @@ class DataFile:
                     if not foi.has_header:
                         dataframe.columns = map(str,
                                                 #foi.column_list
-                                                foi.header_list_returned
+                                                names
                                                 )  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
                     logging.debug(
                         "Pandas Insert Into DB: {0}->{1}-->Records:{2}".format(foi.schema_name, foi.table_name,
@@ -723,6 +731,7 @@ class DataFile:
                     # use the line below if we need to stamp the data file w/ a
                     # column that has additional data
                     foi.current_working_abs_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
+                    header_added=None
                     if foi.append_file_id:
                         # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
                         # print(self.working_path, "/appended/", self.curr_src_working_file)
@@ -742,8 +751,10 @@ class DataFile:
                         ################################################################################################
                         foi.working_path = os.path.dirname(foi.current_working_abs_file_name_appended)
                         foi.current_working_abs_file_name = foi.current_working_abs_file_name_appended
-                    foi.header_added = header_added
-                    foi.header_list_returned = header_list_returned
+
+                    if header_added is not None:
+                        foi.header_added = header_added
+                        foi.header_list_returned = header_list_returned
 
                     min_row = 0
                     if foi.has_header or foi.header_added:

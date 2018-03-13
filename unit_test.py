@@ -5,6 +5,9 @@ from data_file_mgnt import *
 from data_file_mgnt.data_files import *
 from migrate_utils import *
 import db_table
+import logging as log
+logging = log.getLogger()
+logging.setLevel(log.INFO)
 
 
 class Test_db_utils_postgres(unittest.TestCase):
@@ -21,9 +24,9 @@ class Test_db_utils_postgres(unittest.TestCase):
     CLEAN_PREV = True
     GENERATE_SAMPLE_DATA = True
 
-    SAMPLE_DATA_HAS_HEADER = False
-    GENERATE_SAMPLE_DATA_W_HEADER = False
-    LIMIT_ROWS = 5
+    SAMPLE_DATA_HAS_HEADER = True
+    GENERATE_SAMPLE_DATA_W_HEADER = True
+    LIMIT_ROWS = None
 
     db = db_utils.dbconn.Connection(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA,
                                     password=DBPASSWORD,
@@ -136,8 +139,8 @@ class Test_db_utils_postgres(unittest.TestCase):
 
         t = db_table.db_table_func.RecordKeeper(self.db, table_def=db_table.db_table_def.TableFilesRegex)
 
-        z = db_table.db_table_func.RecordKeeper(self.db, table_def=db_table.db_table_def.TableFilesRegex)
-        print(type(t))
+
+
         records = t.get_all_records()
 
         # GENERATING FOI FROM DB META DATA IN LOGGING SCHEMA TABLE TableFilesRegex
@@ -147,10 +150,10 @@ class Test_db_utils_postgres(unittest.TestCase):
             foi_list.append(data_files.FilesOfInterest(
                 file_type='CSV', table_name=str(r.table_name), file_regex=str(r.regex),
                 file_delimiter=str(r.delimiter), column_list=None, schema_name=str(r.db_schema),
-                has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=True, append_crc=True,
+                has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=False, append_crc=False,
                 limit_rows=self.LIMIT_ROWS))
 
-        df.do_work(self.db, cleanup=False, limit_rows=None, import_type=df.IMPORT_VIA_CLIENT_CLI)
+        df.do_work(self.db, cleanup=False, limit_rows=None, import_type=df.IMPORT_VIA_PANDAS)
 
         # uz=data_files.FilesOfInterest('CSV', file_regex=r".*\.zip", file_path="./_sample_working_dir/", parent_file_id=0)
         # df.walk_dir(uz)

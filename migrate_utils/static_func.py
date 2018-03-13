@@ -895,6 +895,11 @@ def get_func(col):
     if (str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']):
         def gen_data():
             return random.randint(1, 2000)
+    elif (str(col.type) in ['BYTEA']):
+        def gen_data():
+
+            return "'NULL'"
+        return gen_data
     elif (str(col.type) in ['UUID']):
 
         def gen_data():
@@ -951,7 +956,7 @@ def get_func(col):
     else:
 
         def gen_data():
-
+            print("gen-fuc",str(col.type))
             return random.randint(1, 32000)
 
         return gen_data

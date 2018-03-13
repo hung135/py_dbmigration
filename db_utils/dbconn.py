@@ -91,6 +91,7 @@ class Connection:
             if db.upper() == "MSSQL":
                 self.url = 'mssql+pymssql://{}:{}@{}:{}/{}'
                 self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
+                self._sqlalchemy_con = sqlalchemy.create_engine(self.url)
             if db.upper() == "MYSQL":
                 # 'mysql+pymysql://root:test@192.168.99.100:3306/mysql'
                 self.url = "mysql+pymysql://{}:{}@{}:{}/{}"
