@@ -34,7 +34,7 @@ def insert_into_file(file, newfile, text_append, delimiter, has_header=True, app
 
 # function that will append data to a data file
 def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True, append_crc=False, db=None,
-                     table_name=None):
+                     table_name=None,ignore_missing_columns=False):
     import os
     import errno
     import hashlib
@@ -55,14 +55,29 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
     if append_crc:
         header_to_add += delimiter + 'crc'
         column_list.append('crc')
+    columns_to_add_count=len(column_list)
 
     if has_header is False and db is not None:
         import db_utils
         assert isinstance(db, db_utils.dbconn.Connection)
         columns = db.get_columns(table_name, db.dbschema)
-        for col in columns:
+
+        # if column count in db is more than columns in files
+        # we drop the trailing columns in the database
+        # if files has more columns than db error and need to make column in database
+        for i, col in enumerate(columns):
             if col not in ['file_id', 'crc']:
                 column_list.append(col)
+
+        file_column_count=count_column_csv(orgfile)+columns_to_add_count
+        logging.info("Files Columns Count:{}\nDB Column Count:{}".format(file_column_count,len(columns)))
+        shrunk_list=[]
+        if len(columns)>file_column_count:
+            for i in range(file_column_count):
+                shrunk_list.append(columns[i])
+            logging.warning("Database has more columns than File, Ignoring trailing columns:")
+
+        column_list=shrunk_list
 
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and has_header is set to false
@@ -99,7 +114,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
                             header_list_to_return=str(header_to_add + delimiter + line)
                     else:
                         outfile.write(pre_pend_data + delimiter + line)
-
+    print("zzzzz",header_list_to_return)
     return header_added, header_list_to_return
 
 
@@ -1029,7 +1044,19 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
 
 
 # @timer
+def count_column_csv(full_file_path):
+    import pandas
+
+    chunksize = 1
+    chunk = None
+    for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize)):
+        # just run through the file to get number of chucks
+        return len(chunk.columns)
+
+
+# @timer
 def count_csv(full_file_path):
+
     import pandas
     count_size = 0
     starttime = datetime.datetime.now()
@@ -1037,16 +1064,19 @@ def count_csv(full_file_path):
     logging.debug("Counting File: {}".format(datetime.datetime.now()))
     chunksize = 10 ** 5
     chunk = None
+    column_count=0
     for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize)):
+        if i==0:
+            column_count=len(chunk.columns)
         # just run through the file to get number of chucks
-        pass
+
     # count the last chunk and added to the (total chunks * i-1) to get exact total
     if i > 0:
         count_size = len(chunk) + (i - 1) * chunksize
     else:
         count_size = len(chunk)
     logging.debug("File Row Count:{0}".format(count_size))
-    return count_size
+    return count_size, column_count
 
 
 def count_file_lines_wc(self, file):

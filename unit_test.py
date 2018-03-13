@@ -20,9 +20,9 @@ class Test_db_utils_postgres(unittest.TestCase):
     DBPASSWORD = 'docker'
     DBPORT = 5432
     SAMPLE_DATA_LINE_COUNT = 115
-    SAMPLE_DATA_TOTAL_TABLES = 3  # None will get all tables
-    CLEAN_PREV = True
-    GENERATE_SAMPLE_DATA = True
+    SAMPLE_DATA_TOTAL_TABLES = 5  # None will get all tables
+    CLEAN_PREV = False
+    GENERATE_SAMPLE_DATA = False
 
     SAMPLE_DATA_HAS_HEADER = False
     GENERATE_SAMPLE_DATA_W_HEADER=False
@@ -41,7 +41,7 @@ class Test_db_utils_postgres(unittest.TestCase):
             self.DATA_SCHEMA))  # db.execute('create  database if not exists testing')
         tbl=self.db.get_table_list_via_query('prey')
         for table in tbl:
-            migrate_utils.static_func.add_column(self.db,'prey.'+table,'crc','uuid')
+            migrate_utils.static_func.add_column(self.db,'prey.'+table,'crcxxx','uuid')
             migrate_utils.static_func.add_column(self.db,'prey.'+table,'file_id','Integer')
     # this should run last
     def test_zz_last(self):
