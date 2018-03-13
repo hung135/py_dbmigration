@@ -676,7 +676,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
         table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
         stmt = sqlalchemy.schema.CreateTable(table)
         column_list = [c.name for c in table.columns]
-        createsql = mig.convert_sql_snake_case(str(stmt), column_list)
+        createsql = convert_sql_snake_case(str(stmt), column_list)
         logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
 
         line = ("\nsqitch add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
