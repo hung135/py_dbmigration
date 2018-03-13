@@ -94,6 +94,8 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
 
             header_added = True
             logging.info("\t\tFile Header:\n\t\t\t{}".format(column_list))
+            if limit_rows is not None:
+                logging.info("Limiting Rows was set: {}".format(limit_rows))
         with open(orgfile, 'r') as src_file:
 
             # making version of very similar logic so we don't have to check for append_cc on each row to do checksum
