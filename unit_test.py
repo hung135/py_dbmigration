@@ -7,9 +7,6 @@ from migrate_utils import *
 import db_table
 
 
-
-
-
 class Test_db_utils_postgres(unittest.TestCase):
     HOST = 'localhost'
     HOST = '192.168.99.100'
@@ -21,13 +18,15 @@ class Test_db_utils_postgres(unittest.TestCase):
     DBPORT = 5432
     SAMPLE_DATA_LINE_COUNT = 115
     SAMPLE_DATA_TOTAL_TABLES = 5  # None will get all tables
-    CLEAN_PREV = False
-    GENERATE_SAMPLE_DATA = False
+    CLEAN_PREV = True
+    GENERATE_SAMPLE_DATA = True
 
     SAMPLE_DATA_HAS_HEADER = False
-    GENERATE_SAMPLE_DATA_W_HEADER=False
+    GENERATE_SAMPLE_DATA_W_HEADER = False
+    LIMIT_ROWS = 5
 
-    db = db_utils.dbconn.Connection(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA, password=DBPASSWORD,
+    db = db_utils.dbconn.Connection(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA,
+                                    password=DBPASSWORD,
                                     dbtype=DBTYPE, port=DBPORT)
     dirs = {
         'sample_data_dir': "./_sample_data/",
@@ -39,10 +38,11 @@ class Test_db_utils_postgres(unittest.TestCase):
         print '# In function:', sys._getframe().f_code.co_name
         self.db.execute('create schema if not exists {}'.format(
             self.DATA_SCHEMA))  # db.execute('create  database if not exists testing')
-        tbl=self.db.get_table_list_via_query('prey')
+        tbl = self.db.get_table_list_via_query('prey')
         for table in tbl:
-            migrate_utils.static_func.add_column(self.db,'prey.'+table,'crcxxx','uuid')
-            migrate_utils.static_func.add_column(self.db,'prey.'+table,'file_id','Integer')
+            migrate_utils.static_func.add_column(self.db, 'prey.' + table, 'crc', 'uuid')
+            migrate_utils.static_func.add_column(self.db, 'prey.' + table, 'file_id', 'Integer')
+
     # this should run last
     def test_zz_last(self):
         print '# In function:', sys._getframe().f_code.co_name
@@ -63,9 +63,9 @@ class Test_db_utils_postgres(unittest.TestCase):
     def test_02_record_keeper(self):
         print '# In function:', sys._getframe().f_code.co_name
 
-        t = db_table.db_table_func.RecordKeeper(self.db,db_table.db_table_def.MetaSourceFiles)
+        t = db_table.db_table_func.RecordKeeper(self.db, db_table.db_table_def.MetaSourceFiles)
         row = db_table.db_table_def.MetaSourceFiles(file_path='.', file_name='abc', file_name_data='',
-                                       file_type='ZIP', parent_file_id=0)
+                                                    file_type='ZIP', parent_file_id=0)
         t.add_record(row, commit=True)
         self.db.commit()
 
@@ -103,7 +103,8 @@ class Test_db_utils_postgres(unittest.TestCase):
         # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
         print("Truncating Logging Tables:")
 
-        self.db.execute("TRUNCATE table logging.meta_source_files, logging.table_file_regex, logging.error_log, logging.load_status RESTART IDENTITY;")
+        self.db.execute(
+            "TRUNCATE table logging.meta_source_files, logging.table_file_regex, logging.error_log, logging.load_status RESTART IDENTITY;")
 
         self.db.execute("""INSERT into logging.table_file_regex SELECT distinct concat(table_name,'.*.csv'),',',
         table_schema,table_name,now(),TRUE
@@ -121,7 +122,8 @@ class Test_db_utils_postgres(unittest.TestCase):
         foi_list.append(data_files.FilesOfInterest(
             file_type='CSV', table_name='xref_user_product', file_regex=r'.*xref_user_product.*.csv',
             file_delimiter=',',
-            column_list=None, schema_name=self.DATA_SCHEMA, has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=False, append_crc=False))
+            column_list=None, schema_name=self.DATA_SCHEMA, has_header=self.SAMPLE_DATA_HAS_HEADER,
+            append_file_id=False, append_crc=False))
         foi_list.append(data_files.FilesOfInterest(
             file_type='CSV', table_name='schema_version', file_regex=r'.*schema_version.*.csv', file_delimiter=',',
             column_list=None, schema_name=self.DATA_SCHEMA, has_header=self.SAMPLE_DATA_HAS_HEADER))
@@ -132,27 +134,27 @@ class Test_db_utils_postgres(unittest.TestCase):
         result_set = self.db.query("select * from logging.meta_source_files")
         self.assertGreater(len(result_set), 0, "No files Found: Check Regex Logic")
 
+        t = db_table.db_table_func.RecordKeeper(self.db, table_def=db_table.db_table_def.TableFilesRegex)
 
-
-        t = db_table.db_table_func.RecordKeeper(self.db,table_def=db_table.db_table_def.TableFilesRegex)
-
-        z = db_table.db_table_func.RecordKeeper(self.db,table_def=db_table.db_table_def.TableFilesRegex)
+        z = db_table.db_table_func.RecordKeeper(self.db, table_def=db_table.db_table_def.TableFilesRegex)
         print(type(t))
         records = t.get_all_records()
 
+        # GENERATING FOI FROM DB META DATA IN LOGGING SCHEMA TABLE TableFilesRegex
         for r in records:
-            assert isinstance(r,db_table.db_table_def.TableFilesRegex)
+            assert isinstance(r, db_table.db_table_def.TableFilesRegex)
 
             foi_list.append(data_files.FilesOfInterest(
-                file_type='CSV', table_name=str(r.table_name), file_regex=str(r.regex), file_delimiter=str(r.delimiter),
-                column_list=None, schema_name=str(r.db_schema), has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=True,append_crc=True))
-
-
+                file_type='CSV', table_name=str(r.table_name), file_regex=str(r.regex),
+                file_delimiter=str(r.delimiter), column_list=None, schema_name=str(r.db_schema),
+                has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=True, append_crc=True,
+                limit_rows=self.LIMIT_ROWS))
 
         df.do_work(self.db, cleanup=False, limit_rows=None, import_type=df.IMPORT_VIA_CLIENT_CLI)
 
         # uz=data_files.FilesOfInterest('CSV', file_regex=r".*\.zip", file_path="./_sample_working_dir/", parent_file_id=0)
         # df.walk_dir(uz)
+
 
 if __name__ == '__main__':
     unittest.main()

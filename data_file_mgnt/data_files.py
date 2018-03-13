@@ -47,7 +47,7 @@ class FilesOfInterest:
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
                  has_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
                  file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF-8',
-                 append_crc=False):
+                 append_crc=False,limit_rows=None):
         self.regex = file_regex
         self.folder_regex = folder_regex
         self.table_name = table_name
@@ -72,6 +72,7 @@ class FilesOfInterest:
 
         self.encoding = encoding
         self.current_working_abs_file_name = None
+        self.limit_rows = limit_rows
 
 
 def get_mapped_table(file_name, foi_list):
@@ -431,9 +432,6 @@ class DataFile:
         status_dict['error_msg'] = error_msg
         status_dict['additional_info'] = additional_msg
 
-
-
-
         return status_dict
 
     def match_regex(self, regex, folder_regex=None):
@@ -740,7 +738,7 @@ class DataFile:
                             append_file_id=foi.append_file_id,
                             append_crc=foi.append_crc,
                             db=db,
-                            table_name=foi.table_name)
+                            table_name=foi.table_name,limit_rows=foi.limit_rows)
                         ################################################################################################
                         foi.working_path = os.path.dirname(foi.current_working_abs_file_name_appended)
                         foi.current_working_abs_file_name = foi.current_working_abs_file_name_appended

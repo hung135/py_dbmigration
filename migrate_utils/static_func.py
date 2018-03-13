@@ -8,11 +8,11 @@ import datetime
 def timer(f):
     def wrapper(*args, **kwargs):
         start_time = datetime.datetime.now()
-        print(f.func_name, "Start Time:", start_time)
+        logging.debug("{} :Start Time:{}".format(f.func_name, start_time))
         x = f(*args, **kwargs)
         end_time = datetime.datetime.now()
         # print(f.func_name,"End Time: ", datetime.datetime.now())
-        print(f.func_name, "Ended, Duration Time: ", str(end_time - start_time))
+        logging.debug("{} :Ended, Duration Time: ".format(f.func_name, str(end_time - start_time)))
 
         return x
 
@@ -21,27 +21,31 @@ def timer(f):
 
 # function that will append the file id passed in to every row in a data file.
 # also adding fucntion to generate a checksum of that row for later use
-# @timer
+@timer
 def insert_into_file(file, newfile, text_append, delimiter, has_header=True, append_file_id=True, append_crc=False,
-                     db=None, table_name=None):
+                     db=None, table_name=None, limit_rows=None):
     # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
     header_added = False
     # logging.debug("Appending File ID to File:{}".format(newfile))
-    header_added,header_list_returned = insert_each_line(file, newfile, text_append, delimiter, has_header, append_crc, db, table_name)
+    header_added, header_list_returned = insert_each_line(file, newfile, text_append, delimiter, has_header,
+                                                          append_crc, db, table_name, limit_rows=limit_rows)
     # return fullpath to new file
-    return newfile, header_added,header_list_returned
+    return newfile, header_added, header_list_returned
 
 
 # function that will append data to a data file
 def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True, append_crc=False, db=None,
-                     table_name=None,ignore_missing_columns=False):
+                     table_name=None, ignore_missing_columns=False, limit_rows=None):
     import os
     import errno
     import hashlib
     header_added = False
     header_list_to_return = None
-    return_char_unix='\n'
-    return_char_windows='\r\n'
+    return_char_unix = '\n'
+    return_char_windows = '\r\n'
+
+    carriage_return = check_file_for_carriage_return(orgfile)
+
     if not os.path.exists(os.path.dirname(newfile)):
         try:
             os.makedirs(os.path.dirname(newfile))
@@ -55,7 +59,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
     if append_crc:
         header_to_add += delimiter + 'crc'
         column_list.append('crc')
-    columns_to_add_count=len(column_list)
+    columns_to_add_count = len(column_list)
 
     if has_header is False and db is not None:
         import db_utils
@@ -69,24 +73,24 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             if col not in ['file_id', 'crc']:
                 column_list.append(col)
 
-        file_column_count=count_column_csv(orgfile)+columns_to_add_count
-        logging.info("Files Columns Count:{}\nDB Column Count:{}".format(file_column_count,len(columns)))
-        shrunk_list=[]
-        if len(columns)>file_column_count:
+        file_column_count = count_column_csv(orgfile) + columns_to_add_count
+        logging.info("Files Columns Count:{}\nDB Column Count:{}".format(file_column_count, len(columns)))
+        shrunk_list = []
+        if len(columns) > file_column_count:
             for i in range(file_column_count):
                 shrunk_list.append(columns[i])
             logging.warning("Database has more columns than File, Ignoring trailing columns:")
 
-        if len(shrunk_list) >0:
-            column_list=shrunk_list
+        if len(shrunk_list) > 0:
+            column_list = shrunk_list
 
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and has_header is set to false
         # this will assure file_id and crc will always be at the front of the file
         if has_header is False and db is not None and len(column_list) > 2:
             column_list = delimiter.join(column_list)
-            outfile.write(column_list + return_char_windows)
-            header_list_to_return=column_list
+            outfile.write(column_list + str(carriage_return))
+            header_list_to_return = column_list
 
             header_added = True
             logging.info("\t\tFile Header:\n\t\t\t{}".format(column_list))
@@ -103,7 +107,10 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
                         logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
                         if has_header:
                             outfile.write(header_to_add + delimiter + line)
-                            header_list_to_return=str(header_to_add + delimiter + line)
+                            header_list_to_return = str(header_to_add + delimiter + line)
+
+                    elif limit_rows is not None and ii > limit_rows:
+                        break
                     else:
                         outfile.write(pre_pend_data + delimiter + hashlib.md5(line).hexdigest() + delimiter + line)
             else:
@@ -112,10 +119,14 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
                         logging.info("Creating file_id for Every Row: {}".format(newfile))
                         if has_header:
                             outfile.write(header_to_add + delimiter + line)
-                            header_list_to_return=str(header_to_add + delimiter + line)
+                            header_list_to_return = str(header_to_add + delimiter + line)
+                    elif limit_rows is not None and ii > limit_rows:
+                        break
                     else:
                         outfile.write(pre_pend_data + delimiter + line)
-    print("zzzzz",header_list_to_return)
+    print("-------",header_list_to_return)
+    header_list_to_return = header_list_to_return.split(str(delimiter))
+    print("-----2--", header_list_to_return)
     return header_added, header_list_to_return
 
 
@@ -879,9 +890,14 @@ def get_func(col):
     from random_words import lorem_ipsum, RandomWords
     # assert isinstance(col, sqlalchemy.Column)
 
-    if (str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']):
+    if (str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']):
         def gen_data():
             return random.randint(1, 2000)
+    elif (str(col.type) in ['UUID']):
+
+        def gen_data():
+            import hashlib
+            return hashlib.md5(str(random.randint(1, 2000))).hexdigest()
 
         return gen_data
     elif ('PRECISION' in str(col.type)
@@ -1055,9 +1071,26 @@ def count_column_csv(full_file_path):
         return len(chunk.columns)
 
 
+# this will read the first line of a file and determin if the file has a windows carriage return or unix
+def check_file_for_carriage_return(full_file_path):
+    """with open(full_file_path, 'rb') as f:
+        Line_Read = f.readlines()
+        if ('\r\n' in Line_Read):
+            return '\r\n'
+        elif ('\n' in Line_Read):
+            return '\n'
+        else:
+            return None """
+    infile = open(full_file_path, 'rb')
+    for index, line in enumerate(infile.readlines()):
+        if line[-2:] == '\r\n':
+            return '\r\n'
+        else:
+            return '\n'
+
+
 # @timer
 def count_csv(full_file_path):
-
     import pandas
     count_size = 0
     starttime = datetime.datetime.now()
@@ -1065,10 +1098,10 @@ def count_csv(full_file_path):
     logging.debug("Counting File: {}".format(datetime.datetime.now()))
     chunksize = 10 ** 5
     chunk = None
-    column_count=0
+    column_count = 0
     for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize)):
-        if i==0:
-            column_count=len(chunk.columns)
+        if i == 0:
+            column_count = len(chunk.columns)
         # just run through the file to get number of chucks
 
     # count the last chunk and added to the (total chunks * i-1) to get exact total
