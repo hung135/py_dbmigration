@@ -361,13 +361,13 @@ class DataFile:
             if foi.column_list is not None:
 
                 copy_string = "{}({})".format(foi.schema_name + "." + foi.table_name,
-                                              (foi.header_list_returned))
+                                              (foi.file_delimiter.join(foi.header_list_returned)))
                 # dest.column_list.replace(' ', '').replace('\n',  # '').strip(',')))
             else:
                 copy_string = foi.schema_name + "." + foi.table_name
             logging.info("Import FROM file into: {}".format(copy_string))
 
-            cols = foi.header_list_returned
+            cols = foi.file_delimiter.join(foi.header_list_returned)
             # not using this anymore because we don't know what order the file_id and crc columns are set in
             # that info will be returned from the process that has to append the file_id and crc
             # the header will be in the correct delimiter format
@@ -476,7 +476,10 @@ class DataFile:
                     names = None
                 else:
                     header = 0
-                    names = ','.join(foi.column_list)
+                    #names = ','.join(foi.column_list)
+                    names = ','.join(foi.header_list_returned)
+                    names = foi.header_list_returned
+
                 logging.debug(sys._getframe().f_code.co_name + " : " + foi.current_working_abs_file_name)
                 for counter, dataframe in enumerate(
                         pd.read_csv(foi.current_working_abs_file_name, delimiter=foi.file_delimiter, nrows=limit_rows,
@@ -484,7 +487,9 @@ class DataFile:
 
                     if not foi.has_header:
                         dataframe.columns = map(str,
-                                                foi.column_list)  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
+                                                #foi.column_list
+                                                foi.header_list_returned
+                                                )  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
                     logging.debug(
                         "Pandas Insert Into DB: {0}->{1}-->Records:{2}".format(foi.schema_name, foi.table_name,
                                                                                counter * chunk_size))
@@ -691,6 +696,7 @@ class DataFile:
 
     def do_work(self, db, cleanup=True, limit_rows=None, import_type=None, vacuum=True, chunksize=10000):
         df = self
+        status_dict={}
 
         while self.get_work(db) is not None:
 
@@ -792,6 +798,9 @@ class DataFile:
 
                                 logging_handler.session.commit()
                                 logging_handler.session.close()
+                                status_dict['error_msg']=str(e)[:2000]
+
+                                logging.error("Unknown Error Occurred Importing: {}".format(e))
 
                             else:
                                 logging_handler = db_logging.logger.ImportLogger(db)
