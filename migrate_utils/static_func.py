@@ -77,7 +77,8 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
                 shrunk_list.append(columns[i])
             logging.warning("Database has more columns than File, Ignoring trailing columns:")
 
-        column_list=shrunk_list
+        if len(shrunk_list) >0:
+            column_list=shrunk_list
 
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and has_header is set to false
