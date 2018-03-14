@@ -23,7 +23,7 @@ def timer(f):
 
 
 # function that will append data to a data file
-def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True,
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True,append_file_id=True,
                      append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0):
     import os
     import errno
@@ -43,11 +43,16 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
                 raise
     # if db connecion is provided pull the headers from db
 
-    column_list = ['file_id']
-    header_to_add = 'file_id'
+    column_list = []
+
+    if append_file_id:
+        column_list.append('file_id')
+
+
     if append_crc:
-        header_to_add += delimiter + 'crc'
         column_list.append('crc')
+    header_to_add=delimiter.join(column_list)
+
     columns_to_add_count = len(column_list)
 
     if has_header is False and db is not None:
@@ -61,7 +66,6 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
         for i, col in enumerate(columns_from_db):
             if col not in ['file_id', 'crc']:
                 column_list.append(col)
-        print("Column_list",column_list,columns_to_add_count)
         file_column_count = count_column_csv(orgfile) + columns_to_add_count
         logging.info("\n\tFiles Columns Count:{}\n\tDB Column Count:{}".format(file_column_count, len(columns_from_db)))
         shrunk_list = []
@@ -72,7 +76,6 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
 
         if len(shrunk_list) > 0:
             column_list = shrunk_list
-        print("shrunk_list",shrunk_list)
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and has_header is set to false
         # this will assure file_id and crc will always be at the front of the file
@@ -90,11 +93,14 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             # making version of very similar logic so we don't have to check for append_cc on each row to do checksum
             # take care of the header first
             # if the file doesn't have a header and we have a header added it
+            data_to_add=None
+            if append_file_id:
+                data_to_add+=pre_pend_data+delimiter
 
-            if append_crc:
-
-                for ii, line in enumerate(src_file):
-
+            for ii, line in enumerate(src_file):
+                    data=None
+                    if append_crc:
+                        data+=data_to_add+str(hashlib.md5(line).hexdigest())+delimiter
 
                     if ii == start_row :
                         logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
@@ -106,23 +112,13 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
                         pass
                     elif limit_rows is not None and ii > limit_rows:
                         break
+                    elif data_to_add is None:
+                        outfile.write(line)
                     else:
-                        outfile.write(pre_pend_data + delimiter + hashlib.md5(line).hexdigest() + delimiter + line)
-            else:
-                for ii, line in enumerate(src_file):
-                    if ii == start_row:
-                        logging.info("Creating file_id for Every Row: {}".format(newfile))
-                        if has_header:
-                            outfile.write(header_to_add + delimiter + line)
-                            header_list_to_return = str(header_to_add + delimiter + line)
+                        outfile.write(data_to_add + line)
 
-                    if ii<start_row:
-                        pass
+                        print("header to add",data_to_add)
 
-                    elif limit_rows is not None and ii > limit_rows:
-                        break
-                    else:
-                        outfile.write(pre_pend_data + delimiter + line)
     header_list_to_return = header_list_to_return.split(str(delimiter))
 
     return header_added, header_list_to_return
@@ -834,7 +830,6 @@ def gen_data(col):
     import string
     import sqlalchemy
     import datetime
-    import operator
     from lorem.text import TextLorem
     from random_words import lorem_ipsum, RandomWords
     assert isinstance(col, sqlalchemy.Column)
@@ -883,7 +878,6 @@ def get_func(col):
     import string
     import sqlalchemy
     import datetime
-    import operator
     from lorem.text import TextLorem
     from random_words import lorem_ipsum, RandomWords
     # assert isinstance(col, sqlalchemy.Column)
@@ -936,7 +930,7 @@ def get_func(col):
 
     elif ('CHAR' in str(col.type)):
         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
-
+        import operator
         def gen_data():
             limit = min([3, operator.div(col.length, 5)])
             if col.length < 35:

@@ -20,16 +20,18 @@ class Test_db_utils_postgres(unittest.TestCase):
     DATA_SCHEMA = 'prey'
     DBPASSWORD = 'docker'
     DBPORT = 5432
-    SAMPLE_DATA_LINE_COUNT = 115
+    SAMPLE_DATA_LINE_COUNT = 15
     SAMPLE_DATA_TOTAL_TABLES = 5  # None will get all tables
     CLEAN_PREV = False
     GENERATE_SAMPLE_DATA = False
+    GENERATE_SAMPLE_DATA_W_HEADER = True
 
     SAMPLE_DATA_HAS_HEADER = False
-    GENERATE_SAMPLE_DATA_W_HEADER = True
-    GENERATE_CRC = True
+    GENERATE_CRC = False
+    GENERATE_FILE_ID= False
     LIMIT_ROWS = None
-    START_ROW = 1
+    START_ROW = 8
+    TRUNCATE_TABLE = True
 
     db = db_utils.dbconn.Connection(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA,
                                     password=DBPASSWORD,
@@ -146,8 +148,8 @@ class Test_db_utils_postgres(unittest.TestCase):
             foi_list.append(data_files.FilesOfInterest(
                 file_type='CSV', table_name=str(r.table_name), file_regex=str(r.regex),
                 file_delimiter=str(r.delimiter), column_list=None, schema_name=str(r.db_schema),
-                has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=True, append_crc=self.GENERATE_CRC,
-                limit_rows=self.LIMIT_ROWS, start_row=self.START_ROW))
+                has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=self.GENERATE_FILE_ID, append_crc=self.GENERATE_CRC,
+                limit_rows=self.LIMIT_ROWS, start_row=self.START_ROW,insert_option=self.TRUNCATE_TABLE))
 
         df.do_work(self.db, cleanup=False, limit_rows=None, import_type=df.IMPORT_VIA_PANDAS)
 

@@ -191,7 +191,7 @@ class DataFile:
             foi.current_working_abs_file_name,
             newfile,
             str(file_id),
-            foi.file_delimiter, foi.has_header,
+            foi.file_delimiter, foi.has_header,foi.append_file_id,
             foi.append_crc, db,foi.table_name,
             foi.limit_rows, foi.start_row
             )
@@ -743,9 +743,9 @@ class DataFile:
                     foi.column_list = db.get_columns(foi.table_name, foi.schema_name)
                     # logging.error("No Table Mapping Found Breaking Out:{}".format(self.curr_src_working_file))
 
-                    if foi.insert_option == 'Truncate':
+                    if foi.insert_option:
                         db.truncate_table(foi.schema_name, foi.table_name)
-                        # print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
+                        print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
                     else:
                         pass
                         # print("Appending  Data:{}.{}".format(foi.schema_name, foi.table_name))
@@ -755,7 +755,7 @@ class DataFile:
                     # column that has additional data
                     foi.current_working_abs_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
                     header_added = None
-                    if foi.append_file_id:
+                    if foi.append_file_id or foi.start_row>0:
                         # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
                         # print(self.working_path, "/appended/", self.curr_src_working_file)
                         ################################################################################################
