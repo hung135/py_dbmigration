@@ -19,23 +19,12 @@ def timer(f):
     return wrapper
 
 
-# function that will append the file id passed in to every row in a data file.
-# also adding fucntion to generate a checksum of that row for later use
-@timer
-def insert_into_file(file, newfile, text_append, delimiter, has_header=True, append_file_id=True, append_crc=False,
-                     db=None, table_name=None, limit_rows=None):
-    # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
-    header_added = False
-    # logging.debug("Appending File ID to File:{}".format(newfile))
-    header_added, header_list_returned = insert_each_line(file, newfile, text_append, delimiter, has_header,
-                                                          append_crc, db, table_name, limit_rows=limit_rows)
-    # return fullpath to new file
-    return newfile, header_added, header_list_returned
+
 
 
 # function that will append data to a data file
-def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True, append_crc=False, db=None,
-                     table_name=None, ignore_missing_columns=False, limit_rows=None):
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True,
+                     append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0):
     import os
     import errno
     import hashlib
@@ -64,26 +53,26 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
     if has_header is False and db is not None:
         import db_utils
         assert isinstance(db, db_utils.dbconn.Connection)
-        columns = db.get_columns(table_name, db.dbschema)
+        columns_from_db = db.get_columns(table_name, db.dbschema)
 
         # if column count in db is more than columns in files
         # we drop the trailing columns in the database
         # if files has more columns than db error and need to make column in database
-        for i, col in enumerate(columns):
+        for i, col in enumerate(columns_from_db):
             if col not in ['file_id', 'crc']:
                 column_list.append(col)
-
+        print("Column_list",column_list,columns_to_add_count)
         file_column_count = count_column_csv(orgfile) + columns_to_add_count
-        logging.info("Files Columns Count:{}\nDB Column Count:{}".format(file_column_count, len(columns)))
+        logging.info("\n\tFiles Columns Count:{}\n\tDB Column Count:{}".format(file_column_count, len(columns_from_db)))
         shrunk_list = []
-        if len(columns) > file_column_count:
+        if len(columns_from_db) > file_column_count:
             for i in range(file_column_count):
-                shrunk_list.append(columns[i])
+                shrunk_list.append(column_list[i])
             logging.warning("Database has more columns than File, Ignoring trailing columns:")
 
         if len(shrunk_list) > 0:
             column_list = shrunk_list
-
+        print("shrunk_list",shrunk_list)
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and has_header is set to false
         # this will assure file_id and crc will always be at the front of the file
@@ -105,30 +94,37 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             if append_crc:
 
                 for ii, line in enumerate(src_file):
-                    if ii == 0:
+
+
+                    if ii == start_row :
                         logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
                         if has_header:
                             outfile.write(header_to_add + delimiter + line)
                             header_list_to_return = str(header_to_add + delimiter + line)
 
+                    if ii<start_row:
+                        pass
                     elif limit_rows is not None and ii > limit_rows:
                         break
                     else:
                         outfile.write(pre_pend_data + delimiter + hashlib.md5(line).hexdigest() + delimiter + line)
             else:
                 for ii, line in enumerate(src_file):
-                    if ii == 0:
+                    if ii == start_row:
                         logging.info("Creating file_id for Every Row: {}".format(newfile))
                         if has_header:
                             outfile.write(header_to_add + delimiter + line)
                             header_list_to_return = str(header_to_add + delimiter + line)
+
+                    if ii<start_row:
+                        pass
+
                     elif limit_rows is not None and ii > limit_rows:
                         break
                     else:
                         outfile.write(pre_pend_data + delimiter + line)
-    print("-------",header_list_to_return)
     header_list_to_return = header_list_to_return.split(str(delimiter))
-    print("-----2--", header_list_to_return)
+
     return header_added, header_list_to_return
 
 
@@ -895,6 +891,7 @@ def get_func(col):
     if (str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']):
         def gen_data():
             return random.randint(1, 2000)
+        return gen_data
     elif (str(col.type) in ['BYTEA']):
         def gen_data():
 
@@ -910,7 +907,8 @@ def get_func(col):
     elif ('PRECISION' in str(col.type)
           or 'NUMERIC' in str(col.type)):
         def gen_data():
-            return random.randrange(1, 100)
+            x=random.randrange(1, 100)
+            return x
 
         return gen_data
 
@@ -941,7 +939,7 @@ def get_func(col):
 
         def gen_data():
             limit = min([3, operator.div(col.length, 5)])
-            if col.length < 20:
+            if col.length < 35:
                 data = ''.join(random.choice(string.letters) for x in range(col.length))
 
             else:
@@ -949,7 +947,7 @@ def get_func(col):
                 rw = RandomWords()
                 data = ' '.join(rw.random_words(count=word_count))
                 if (len(data) > col.length):
-                    print("get_func: Bada Data Generated", len(data), col.length, limit, data)
+                    print("get_func: Bad Data Generated", len(data), col.length, limit, data)
             return data
 
         return gen_data
@@ -970,12 +968,11 @@ def generate_data_sample(db, table_name, source_schema, file_name, line_count=10
     columns1 = db.get_all_columns_schema(source_schema, table_name)
     func_list = []
     column_names = []
+    column_names2 = []
     for c in columns1:
-        # print(c.autoincrement,"-------------")
         if c.autoincrement == 'NO' and c.column_name not in ['file_id', 'crc']:
             # setattr(c,'randfunc',get_func(c))
             func_list.append(get_func(c))
-
             column_names.append(c.column_name)
 
     if not os.path.exists(os.path.dirname(file_name)):
@@ -988,11 +985,11 @@ def generate_data_sample(db, table_name, source_schema, file_name, line_count=10
                 header = ','.join([c for c in column_names])
                 if include_header:
                     f.write(header + '\n')
-            for i, c in enumerate(func_list):
+            for i, func in enumerate(func_list):
                 if (i == 0):
-                    line += str(c())
+                    line += str(func())
                 else:
-                    line += "," + str(c())
+                    line += "," + str(func())
 
             # print(x, line)
             f.write(line + '\n')

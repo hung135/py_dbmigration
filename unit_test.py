@@ -6,6 +6,7 @@ from data_file_mgnt.data_files import *
 from migrate_utils import *
 import db_table
 import logging as log
+
 logging = log.getLogger()
 logging.setLevel(log.INFO)
 
@@ -21,12 +22,14 @@ class Test_db_utils_postgres(unittest.TestCase):
     DBPORT = 5432
     SAMPLE_DATA_LINE_COUNT = 115
     SAMPLE_DATA_TOTAL_TABLES = 5  # None will get all tables
-    CLEAN_PREV = True
-    GENERATE_SAMPLE_DATA = True
+    CLEAN_PREV = False
+    GENERATE_SAMPLE_DATA = False
 
-    SAMPLE_DATA_HAS_HEADER = True
+    SAMPLE_DATA_HAS_HEADER = False
     GENERATE_SAMPLE_DATA_W_HEADER = True
+    GENERATE_CRC = True
     LIMIT_ROWS = None
+    START_ROW = 1
 
     db = db_utils.dbconn.Connection(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA,
                                     password=DBPASSWORD,
@@ -38,7 +41,7 @@ class Test_db_utils_postgres(unittest.TestCase):
 
     # this should run first test functions run alphabetically
     def test_00_init(self):
-        print '# In function:', sys._getframe().f_code.co_name
+        print('# In function:', sys._getframe().f_code.co_name)
         self.db.execute('create schema if not exists {}'.format(
             self.DATA_SCHEMA))  # db.execute('create  database if not exists testing')
         tbl = self.db.get_table_list_via_query('prey')
@@ -48,12 +51,12 @@ class Test_db_utils_postgres(unittest.TestCase):
 
     # this should run last
     def test_zz_last(self):
-        print '# In function:', sys._getframe().f_code.co_name
+        print('# In function:', sys._getframe().f_code.co_name)
         # this should run last
 
     def test_01_clean_previous(self):
         import commands
-        print '# In function:', sys._getframe().f_code.co_name
+        print('# In function:', sys._getframe().f_code.co_name)
 
         if self.CLEAN_PREV is not False:
             for key, dir in self.dirs.items():
@@ -64,7 +67,8 @@ class Test_db_utils_postgres(unittest.TestCase):
             print("Skip Cleaning Previous")
 
     def test_02_record_keeper(self):
-        print '# In function:', sys._getframe().f_code.co_name
+
+        print('# In function:', sys._getframe().f_code.co_name)
 
         t = db_table.db_table_func.RecordKeeper(self.db, db_table.db_table_def.MetaSourceFiles)
         row = db_table.db_table_def.MetaSourceFiles(file_path='.', file_name='abc', file_name_data='',
@@ -99,10 +103,10 @@ class Test_db_utils_postgres(unittest.TestCase):
 
     @static_func.timer
     def test_07_import_data(self):
-        print '# In function:', sys._getframe().f_code.co_name
+        print('# In function:', sys._getframe().f_code.co_name)
 
     def test_08_walkdir_data_file(self):
-        print '# In function:', sys._getframe().f_code.co_name
+        print('# In function:', sys._getframe().f_code.co_name)
         # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
         print("Truncating Logging Tables:")
 
@@ -122,14 +126,8 @@ class Test_db_utils_postgres(unittest.TestCase):
             data_files.FilesOfInterest('ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
                                        parent_file_id=0))
 
-        foi_list.append(data_files.FilesOfInterest(
-            file_type='CSV', table_name='xref_user_product', file_regex=r'.*xref_user_product.*.csv',
-            file_delimiter=',',
-            column_list=None, schema_name=self.DATA_SCHEMA, has_header=self.SAMPLE_DATA_HAS_HEADER,
-            append_file_id=False, append_crc=False))
-        foi_list.append(data_files.FilesOfInterest(
-            file_type='CSV', table_name='schema_version', file_regex=r'.*schema_version.*.csv', file_delimiter=',',
-            column_list=None, schema_name=self.DATA_SCHEMA, has_header=self.SAMPLE_DATA_HAS_HEADER))
+
+
 
         df = data_files.DataFile(working_path=self.dirs["sample_working_dir"], db=self.db, foi_list=foi_list,
                                  parent_file_id=0)
@@ -138,8 +136,6 @@ class Test_db_utils_postgres(unittest.TestCase):
         self.assertGreater(len(result_set), 0, "No files Found: Check Regex Logic")
 
         t = db_table.db_table_func.RecordKeeper(self.db, table_def=db_table.db_table_def.TableFilesRegex)
-
-
 
         records = t.get_all_records()
 
@@ -150,8 +146,8 @@ class Test_db_utils_postgres(unittest.TestCase):
             foi_list.append(data_files.FilesOfInterest(
                 file_type='CSV', table_name=str(r.table_name), file_regex=str(r.regex),
                 file_delimiter=str(r.delimiter), column_list=None, schema_name=str(r.db_schema),
-                has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=False, append_crc=False,
-                limit_rows=self.LIMIT_ROWS))
+                has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=True, append_crc=self.GENERATE_CRC,
+                limit_rows=self.LIMIT_ROWS, start_row=self.START_ROW))
 
         df.do_work(self.db, cleanup=False, limit_rows=None, import_type=df.IMPORT_VIA_PANDAS)
 
