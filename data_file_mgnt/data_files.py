@@ -599,6 +599,7 @@ class DataFile:
                         ORDER BY process_start_dtm""".format(host)))
 
     # process_error HAS to equal 'sucess' to be marked as process
+    # todo handle error when file is not longer located in directory because it was moved
     def finish_work(self, db, status_dict=None, file_of_interest=None, vacuum=True):
 
         assert isinstance(db, db_utils.dbconn.Connection)
@@ -688,7 +689,11 @@ class DataFile:
                 logging.debug("Flagging Bad File: {}".format(self.curr_src_working_file))
                 logging.error(e)
                 self.curr_file_success = False
-                self.finish_work(db, status_dict=e, file_of_interest=None, vacuum=True)
+                status_dict = {}
+                status_dict['import_status'] = 'failed'
+                status_dict['error_msg'] = e
+
+                self.finish_work(db, status_dict=status_dict, file_of_interest=None, vacuum=True)
 
             else:
                 pass
