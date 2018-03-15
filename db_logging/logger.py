@@ -119,8 +119,6 @@ class ImportLogger:
     def print_records(self, num_of_records):
 
         result = self.session.query(self.LoadStatus).limit(num_of_records).all()
-        print(dir(result))
-        print("----------------------")
 
         for m in result:
             # pprint(dir(m))

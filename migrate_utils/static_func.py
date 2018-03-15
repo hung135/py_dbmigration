@@ -79,7 +79,6 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and has_header is set to false
         # this will assure file_id and crc will always be at the front of the file
-        print(len(column_list),"-----")
         if has_header is False and db is not None:
             column_list = delimiter.join(column_list)
             outfile.write(column_list + str(carriage_return))

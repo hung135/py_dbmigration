@@ -675,7 +675,7 @@ class DataFile:
                     row.total_files = 1
                     logging.debug(
                         "Counting File : {}".format(os.path.join(self.source_file_path, self.curr_src_working_file)))
-                    self.row_count = migrate_utils.static_func.count_csv(
+                    self.row_count,dummy = migrate_utils.static_func.count_csv(
                         os.path.join(self.source_file_path, self.curr_src_working_file))
                     row.total_rows = self.row_count
                     logging.debug("Counting File Result:{0}:".format(self.row_count))
@@ -694,7 +694,7 @@ class DataFile:
                 pass
             finally:
 
-                t.commit()
+                t.session.commit()
                 t.session.close()
 
         return self.curr_src_working_file
