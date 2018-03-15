@@ -18,7 +18,7 @@ import migrate_utils.static_func
 import logging as log
 
 logging = log.getLogger()
-logging.setLevel(log.INFO)
+logging.setLevel(log.DEBUG)
 
 
 # given 2 data frame this will find all the records do not exist in the
@@ -135,7 +135,6 @@ class DataFile:
         self.source_file_path = None
 
         self.curr_src_working_file = None
-        self.curr_file_success = True
         self.curr_pid = None
         self.host = None
         # the  files found walking the source directory based on the regex
@@ -148,7 +147,7 @@ class DataFile:
         self.embedded_id = 0
         self.work_file_type = 0
         self.total_files = 0
-
+        self.curr_file_success = False
         self.processed_file_count = 0
         self.total_data_file_count = 0
         self.foi_list = foi_list
@@ -369,7 +368,6 @@ class DataFile:
     # import one file at a time using client side copy command postgres
     # standard return will be sucesscode, rows_inserted,description
     def import_1file_client_side(self, foi, db):
-        import_status = 'success'
         error_msg = None
         additional_msg = None
         assert isinstance(foi, FilesOfInterest)
@@ -442,7 +440,6 @@ class DataFile:
             # if txt_out[0] > 0 and not ('ERROR' in txt_out[1]):
             if int(bash_error_code) > 0:
                 # self.flag_bad_file(db, self.source_file_path, self.curr_src_working_file, txt_out[1])
-                self.curr_file_success = False
                 error_msg = str(txt_out)[:2000]
                 error_code = bash_error_code
                 additional_msg = str(command_text)[:2000]
@@ -451,6 +448,7 @@ class DataFile:
                 self.processed_file_count += 1
                 i = txt_out.split()
                 self.rows_inserted = i[1]
+                import_status = 'success'
 
         else:
             logging.debug("Regex Not Match Skipping:{0}".format(foi.table_name))
@@ -481,7 +479,7 @@ class DataFile:
 
         full_file_path = None
         self.rows_inserted = 0
-        import_status = 'success'
+        import_status = None
         additional_info = None
         header = 'infer'
         names = None
@@ -531,12 +529,11 @@ class DataFile:
                 else:
                     self.rows_inserted = counter * chunk_size
 
-
+                import_status = 'success'
             except Exception as e:
 
                 cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
                 delta = diff_list(dataframe.columns.tolist(), cols_tb)
-                self.curr_file_success = False
                 cols = list(delta)
                 if len(cols) > 1:
                     cols = str(list(delta))
@@ -601,29 +598,32 @@ class DataFile:
                         WHERE  current_worker_host like '%{}%' and current_worker_host_pid is not null
                         ORDER BY process_start_dtm""".format(host)))
 
-    def finish_work(self, db, process_error=None, file_of_interest=None, vacuum=True):
+    # process_error HAS to equal 'sucess' to be marked as process
+    def finish_work(self, db, status_dict=None, file_of_interest=None, vacuum=True):
 
         assert isinstance(db, db_utils.dbconn.Connection)
         t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
         row.process_end_dtm = datetime.datetime.now()
-
-        if self.curr_file_success:
+        print("type status_dict",status_dict)
+        if status_dict is None:
+            row.file_process_state = 'Uknown ERR'
+        elif status_dict['import_status']== 'success':
             row.file_process_state = 'Processed'
             if file_of_interest is not None:
                 row.database_table = ".".join([str(file_of_interest.schema_name), str(file_of_interest.table_name)])
             row.rows_inserted = self.rows_inserted
-        elif process_error is not None and process_error != '':
-            row.last_error_msg = str(process_error)[:2000]
+            self.curr_file_success=True
+        else:
+            row.last_error_msg = str(status_dict)[:2000]
             row.file_process_state = 'Failed'
             row.rows_inserted = 0
-        else:
-            row.file_process_state = 'uknown err'
 
-        if vacuum and file_of_interest is not None and process_error is None:
+
+        if vacuum and file_of_interest is not None and status_dict is None:
             db.vacuum(file_of_interest.schema_name, file_of_interest.table_name)
         t.session.commit()
-
+        status_dict = None
         return t.session.close
 
     # @migrate_utils.static_func.timer
@@ -632,7 +632,7 @@ class DataFile:
         assert isinstance(self.foi_list, list)
         self.processed_file_count = 0
         self.total_data_file_count = 0
-        self.curr_file_success = True  # reset status of file
+        self.curr_file_success = False  # reset status of file
         t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
 
         # to ensure we lock 1 row to avoid race conditions
@@ -688,7 +688,7 @@ class DataFile:
                 logging.debug("Flagging Bad File: {}".format(self.curr_src_working_file))
                 logging.error(e)
                 self.curr_file_success = False
-                self.finish_work(db, process_error=e, file_of_interest=None, vacuum=True)
+                self.finish_work(db, status_dict=e, file_of_interest=None, vacuum=True)
 
             else:
                 pass
@@ -700,23 +700,31 @@ class DataFile:
         return self.curr_src_working_file
 
     def extract_file(self, db, full_file_path, abs_writable_path):
+        status_dict = {}
+        try:
+            self.files = zip_utils.unzipper.extract_file(full_file_path, abs_writable_path, False, self.work_file_type)
+            t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+            row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
+            self.total_files = len(self.files)
 
-        self.files = zip_utils.unzipper.extract_file(full_file_path, abs_writable_path, False, self.work_file_type)
-        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
-        row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
-        self.total_files = len(self.files)
-
-        row.total_files = self.total_files
-        t.commit()
+            row.total_files = self.total_files
+            t.commit()
 
         # We walk the tmp dir and add those data files to list of to do
-        new_src_dir = abs_writable_path
-        logging.debug("WALKING EXTRACTED FILES:\src_dir:{0}\nworking_dir:{1}:".format(new_src_dir, self.working_path))
+            new_src_dir = abs_writable_path
+            logging.debug("WALKING EXTRACTED FILES:\src_dir:{0}\nworking_dir:{1}:".format(new_src_dir, self.working_path))
 
-        file_table_map = [FilesOfInterest('DATA', '', file_path=abs_writable_path, file_name_data_regex=None,
+            file_table_map = [FilesOfInterest('DATA', '', file_path=abs_writable_path, file_name_data_regex=None,
                                           parent_file_id=self.meta_source_file_id)]
 
-        DataFile(new_src_dir, db, file_table_map, parent_file_id=self.meta_source_file_id)
+            DataFile(new_src_dir, db, file_table_map, parent_file_id=self.meta_source_file_id)
+        except Exception as e:
+            status_dict['import_status'] = 'failed'
+            status_dict['error_msg'] = 'Error During Unziping File'
+        else:
+            status_dict['import_status'] = 'success'
+
+        return status_dict
 
     # Do work will query the meta source table for a record
     # It will stamp that record with this pid and ip address
@@ -737,7 +745,7 @@ class DataFile:
 
                 foi = get_mapped_table(self.curr_src_working_file, self.foi_list)
 
-                # logging.debug("Getting Mapped table:{}\n{}".format(self.curr_src_working_file, x))
+                logging.debug("Getting Mapped table:{}\n{}".format(self.curr_src_working_file, foi))
                 if foi is not None:
                     # we found a table that is mapped to file of interest so we
                     foi.column_list = db.get_columns(foi.table_name, foi.schema_name)
@@ -855,19 +863,22 @@ class DataFile:
                             logging_handler.session.commit()
                             logging_handler.session.close()
                         finally:
+                            assert isinstance(status_dict,dict)
 
-                            df.finish_work(db, process_error=status_dict['error_msg'], file_of_interest=foi,
+                            df.finish_work(db, status_dict=status_dict, file_of_interest=foi,
                                            vacuum=True)
 
                 # no matching pattern for regext and db_tablename
                 else:
-
-                    df.finish_work(db, process_error="No Pattern Mapping Found", file_of_interest=foi, vacuum=vacuum)
+                    status_dict={}
+                    status_dict['import_status'] = 'failed'
+                    status_dict['error_msg'] = 'No Pattern Mapping Found'
+                    df.finish_work(db, status_dict=status_dict, file_of_interest=foi, vacuum=vacuum)
             # Process Compressed files
             else:
                 full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
 
-                self.extract_file(db, full_file_name, os.path.join(self.working_path, self.curr_src_working_file))
-                self.finish_work(db, vacuum=vacuum)
+                status_dict=self.extract_file(db, full_file_name, os.path.join(self.working_path, self.curr_src_working_file))
+                self.finish_work(db, status_dict=status_dict,vacuum=vacuum)
             if cleanup:
                 self.cleanup_files()  # import_files(files,loan_acquisition)

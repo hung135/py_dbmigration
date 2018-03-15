@@ -8,7 +8,7 @@ import db_table
 import logging as log
 
 logging = log.getLogger()
-logging.setLevel(log.INFO)
+logging.setLevel(log.DEBUG)
 
 
 class Test_db_utils_postgres(unittest.TestCase):
@@ -17,20 +17,20 @@ class Test_db_utils_postgres(unittest.TestCase):
     DATABASE = 'postgres'
     USERID = 'postgres'
     DBTYPE = 'POSTGRES'
-    DATA_SCHEMA = 'prey'
+    DATA_SCHEMA = 'test'
     DBPASSWORD = 'docker'
     DBPORT = 5432
     SAMPLE_DATA_LINE_COUNT = 15
-    SAMPLE_DATA_TOTAL_TABLES = 5  # None will get all tables
+    SAMPLE_DATA_TOTAL_TABLES = 15  # None will get all tables
     CLEAN_PREV = False
-    GENERATE_SAMPLE_DATA = False
-    GENERATE_SAMPLE_DATA_W_HEADER = True
+    GENERATE_SAMPLE_DATA =False
+    GENERATE_SAMPLE_DATA_W_HEADER = False
 
     SAMPLE_DATA_HAS_HEADER = False
     GENERATE_CRC = False
     GENERATE_FILE_ID= False
     LIMIT_ROWS = None
-    START_ROW = 8
+    START_ROW = 2
     TRUNCATE_TABLE = True
 
     db = db_utils.dbconn.Connection(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA,
@@ -46,10 +46,10 @@ class Test_db_utils_postgres(unittest.TestCase):
         print('# In function:', sys._getframe().f_code.co_name)
         self.db.execute('create schema if not exists {}'.format(
             self.DATA_SCHEMA))  # db.execute('create  database if not exists testing')
-        tbl = self.db.get_table_list_via_query('prey')
+        tbl = self.db.get_table_list_via_query(self.DATA_SCHEMA)
         for table in tbl:
-            migrate_utils.static_func.add_column(self.db, 'prey.' + table, 'crc', 'uuid')
-            migrate_utils.static_func.add_column(self.db, 'prey.' + table, 'file_id', 'Integer')
+            migrate_utils.static_func.add_column(self.db, self.DATA_SCHEMA + table, 'crc', 'uuid')
+            migrate_utils.static_func.add_column(self.db, self.DATA_SCHEMA + table, 'file_id', 'Integer')
 
     # this should run last
     def test_zz_last(self):
