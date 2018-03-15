@@ -1062,12 +1062,15 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
 def count_column_csv(full_file_path):
     import pandas
 
-    chunksize = 1
-    chunk = None
-    for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize)):
-        # just run through the file to get number of chucks
-        return len(chunk.columns)
-
+    try:
+        chunksize = 1
+        chunk = None
+        for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize)):
+            # just run through the file to get number of chucks
+            return len(chunk.columns)
+    except Exception as e:
+        pass
+    return 0
 
 # this will read the first line of a file and determin if the file has a windows carriage return or unix
 def check_file_for_carriage_return(full_file_path):

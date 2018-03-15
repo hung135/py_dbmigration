@@ -685,10 +685,9 @@ class DataFile:
             except Exception as e:
                 # print(type(e))
                 row.last_error_msg = str(e)[:2000]
-                self.curr_src_working_file = None
+
                 logging.debug("Flagging Bad File: {}".format(self.curr_src_working_file))
                 logging.error(e)
-                self.curr_file_success = False
                 status_dict = {}
                 status_dict['import_status'] = 'failed'
                 status_dict['error_msg'] = e
