@@ -73,7 +73,7 @@ class RecordKeeper():
 
         if commit:
             try:
-                self.commit()
+                self.session.commit()
 
             except Exception as e:
                 logging.error(e)

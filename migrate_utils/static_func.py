@@ -33,6 +33,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
     return_char_unix = '\n'
     return_char_windows = '\r\n'
 
+
     carriage_return = check_file_for_carriage_return(orgfile)
 
     if not os.path.exists(os.path.dirname(newfile)):
@@ -93,14 +94,15 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             # making version of very similar logic so we don't have to check for append_cc on each row to do checksum
             # take care of the header first
             # if the file doesn't have a header and we have a header added it
-            data_to_add=None
+            file_id_to_add=''
             if append_file_id:
-                data_to_add+=pre_pend_data+delimiter
+                file_id_to_add+=pre_pend_data+delimiter
 
             for ii, line in enumerate(src_file):
-                    data=None
+                    # local variable to accrue data before we write file
+                    data_to_prepend=file_id_to_add
                     if append_crc:
-                        data+=data_to_add+str(hashlib.md5(line).hexdigest())+delimiter
+                        data_to_prepend+=str(hashlib.md5(line).hexdigest())+delimiter
 
                     if ii == start_row :
                         logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
@@ -112,12 +114,9 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
                         pass
                     elif limit_rows is not None and ii > limit_rows:
                         break
-                    elif data_to_add is None:
-                        outfile.write(line)
                     else:
-                        outfile.write(data_to_add + line)
+                        outfile.write(data_to_prepend + line)
 
-                        print("header to add",data_to_add)
 
     header_list_to_return = header_list_to_return.split(str(delimiter))
 

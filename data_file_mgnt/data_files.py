@@ -270,6 +270,7 @@ class DataFile:
                                                         parent_file_id=parent_file_id)
             t.add_record(row, commit=True)
 
+
     def dump_delimited_file(self, db, file_name, delimiter):
         shell_command = """psql -c "copy data_table FROM '{0}}' WITH DELIMITER AS '{1}' CSV QUOTE AS '"' """
         shell_command.format(file_name, delimiter)
@@ -382,9 +383,16 @@ class DataFile:
             # logging.debug("Into Import:{0}".format(dest.table_name))
             # if re.match(dest.regex, dest.full_file_name):
             cols = (foi.column_list)
+
+
             if foi.header_list_returned is not None:
+
                 cols = ','.join(foi.header_list_returned)
-            print("xxxx", type(foi.header_list_returned), type(foi.column_list))
+            else:
+                # remove file_id in the case we got headers from db
+
+                cols = ','.join(cols)
+
 
             copy_string = None
             if foi.column_list is not None:
@@ -422,7 +430,6 @@ class DataFile:
                 header,
                 foi.encoding,
                 copy_command_connection_flags)
-
             logging.info("Copy Command STARTED:{0}".format(foi.table_name))
 
             # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -541,6 +548,7 @@ class DataFile:
                 error_msg = str(e)[:256]
                 import_status = 'failed'
                 additional_info = (','.join(cols) + str(e))[:2000]
+                db.commit()
 
         status_dict = {}
         status_dict['rows_inserted'] = self.rows_inserted
@@ -609,7 +617,7 @@ class DataFile:
         print("type status_dict",status_dict)
         if status_dict is None:
             row.file_process_state = 'Uknown ERR'
-        elif status_dict['import_status']== 'success':
+        elif status_dict.get('import_status',None)== 'success':
             row.file_process_state = 'Processed'
             if file_of_interest is not None:
                 row.database_table = ".".join([str(file_of_interest.schema_name), str(file_of_interest.table_name)])
@@ -625,7 +633,7 @@ class DataFile:
             db.vacuum(file_of_interest.schema_name, file_of_interest.table_name)
         t.session.commit()
         status_dict = None
-        return t.session.close
+        return t.session.close()
 
     # @migrate_utils.static_func.timer
     def get_work(self, db):
@@ -644,7 +652,7 @@ class DataFile:
                         FROM {0}.meta_source_files WHERE  current_worker_host is null order by
                         id asc, file_size asc, file_name_data desc ,file_type asc limit 1)
                     """).format(db_table.db_table_def.MetaSourceFiles.DbSchema, self.host, self.curr_pid))
-        t.commit()
+        t.session.commit()
 
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,
                            db_table.db_table_def.MetaSourceFiles.current_worker_host_pid == self.curr_pid,
@@ -670,7 +678,7 @@ class DataFile:
                 self.file_size = os.path.getsize(self.source_file_path + '/' + self.curr_src_working_file)
 
                 row.file_size = self.file_size
-                t.commit()
+                t.session.commit()
                 if self.work_file_type in ('DATA', 'CSV') and self.row_count == 0:
                     # logging.debug("Working DATAFILE:{0}:".format(self.curr_src_working_file))
                     row.total_files = 1
@@ -712,7 +720,7 @@ class DataFile:
             self.total_files = len(self.files)
 
             row.total_files = self.total_files
-            t.commit()
+            t.session.commit()
 
         # We walk the tmp dir and add those data files to list of to do
             new_src_dir = abs_writable_path
@@ -753,6 +761,11 @@ class DataFile:
                 if foi is not None:
                     # we found a table that is mapped to file of interest so we
                     foi.column_list = db.get_columns(foi.table_name, foi.schema_name)
+                    # if 2 column_names are reserved file_id and crc
+                    if foi.append_file_id is False:
+                        foi.column_list.remove('file_id')
+                    if foi.append_crc is False:
+                        foi.column_list.remove('crc')
                     # logging.error("No Table Mapping Found Breaking Out:{}".format(self.curr_src_working_file))
 
                     if foi.insert_option:
@@ -767,7 +780,7 @@ class DataFile:
                     # column that has additional data
                     foi.current_working_abs_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
                     header_added = None
-                    if foi.append_file_id or foi.start_row>0:
+                    if foi.append_file_id or foi.append_crc or foi.start_row>0:
                         # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
                         # print(self.working_path, "/appended/", self.curr_src_working_file)
                         ################################################################################################
@@ -775,7 +788,8 @@ class DataFile:
                         ################################################################################################
                         foi.working_path = os.path.dirname(new_file_name)
                         foi.current_working_abs_file_name = new_file_name
-
+                    else:
+                        print("not inserting anything to file",foi.append_crc,foi.append_file_id)
                     if header_added is not None:
                         foi.header_added = header_added
                         foi.header_list_returned = header_list_returned

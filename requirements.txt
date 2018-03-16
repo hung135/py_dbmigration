@@ -14,3 +14,4 @@ inflection
 reflection
 lorem
 RandomWords
+nose_parameterized
