@@ -386,6 +386,14 @@ def show_users(db):
         ;""".format(db._database_name, db.dbschema)
     return db.query(sql)
 
+def print_padded(pad_size=10,*args):
+    import sys
+    #sys.stdout.write('.')
+    for arg in args:
+        sys.stdout.write(str(arg).ljust(pad_size))
+    sys.stdout.write('\n')
+    sys.stdout.flush()
+
 
 def appdend_to_readme(db, folder=None, targetschema=None):
     with open("../README.md") as f:
@@ -1090,10 +1098,22 @@ def check_file_for_carriage_return(full_file_path):
 
 
 # @timer
-def count_csv(full_file_path):
+def validate_csv(full_file_path):
     import pandas
     count_size = 0
-    starttime = datetime.datetime.now()
+
+
+    chunksize = 10 ** 5
+    chunk = None
+    column_count = 0
+    for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize)):
+        for l in chunk:
+            print()
+    print"xxxxx",len(l)
+
+# @timer
+def count_csv(full_file_path):
+    import pandas
 
     logging.debug("Counting File: {}".format(datetime.datetime.now()))
     chunksize = 10 ** 5

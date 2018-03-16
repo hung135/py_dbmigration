@@ -476,11 +476,14 @@ class Connection:
         """
         # type: (str, str) -> list
         import sqlalchemy
-
-        con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
-        table = sqlalchemy.Table(table_name, meta, autoload=True, autoload_with=con)
-        column_list = [c.name for c in table.columns]
-        return list(column_list)
+        try:
+            con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
+            table = sqlalchemy.Table(table_name, meta, autoload=True, autoload_with=con)
+            column_list = [c.name for c in table.columns]
+            return list(column_list)
+        except:
+            logging.warning("No Columns found when trying to get Column List: Returning None")
+            return []
 
     # returns a list of table dict
     # @migrate_utils.static_func.timer

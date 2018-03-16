@@ -105,7 +105,7 @@ class Test_db_utils_postgres(unittest.TestCase):
                                                         )
 
 
-    @unittest.skip("Skipping for now")
+    #@unittest.skip("Skipping for now")
     def test_08_walkdir_data_file(self):
         print('# In function:', sys._getframe().f_code.co_name)
         # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
@@ -142,7 +142,7 @@ class Test_db_utils_postgres(unittest.TestCase):
             assert isinstance(r, db_table.db_table_def.TableFilesRegex)
 
             foi_list.append(data_files.FilesOfInterest(
-                file_type='CSV', table_name=str(r.table_name), file_regex=str(r.regex),
+                file_type='CSV', table_name=str("tbl_1"), file_regex=str(r.regex),
                 file_delimiter=str(r.delimiter), column_list=None, schema_name=str(r.db_schema),
                 has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=self.GENERATE_FILE_ID,
                 append_crc=self.GENERATE_CRC,
@@ -169,7 +169,7 @@ class Test_db_utils_postgres(unittest.TestCase):
                                        parent_file_id=0))
         return foi_list
 
-    @static_func.timer
+    @unittest.skip("skipping")
     def test_07_import_data(self):
         print('# In function:', sys._getframe().f_code.co_name)
 
@@ -184,8 +184,8 @@ class Test_db_utils_postgres(unittest.TestCase):
         GENERATE_FILE_ID = [  False, True]
         LIMIT_ROWS = [None, 10]
         START_ROW = [0]
-        TRUNCATE_TABLE = [True]
-        IMPORT_METHOD = [data_files.DataFile.IMPORT_VIA_PANDAS,data_files.DataFile.IMPORT_VIA_CLIENT_CLI]
+        TRUNCATE_TABLE = [True, False]
+        IMPORT_METHOD = [data_files.DataFile.IMPORT_VIA_PANDAS] #,data_files.DataFile.IMPORT_VIA_CLIENT_CLI]
 
         x = itertools.product(
             #SAMPLE_DATA_HAS_HEADER,
@@ -205,20 +205,21 @@ class Test_db_utils_postgres(unittest.TestCase):
             _TRUNCATE_TABLE,\
             _IMPORT_METHOD= params
             print('# In function:', sys._getframe().f_code.co_name)
-            print("---------",
+
+            migrate_utils.static_func.print_padded(20,
                   '_GENERATE_CRC', \
                   '_GENERATE_FILE_ID', \
                   '_LIMIT_ROWS', \
                   '_START_ROW', \
                   '_TRUNCATE_TABLE', \
-                  '_IMPORT_METHOD', "-----------")
-            print("---------",
+                  '_IMPORT_METHOD')
+            migrate_utils.static_func.print_padded(20,
             _GENERATE_CRC,\
             _GENERATE_FILE_ID,\
             _LIMIT_ROWS,\
             _START_ROW,\
             _TRUNCATE_TABLE,\
-            _IMPORT_METHOD,"-----------")
+            _IMPORT_METHOD)
             self.clean_db()
             foi_list=self.make_foi()
             df = data_files.DataFile(working_path=self.dirs["sample_working_dir"], db=self.db, foi_list=foi_list,
@@ -238,5 +239,9 @@ class Test_db_utils_postgres(unittest.TestCase):
             df.do_work(self.db, cleanup=False, limit_rows=None, import_type=_IMPORT_METHOD)
 
 
+
+    def test_validate_csv(self):
+        migrate_utils.static_func.validate_csv(full_file_path="/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data/test_state2018.csv")
+        pass
 if __name__ == '__main__':
     unittest.main()

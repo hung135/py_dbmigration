@@ -515,11 +515,12 @@ class DataFile:
                         names = foi.column_list
 
                 logging.debug(sys._getframe().f_code.co_name + " : " + foi.current_working_abs_file_name)
+                dataframe_columns=''
                 for counter, dataframe in enumerate(
                         pd.read_csv(foi.current_working_abs_file_name, delimiter=foi.file_delimiter, nrows=limit_rows,
                                     quotechar='"', chunksize=chunk_size, header=header)):
 
-                    if not foi.has_header:
+                    if not foi.has_header and len(foi.column_list)>0:
                         dataframe.columns = map(str,
                                                 # foi.column_list
                                                 names
@@ -537,10 +538,11 @@ class DataFile:
                     self.rows_inserted = counter * chunk_size
 
                 import_status = 'success'
+                dataframe_columns=dataframe.columns.tolist()
             except Exception as e:
 
                 cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
-                delta = diff_list(dataframe.columns.tolist(), cols_tb)
+                delta = diff_list(dataframe_columns, cols_tb)
                 cols = list(delta)
                 if len(cols) > 1:
                     cols = str(list(delta))
@@ -762,13 +764,17 @@ class DataFile:
                     # we found a table that is mapped to file of interest so we
                     foi.column_list = db.get_columns(foi.table_name, foi.schema_name)
                     # if 2 column_names are reserved file_id and crc
-                    if foi.append_file_id is False:
-                        foi.column_list.remove('file_id')
-                    if foi.append_crc is False:
-                        foi.column_list.remove('crc')
-                    # logging.error("No Table Mapping Found Breaking Out:{}".format(self.curr_src_working_file))
 
-                    if foi.insert_option:
+                    try:
+                        # Todo Come back and clean this up
+                        if foi.append_file_id is False:
+                            foi.column_list.remove('file_id')
+                        if foi.append_crc is False:
+                            foi.column_list.remove('crc')
+                        # logging.error("No Table Mapping Found Breaking Out:{}".format(self.curr_src_working_file))
+                    except:
+                        pass
+                    if foi.insert_option and len(foi.column_list)>0:
                         db.truncate_table(foi.schema_name, foi.table_name)
                         print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
                     else:
