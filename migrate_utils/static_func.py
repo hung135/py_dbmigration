@@ -1098,6 +1098,19 @@ def check_file_for_carriage_return(full_file_path):
 
 
 # @timer
+def profile_csv_directory(path,file_pattern=None):
+    import os
+    path = './_sample_data'
+    file_list=[]
+    # traverse root directory, and list directories as dirs and files as files
+    for root, dirs, files in os.walk(os.path.abspath(path)):
+        path = root.split(os.sep)
+        print((len(path) - 1) * '---', os.path.basename(root))
+        for file in files:
+            print(root, file)
+            file_list.append(os.path.join(root,file))
+    for f in file_list:
+        profile_csv(f)
 
 def profile_csv(full_file_path):
     """
@@ -1106,7 +1119,7 @@ def profile_csv(full_file_path):
     :param full_file_path:
     :return: dict
     """
-    
+
     import pandas.core.series
     count_size = 0
     chunksize = 10 ** 5
@@ -1118,14 +1131,21 @@ def profile_csv(full_file_path):
         #print(chunk)
 
         for j,col in enumerate(chunk.iteritems()):
-            x=col[1]
-            x_len=x.map(len).max()
-            assert isinstance(x,pandas.core.series.Series)
+            x = col[1]
+            #assert isinstance(x,pandas.core.series.Series)
+            x_len=0
+
+            if x.dtype=='object':
+                try:
+                    x_len=x.map(len).max()
+                except:
+                    x_len='numeric'
             #print(x.map(len).max(),x.name)
             y=column_profile.get(x.name,0)
-            if x_len>y:
+            if x_len>=y:
                 column_profile[x.name]=x_len
-
+    print(column_profile)
+    print(full_file_path)
     return (column_profile)
 
 # @timer

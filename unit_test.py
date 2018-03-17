@@ -241,8 +241,8 @@ class Test_db_utils_postgres(unittest.TestCase):
 
 
     def test_profile_csv(self):
-        migrate_utils.static_func.profile_csv(full_file_path="/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data/test_city2018.csv")
-        migrate_utils.static_func.profile_csv(full_file_path="/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data/test_custom_field2018.csv")
+        #migrate_utils.static_func.profile_csv(full_file_path="/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data/test_city2018.csv")
+        migrate_utils.static_func.profile_csv_directory("/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data")
         pass
 if __name__ == '__main__':
     unittest.main()
