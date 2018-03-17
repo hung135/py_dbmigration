@@ -20,11 +20,11 @@ class Test_db_utils_postgres(unittest.TestCase):
     DATA_SCHEMA = 'test'
     DBPASSWORD = 'docker'
     DBPORT = 5432
-    SAMPLE_DATA_LINE_COUNT = 15
-    SAMPLE_DATA_TOTAL_TABLES = 15  # None will get all tables
-    CLEAN_PREV = True
-    GENERATE_SAMPLE_DATA = True
-    GENERATE_SAMPLE_DATA_W_HEADER = False
+    SAMPLE_DATA_LINE_COUNT = 1500
+    SAMPLE_DATA_TOTAL_TABLES = 8  # None will get all tables
+    CLEAN_PREV = False
+    GENERATE_SAMPLE_DATA = False
+    GENERATE_SAMPLE_DATA_W_HEADER = True
 
     SAMPLE_DATA_HAS_HEADER = False
     GENERATE_CRC = False
@@ -179,7 +179,7 @@ class Test_db_utils_postgres(unittest.TestCase):
         #SAMPLE_DATA_HAS_HEADER = [True, False]
         CLEAN_PREV = [True, False]
         GENERATE_SAMPLE_DATA = [True, False]
-        GENERATE_SAMPLE_DATA_W_HEADER = [True, False]
+        GENERATE_SAMPLE_DATA_W_HEADER = [True]
         GENERATE_CRC = [ False, True]
         GENERATE_FILE_ID = [  False, True]
         LIMIT_ROWS = [None, 10]
@@ -240,8 +240,9 @@ class Test_db_utils_postgres(unittest.TestCase):
 
 
 
-    def test_validate_csv(self):
-        migrate_utils.static_func.validate_csv(full_file_path="/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data/test_state2018.csv")
+    def test_profile_csv(self):
+        migrate_utils.static_func.profile_csv(full_file_path="/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data/test_city2018.csv")
+        migrate_utils.static_func.profile_csv(full_file_path="/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data/test_custom_field2018.csv")
         pass
 if __name__ == '__main__':
     unittest.main()

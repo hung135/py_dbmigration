@@ -518,7 +518,7 @@ class DataFile:
                 dataframe_columns=''
                 for counter, dataframe in enumerate(
                         pd.read_csv(foi.current_working_abs_file_name, delimiter=foi.file_delimiter, nrows=limit_rows,
-                                    quotechar='"', chunksize=chunk_size, header=header)):
+                                    quotechar='"', chunksize=chunk_size, header=header,dtype=object,skiprows=foi.start_row)):
 
                     if not foi.has_header and len(foi.column_list)>0:
                         dataframe.columns = map(str,

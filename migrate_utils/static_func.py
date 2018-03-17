@@ -1098,18 +1098,35 @@ def check_file_for_carriage_return(full_file_path):
 
 
 # @timer
-def validate_csv(full_file_path):
-    import pandas
+
+def profile_csv(full_file_path):
+    """
+    Given a CSV with a header:
+    The function will find the max len for each column
+    :param full_file_path:
+    :return: dict
+    """
+    
+    import pandas.core.series
     count_size = 0
-
-
     chunksize = 10 ** 5
-    chunk = None
-    column_count = 0
-    for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize)):
-        for l in chunk:
-            print()
-    print"xxxxx",len(l)
+
+    column_profile={}
+    for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,dtype=object)):
+
+        assert isinstance(chunk,pandas.core.frame.DataFrame)
+        #print(chunk)
+
+        for j,col in enumerate(chunk.iteritems()):
+            x=col[1]
+            x_len=x.map(len).max()
+            assert isinstance(x,pandas.core.series.Series)
+            #print(x.map(len).max(),x.name)
+            y=column_profile.get(x.name,0)
+            if x_len>y:
+                column_profile[x.name]=x_len
+
+    return (column_profile)
 
 # @timer
 def count_csv(full_file_path):
