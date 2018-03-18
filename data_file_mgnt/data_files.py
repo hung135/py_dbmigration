@@ -78,6 +78,7 @@ class FilesOfInterest:
         self.header_added = None
         self.start_row = start_row
 
+    def __str__(self):
 
 
 def get_mapped_table(file_name, foi_list):
@@ -113,6 +114,7 @@ class DataFile:
     FILE_TYPE_DATA = 'DATA'
     IMPORT_VIA_PANDAS = 'IMPORT_VIA_PANDAS'
     IMPORT_VIA_CLIENT_CLI = 'IMPORT_VIA_CLIENT_CLI'
+    IMPORT_VIA_CUSTOM_FUNC = 'IMPORT_VIA_CUSTOM_FUNC'
     working_path = None
     db = None
     file_pattern_list = None
@@ -482,6 +484,7 @@ class DataFile:
     # leveraging pandas libraries to read csv into a dataframe and let pandas
     # insert into database
     # @migrate_utils.static_func.timer
+    @migrate_utils.static_func.dump_params
     def import_file_pandas(self, foi, db, lowercase=True, limit_rows=None, chunk_size=10000):
 
         full_file_path = None
@@ -817,7 +820,8 @@ class DataFile:
                                 ####################################################################################
                                 status_dict = self.import_1file_client_side(foi, db)
                                 ####################################################################################
-
+                            elif import_type == self.IMPORT_VIA_CUSTOM_FUNC:
+                                status_dict == self.CUSTOM_FUNC()
                             else:
                                 raise Exception(
                                     "No Import Method Provided: \n{}\n{}".format(

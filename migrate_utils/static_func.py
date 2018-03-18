@@ -20,9 +20,36 @@ def timer(f):
 
 
 
+# decorator function to time a function
+def dump_params(f):
+    import sys
+    def wrapper(*args, **kwargs):
+        #print('# In function:', sys._getframe().f_code.co_name)
+
+        print("Fucntion Name",f.__name__)
+        #print(f.__code__.co_argcount)
+        print(f.__code__.co_varnames[:f.func_code.co_argcount])
+        fields =(f.__code__.co_varnames[:f.func_code.co_argcount])
+        #print(dir(f.__code__))
+        #for a in fields:
+        #    print(a,kwargs.get(a,''))
+
+        for x in kwargs:
+            print(x,"kwargs")
+
+        for arg in zip(fields,args):
+            print( str(arg))
+        x = f(*args, **kwargs)
+
+
+
+        return x
+
+    return wrapper
 
 
 # function that will append data to a data file
+@dump_params
 def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True,append_file_id=True,
                      append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0):
     import os
