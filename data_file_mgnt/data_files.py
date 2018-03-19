@@ -47,7 +47,7 @@ class FilesOfInterest:
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
                  has_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
                  file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF-8',
-                 append_crc=False, limit_rows=None, start_row=0):
+                 append_crc=False, limit_rows=None, start_row=0,header_row=0):
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -77,6 +77,7 @@ class FilesOfInterest:
         self.header_list_returned = None
         self.header_added = None
         self.start_row = start_row
+        self.header_row=header_row
 
     # def __str__(self):
 
@@ -492,7 +493,7 @@ class DataFile:
         self.rows_inserted = 0
         import_status = None
         additional_info = None
-        header = 'infer'
+
         names = None
         error_msg = None
         if db is not None:
@@ -506,23 +507,21 @@ class DataFile:
 
                 if limit_rows is not None:
                     logging.debug("Pandas Read Limit SET: {0}:ROWS".format(limit_rows))
-                if foi.has_header:
-                    header = 'infer'
-                    names = None
+
+                header = self.header_row
+                # names = ','.join(foi.column_list)
+                # names = ','.join(foi.header_list_returned)
+                if foi.header_list_returned is not None:
+                    names = foi.header_list_returned
                 else:
-                    header = 0
-                    # names = ','.join(foi.column_list)
-                    # names = ','.join(foi.header_list_returned)
-                    if foi.header_list_returned is not None:
-                        names = foi.header_list_returned
-                    else:
-                        names = foi.column_list
+                    names = foi.column_list
 
                 logging.debug(sys._getframe().f_code.co_name + " : " + foi.current_working_abs_file_name)
                 dataframe_columns=''
                 for counter, dataframe in enumerate(
                         pd.read_csv(foi.current_working_abs_file_name, delimiter=foi.file_delimiter, nrows=limit_rows,
-                                    quotechar='"', chunksize=chunk_size, header=header,dtype=object,skiprows=foi.start_row)):
+                                    quotechar='"', chunksize=chunk_size, header=header,index_col=False,
+                                    dtype=object,skiprows=foi.start_row)):
 
                     if not foi.has_header and len(foi.column_list)>0:
                         dataframe.columns = map(str,
