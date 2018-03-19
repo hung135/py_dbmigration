@@ -494,6 +494,7 @@ class DataFile:
         import_status = None
         additional_info = None
         dataframe_columns=''
+
         names = None
         error_msg = None
         if db is not None:
@@ -627,6 +628,7 @@ class DataFile:
             if file_of_interest is not None:
                 row.database_table = ".".join([str(file_of_interest.schema_name), str(file_of_interest.table_name)])
             row.rows_inserted = self.rows_inserted
+            row.last_error_msg = ''
             self.curr_file_success=True
         else:
             row.last_error_msg = str(status_dict)[:2000]
@@ -860,7 +862,7 @@ class DataFile:
                                     file_path=foi.current_working_abs_file_name,
                                     records_inserted=status_dict['rows_inserted'],
                                     success=1, start_date=datetime.datetime.now(),
-                                    end_date=datetime.datetime.now(),
+                                    end_date=datetime.datetime.now(),last_error_msg='',
                                     previous_record_count=0, current_record_count=0,
                                     records_updated=0,
                                     records_deleted=0, created_by=db._userid,

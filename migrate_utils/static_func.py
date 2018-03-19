@@ -1203,10 +1203,10 @@ def count_csv(full_file_path):
 
 def count_file_lines_wc(self, file):
     import commands
-    command_output = commands.getstatusoutput("wc -l '{}'".format(file))
-    logging.debug("FileName:{0} RowCount:{1}".format(file, command_output))
+    record_count,file_name = commands.getstatusoutput("wc -l '{}'".format(file))
+    logging.debug("FileName:{0} RowCount:{1}".format(file, record_count))
 
-    return command_output
+    return record_count
 
 
 # adds a column to a table in datbase
