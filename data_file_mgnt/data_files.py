@@ -486,14 +486,14 @@ class DataFile:
     # leveraging pandas libraries to read csv into a dataframe and let pandas
     # insert into database
     # @migrate_utils.static_func.timer
-    @migrate_utils.static_func.dump_params
+    #@migrate_utils.static_func.dump_params
     def import_file_pandas(self, foi, db, lowercase=True, limit_rows=None, chunk_size=10000):
 
         full_file_path = None
         self.rows_inserted = 0
         import_status = None
         additional_info = None
-
+        dataframe_columns=''
         names = None
         error_msg = None
         if db is not None:
@@ -508,7 +508,7 @@ class DataFile:
                 if limit_rows is not None:
                     logging.debug("Pandas Read Limit SET: {0}:ROWS".format(limit_rows))
 
-                header = self.header_row
+                header = foi.header_row
                 # names = ','.join(foi.column_list)
                 # names = ','.join(foi.header_list_returned)
                 if foi.header_list_returned is not None:
@@ -517,7 +517,7 @@ class DataFile:
                     names = foi.column_list
 
                 logging.debug(sys._getframe().f_code.co_name + " : " + foi.current_working_abs_file_name)
-                dataframe_columns=''
+                
                 for counter, dataframe in enumerate(
                         pd.read_csv(foi.current_working_abs_file_name, delimiter=foi.file_delimiter, nrows=limit_rows,
                                     quotechar='"', chunksize=chunk_size, header=header,index_col=False,
@@ -789,7 +789,7 @@ class DataFile:
                     # column that has additional data
                     foi.current_working_abs_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
                     header_added = None
-                    if foi.append_file_id or foi.append_crc or foi.start_row>0:
+                    if foi.append_file_id or foi.append_crc:
                         # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
                         # print(self.working_path, "/appended/", self.curr_src_working_file)
                         ################################################################################################
@@ -833,7 +833,7 @@ class DataFile:
                             logging_handler = db_logging.logger.ImportLogger(db)
                             error_log_entry = logging_handler.ErrorLog(
                                 program_unit=sys.argv[0],
-                                error_code=import_type,
+                                error_code=import_type[:5],
                                 error_message='Inside Function import_1file_client_side',
                                 error_timestamp=datetime.datetime.now(),
                                 user_name=db._userid,

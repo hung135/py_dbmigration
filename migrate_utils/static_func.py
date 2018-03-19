@@ -49,7 +49,7 @@ def dump_params(f):
 
 
 # function that will append data to a data file
-@dump_params
+#@dump_params
 def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True,append_file_id=True,
                      append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0):
     import os
