@@ -1125,7 +1125,7 @@ def check_file_for_carriage_return(full_file_path):
 
 
 # @timer
-def profile_csv_directory(path,file_pattern=None):
+def profile_csv_directory(path,delimiter=',',file_pattern=None):
     import os
     path = './_sample_data'
     file_list=[]
@@ -1139,7 +1139,7 @@ def profile_csv_directory(path,file_pattern=None):
     for f in file_list:
         profile_csv(f)
 
-def profile_csv(full_file_path):
+def profile_csv(full_file_path,delimiter=','):
     """
     Given a CSV with a header:
     The function will find the max len for each column
@@ -1152,7 +1152,7 @@ def profile_csv(full_file_path):
     chunksize = 10 ** 5
 
     column_profile={}
-    for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,dtype=object)):
+    for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,dtype=object,delimiter=delimiter)):
 
         assert isinstance(chunk,pandas.core.frame.DataFrame)
         #print(chunk)
@@ -1166,7 +1166,8 @@ def profile_csv(full_file_path):
                 try:
                     x_len=x.map(len).max()
                 except:
-                    x_len='numeric'
+                    # eception occurs because we cannnot take a len of a number
+                    x_len=0
             #print(x.map(len).max(),x.name)
             y=column_profile.get(x.name,0)
             if x_len>=y:
