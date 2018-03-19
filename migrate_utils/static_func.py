@@ -1137,7 +1137,9 @@ def profile_csv_directory(path,delimiter=',',file_pattern=None):
             print(root, file)
             file_list.append(os.path.join(root,file))
     for f in file_list:
-        profile_csv(f)
+        if file_pattern in f:
+            print("Profiling file:{}".format(f))
+            profile_csv(f,delimiter)
 
 def profile_csv(full_file_path,delimiter=','):
     """
@@ -1152,8 +1154,9 @@ def profile_csv(full_file_path,delimiter=','):
     chunksize = 10 ** 5
 
     column_profile={}
-    for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,dtype=object,delimiter=delimiter)):
-
+    for i, chunk in enumerate(pandas.read_csv(full_file_path,header=1,engine='c' ,chunksize=chunksize,
+        dtype=object,index_col=False,sep=delimiter)):
+        #print("process chunk:{} Delimiter:{}".format(i,delimiter))
         assert isinstance(chunk,pandas.core.frame.DataFrame)
         #print(chunk)
 
