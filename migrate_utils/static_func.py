@@ -1127,7 +1127,7 @@ def check_file_for_carriage_return(full_file_path):
 # @timer
 def profile_csv_directory(path,delimiter=',',file_pattern=None):
     import os
-    path = './_sample_data'
+    #path = './_sample_data'
     file_list=[]
     # traverse root directory, and list directories as dirs and files as files
     for root, dirs, files in os.walk(os.path.abspath(path)):

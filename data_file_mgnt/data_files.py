@@ -78,7 +78,7 @@ class FilesOfInterest:
         self.header_added = None
         self.start_row = start_row
 
-    #def __str__(self):
+    # def __str__(self):
 
 
 
