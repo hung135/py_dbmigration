@@ -655,6 +655,106 @@ def print_table_dict(db, folder='.', targetschema=None):
             f.write(','.join("{0}".format(x) for x in r) + '\n')
 
 
+
+
+#todo dump all types of objects to sqitch format
+def print_create_db_obj(db, folder=None, targetschema=None, file_prefix=None,object='Tables'):
+    import migrate_utils as mig
+    import sqlalchemy
+    import os
+
+    sql_get_routines="﻿SELECT routines.routine_name FROM information_schema.routines where routines.specific_schema='{}'"
+    sql="SELECT pg_get_functiondef('{}.{}'::regproc)"
+    routine_list=db.query(sql_get_routines.format(db.dbschema))
+    for r in routine_list:
+        code=db.query(sql.format(db.dbschema,r))
+
+    con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
+    # print dir(meta.tables)
+    folder_deploy = folder + "/deploy/{}/".format(object)
+    folder_revert = folder + "/revert/{}/".format(object)
+    folder_verify = folder + "/verify/{}/".format(object)
+    try:
+        os.makedirs(folder_deploy)
+    except:
+        pass
+    try:
+        os.makedirs(folder_revert)
+    except:
+        pass
+    try:
+        os.makedirs(folder_verify)
+    except:
+        pass
+    table_count = 0
+    sqitch = []
+    db_objects = []
+
+    if targetschema is None:
+        dbschema = db.dbschema
+
+    else:
+        dbschema = targetschema
+
+    # for n, t in meta.tables.iteritems():
+    for n, t in meta.tables.items():
+        table_count += 1
+
+        if file_prefix is not None:
+            filename = file_prefix + t.name.lower() + ".sql"
+            fqn = file_prefix
+        else:
+            filename = t.name.lower() + ".sql"
+            fqn = ""
+        basefilename = t.name.lower()
+        # print(type(n), n, t.name)
+        table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
+        stmt = sqlalchemy.schema.CreateTable(table)
+        column_list = [c.name for c in table.columns]
+        createsql = convert_sql_snake_case(str(stmt), column_list)
+        logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
+
+        line = ("\nsqitch add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
+
+        sqitch.append(line)
+        if targetschema is not None:
+            createsql = createsql.replace(("table " + db.dbschema + ".").lower(), "table " + targetschema + ".")
+        m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
+        db_objects.append(m)
+
+    if folder is None:
+        for i in db_objects:
+            print(i)
+        for s in sqitch:
+            print(s)
+    else:
+        for i in db_objects:
+            print("Writing:")
+            print(folder_deploy + i["table"])
+            with open(folder_deploy + i["filename"], "wb") as f:
+                f.write(bytes(i["sql"]))
+
+            drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
+            print(dbschema, "-----db---")
+            v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
+                dbschema, i["table"])
+            verify = "BEGIN;\n" + v_str
+
+            with open(folder_revert + i["filename"], "wb") as f:
+                f.write(bytes(drop))
+                f.write(bytes("COMMIT;\n"))
+            with open(folder_verify + i["filename"], "wb") as f:
+                f.write(bytes(verify))
+                f.write(bytes("ROLLBACK;\n"))
+
+        with open(folder + "sqitchplanadd_table.bash", "wb") as f:
+            f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table()"))
+        for s in sqitch:
+            with open(folder + "sqitchplanadd_table.bash", "a") as f:
+                f.write(s)
+
+    print("Total Tables:{}".format(table_count))
+
 def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     import migrate_utils as mig
     import sqlalchemy
