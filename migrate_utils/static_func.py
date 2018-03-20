@@ -1201,10 +1201,14 @@ def count_csv(full_file_path):
     return count_size, column_count
 
 
-def count_file_lines_wc(self, file):
+def count_file_lines_wc(file):
     import commands
-    record_count,file_name = commands.getstatusoutput("wc -l '{}'".format(file))
-    logging.debug("FileName:{0} RowCount:{1}".format(file, record_count))
+    record_count=0
+    status_code,status_text = commands.getstatusoutput("wc -l '{}'".format(file))
+    if status_code==0:
+        record_count,txt=status_text.split(' ')
+    print(file, record_count,"----FileCount linux-------")
+    logging.debug("FileName:{0} RowCount:{1}".format( txt,record_count))
 
     return record_count
 
