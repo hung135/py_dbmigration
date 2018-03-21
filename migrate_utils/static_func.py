@@ -236,6 +236,27 @@ def dd_lookup(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep
             db.execute(sqlx)
             db.execute(sqlx2)
 
+# this function will add a crc column to the table if not existing and will generate a checksum based on columns passed in
+#  else it will pull list of columns from db and generate checksum for those columns and set the crc
+def set_postgres_checksum_rows(db, schema, table_name,column_list=None, where_clause='1=1'):
+    checksum_sql="""update {}.{} set crc=md5(row({})::text)::uuid where {}"""
+    add_column(db, schema+'.'+table_name, 'crc', 'uuid', nullable='')
+
+    if column_list is None:
+        col_list=db.get_columns(table_name,schema)
+    else:
+        col_list=column_list
+    logging.info("Running Checksum on These columns: {}".format(col_list))
+    logging.info("Note order of columns matter else will result in different checksum")
+    db.execute(checksum_sql.format(schema,table_name,col_list,where_clause))
+
+def do_postgres_upsert_insert(db, source_tbl_fqn, target_tbl_fqn):
+    checksum_sql=generate_postgres_upsert(db,source_tbl_fqn,target_tbl_fqn)
+    db.execute(checksum_sql.format(schema,table_name,col_list,where_clause))
+
+def do_postgres_upsert_update(db, source_tbl_fqn, target_tbl_fqn):
+    checksum_sql=generate_postgres_upsert(db,source_tbl_fqn,target_tbl_fqn)
+    db.execute(checksum_sql.format(schema,table_name,col_list,where_clause))
 
 def pivot_table(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
     tables = db.get_tables(schema=schema)
@@ -658,13 +679,11 @@ def print_table_dict(db, folder='.', targetschema=None):
 
 
 #todo dump all types of objects to sqitch format
-def print_create_db_obj(db, folder=None, targetschema=None, file_prefix=None,object='Tables'):
+"""def print_create_db_obj(db, folder=None, targetschema=None, file_prefix=None,object='Tables'):
     import migrate_utils as mig
     import sqlalchemy
     import os
-
-    sql_get_routines="﻿SELECT routines.routine_name FROM information_schema.routines where routines.specific_schema='{}'"
-    sql="SELECT pg_get_functiondef('{}.{}'::regproc)"
+    sql_get_routines="SELECT routines.routine_name FROM information_schema.routines where routines.specific_schema='{}'"sql="SELECT pg_get_functiondef('{}.{}'::regproc)"
     routine_list=db.query(sql_get_routines.format(db.dbschema))
     for r in routine_list:
         code=db.query(sql.format(db.dbschema,r))
@@ -754,7 +773,7 @@ def print_create_db_obj(db, folder=None, targetschema=None, file_prefix=None,obj
                 f.write(s)
 
     print("Total Tables:{}".format(table_count))
-
+"""
 def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     import migrate_utils as mig
     import sqlalchemy
@@ -1167,7 +1186,7 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
             os.makedirs(zip_directory)
         zipdir(data_directory, os.path.abspath(zip_file_name))
 
-
+# this will return sql to do upsert based on the primary keys
 def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
     import db_utils.dbconn
     assert isinstance(db, db_utils.dbconn.Connection)
@@ -1185,7 +1204,7 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
             z += ',' + col + ' = excluded.' + col + '\n\t\t'
     primary_keys = db.get_primary_keys(schema + '.' + table_name)
 
-    sql_template = """INSERT into {} ({})\nSELECT {} \nFROM {} \nON CONFLICT ({}) \nDO UPDATE SET \n{};""".format(
+    sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {} \nON CONFLICT ({}) \nDO UPDATE SET \n{};""".format(
         schema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
         source_schema + '.' + table_name, ','.join(primary_keys), z)
 
