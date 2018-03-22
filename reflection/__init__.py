@@ -1,1 +1,1 @@
-from .reflect_table import *
+from . import reflect_table

@@ -84,7 +84,7 @@ class Scrape:
 
         self.login()
 
-    def login(self, password):
+    def login(self, password=None):
         payload = {'username': 'hung135@hotmail.com', 'password': password}
         self.session = requests.session()
 

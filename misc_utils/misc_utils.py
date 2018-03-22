@@ -7,7 +7,7 @@ def timer_decorator(f):
 
     def timer(*args, **kwargs):
         t = time.time()
-        logging.debug("Timer Started for Function: {},{} :{}".format(__name__, f.__name__, dt.datetime.now()))
+        logging.debug("Timer Started for Function: {},{} :{}".format(__name__, f.__name__, datetime.datetime.now()))
         f(*args, **kwargs)
         time_delta = time.time() - t
         logging.debug('{} {} Took: {} Seconds'.format(__name__, f.__name__, time_delta))

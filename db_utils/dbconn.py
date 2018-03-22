@@ -1,37 +1,77 @@
 import logging
-from py_dbmigration import db_logging
 import os
-#import subprocess as commands
+# import subprocess as commands
 import commands
 import sys
-import datetime as dt
+import datetime
 from sqlalchemy.ext.automap import automap_base
+import migrate_utils
 
 
 # Decorator function to log and time how long a function took to run
 
 class Connection:
-    _conn = None
-    _cur = None
-    _password = None
-    _userid = None
-    _sslmode = None
-    _host = None
-    _port = 5432
-    _database_name = None
-    _commit = True
-    _dbtype = None
-    _db_url = None
-    last_row_count = 0
-    dbschema = None
+    # _conn = None this need to be instance
+    # _cur = None
+    # _password = None
+    # _userid = None
+    # _sslmode = None
+    # _host = None
+    # _port = 5432
+    # _database_name = None
+    # _commit = True
+    # _dbtype = None
+    # _db_url = None
+    # last_row_count = 0
+    # dbschema = None
+    # _sqlalchemy_con = None this needs to be instance
+    # _sqlalchemy_meta = None this needs to be instance
 
+    def __init__(self, dbschema, commit=True, password=None, userid=None, host=None, port=None, database=None,
+                 dbtype='POSTGRES', appname='py_dbutils'):
+        """ Default to commit after every transaction
+        """
+
+        self._commit = commit
+        self.dbschema = dbschema
+        self.appname = appname
+
+        self._database_name = database
+
+        self._port = port
+
+        self._userid = userid
+
+        self._password = password
+
+        self._host = host
+        self._sslmode = None
+
+        logging.debug("DB Connecting To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
+        self._dbtype = dbtype.upper()
+        if self._dbtype == 'POSTGRES':
+            self._conn = self._connect_postgres
+        if self._dbtype == 'MSSQL':
+            self._conn = self._connect_mssql()
+        if self._dbtype == 'MYSQL':
+            self._conn = self._connect_mysql()
+        if self._dbtype == 'ORACLE':
+            self._conn = self._connect_oracle()
+        self._cur = self._conn.cursor()
+        self.url = None  # db url
+        logging.debug("DB Connected To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
+
+        self._sqlalchemy_con = None
+        self._sqlalchemy_meta = {}
+
+    # @migrate_utils.static_func.timer
     def connect_sqlalchemy(self, schema=None, db=None):
         import sqlalchemy
         # import pymssql
         '''Returns a connection and a metadata object'''
         # We connect with the help of the PostgreSQL URL
         # postgresql://federer:grandestslam@localhost:5432/tennis
-        url = ""
+
         if db is None and self._dbtype is None:
             db = "POSTGRES"
         else:
@@ -39,21 +79,35 @@ class Connection:
         if schema is None:
             schema = self.dbschema
 
-        if db.upper() == "POSTGRES":
-            url = 'postgresql://{}:{}@{}:{}/{}'
-            url = url.format(self._userid, self._password, self._host, self._port, self._database_name)
-        if db.upper() == "MSSQL":
-            url = 'mssql+pymssql://{}:{}@{}:{}/{}'
-            url = url.format(self._userid, self._password, self._host, self._port, self._database_name)
-        # con=self._connect_mssql()
-        # The return value of create_engine() is our connection object
-        con = sqlalchemy.create_engine(url)
+        if self._sqlalchemy_con is None or self._sqlalchemy_meta.get(schema, None) is None:
 
-        # We then bind the connection to MetaData()
-        #print('connecting schema:', schema)
-        meta = sqlalchemy.MetaData(bind=con, reflect=True, schema=schema)
+            if db.upper() == "POSTGRES":
+                self.url = 'postgresql://{}:{}@{}:{}/{}'
+                self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
 
-        return con, meta
+                if self._sqlalchemy_con is None:
+                    self._sqlalchemy_con = sqlalchemy.create_engine(self.url,
+                                                                    connect_args={"application_name": self.appname})
+            if db.upper() == "MSSQL":
+                self.url = 'mssql+pymssql://{}:{}@{}:{}/{}'
+                self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
+                self._sqlalchemy_con = sqlalchemy.create_engine(self.url)
+            if db.upper() == "MYSQL":
+                # 'mysql+pymysql://root:test@192.168.99.100:3306/mysql'
+                self.url = "mysql+pymysql://{}:{}@{}:{}/{}"
+                self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
+                self._sqlalchemy_con = sqlalchemy.create_engine(self.url)
+
+            # con=self._connect_mssql()
+            # The return value of create_engine() is our connection object
+
+            # We then bind the connection to MetaData()
+            # print('connecting schema:', schema)
+            if self._sqlalchemy_meta.get(schema, None) is None:
+                self._sqlalchemy_meta[schema] = sqlalchemy.MetaData(bind=self._sqlalchemy_con, reflect=True,
+                                                                    schema=schema)
+
+        return self._sqlalchemy_con, self._sqlalchemy_meta[schema]
 
     def print_drop_tables(self):
 
@@ -78,7 +132,6 @@ class Connection:
             # print(type(z),filename)
             i = 0
             with open(full_file_path, "wb") as f:
-                print(bytes("Dumping to CSV: {}".format(t), "utf-8"))
                 for df in z:
                     i += 1
 
@@ -147,10 +200,28 @@ class Connection:
                     f.write(createsql + ";")
         print("Total Tables:{}".format(table_count))
 
-    def get_table_columns(self, table_name):
+    def get_table_column_types(self, table_name, trg_schema=None):
+
         import sqlalchemy
+        if trg_schema is None:
+            schema = self.dbschema
+        else:
+            schema = trg_schema
         con, meta = self.connect_sqlalchemy()
-        table = sqlalchemy.Table(table_name, meta, schema=self.dbschema, autoload=True, autoload_with=con)
+        table = sqlalchemy.Table(table_name, meta, schema=schema, autoload=True, autoload_with=con)
+
+        return table.columns
+
+    def get_table_columns(self, table_name, trg_schema=None):
+
+        import sqlalchemy
+        if trg_schema is None:
+            schema = self.dbschema
+        else:
+            schema = trg_schema
+        con, meta = self.connect_sqlalchemy()
+        table = sqlalchemy.Table(table_name, meta, schema=schema, autoload=True, autoload_with=con)
+
         return [c.name for c in table.columns]
 
     def query(self, sqlstring):
@@ -180,10 +251,13 @@ class Connection:
         """ Default to commit after every transaction
                 Will check instance variable to decide if a commit is needed
         """
+        assert isinstance(table_name,str)
         if table_name is None or table_name == '':
             self._cur.execute("vacuum")
             logging.debug("Vacuuming Schema")
-
+        elif '.' in table_name:
+            logging.debug("Vacuuming Table:{0}".format(table_name))
+            self._cur.execute("vacuum {0}".format(table_name))
         else:
             logging.debug("Vacuuming Table:{0}".format(table_name))
             self._cur.execute("vacuum {0}.{1}".format(dbschema, table_name))
@@ -208,9 +282,9 @@ class Connection:
 
     def truncate_table(self, dbschema, table_name):
         logging.debug(
-            "Truncating Table: \n\tHost:{0}\n\tDatabase:{1}\n\tTablename:{2}".format(self._host, self._database_name,
-                                                                                     table_name))
-        self._cur.execute('TRUNCATE table {0}.{1}'.format(dbschema, table_name))
+            "Truncating Table: \n\tHost:{0}\n\tDatabase:{1}\n\tTablename:{2}\n\tSchema:{3}".format(self._host, self._database_name,
+                                                                                     table_name,dbschema))
+        self._cur.execute('TRUNCATE table {0}.{1} cascade'.format(dbschema, table_name))
 
         self.commit()
         self.vacuum(dbschema, table_name)
@@ -231,6 +305,7 @@ class Connection:
         else:
             raise Exception('create tables functions allowed')
 
+    @property
     def _connect_postgres(self):
         import psycopg2
 
@@ -248,18 +323,18 @@ class Connection:
             if self._database_name is None:
                 self._database_name = os.getenv('PGDATABASE', 'postgres')
 
-        except:
-            logging.error(Exception)
+        except Exception as e:
+            logging.error(e)
             sys.exit()
 
         if self._port == '':
             self._port = 5432
         conn = psycopg2.connect(dbname=self._database_name, user=self._userid, password=self._password, port=self._port,
-                                host=self._host)
+                                host=self._host, application_name=self.appname)
         conn.set_client_encoding('UNICODE')
         return conn
 
-    def _connect_mssql(self):
+    def _connect_mssql(self, appname='py_dbutils'):
         import pymssql
 
         try:
@@ -274,7 +349,9 @@ class Connection:
         except Exception:
             logging.error(
                 "Error Getting Environment Variables MSSQL:\nUser:{}\nHost:{}\nPort:{}\nDB:{}".format(self._userid,
-                                                                                                      self._host, self._port, self._database_name))
+                                                                                                      self._host,
+                                                                                                      self._port,
+                                                                                                      self._database_name))
             sys.exit()
 
         if self._port == '':
@@ -282,15 +359,21 @@ class Connection:
 
         conn = pymssql.connect(server=self._host, user=self._userid, password=self._password,
                                database=self._database_name, host=self._host, port=self._port, conn_properties=None,
-                               timeout=0, login_timeout=60, charset='UTF-8', as_dict=False, appname=None,
+                               timeout=0, login_timeout=60, charset='UTF-8', as_dict=False, appname=appname,
                                autocommit=self._commit, tds_version='7.1')
 
         return conn
 
     def _connect_mysql(self):
+        print("Connecting to mysql:")
+        # import mysql.connector
         import pymysql
-        conn = pymysql.connect(host=self._host, port=self._port, user=self._userid, passwd=self._password,
-                               db=self._database_name)
+
+        conn = pymysql.connect(user=self._userid, password=self._password,
+                               host=self._host,
+                               database=self._database_name)
+
+        print("coneected")
         return conn
 
     def _connect_oracle(self):
@@ -298,36 +381,6 @@ class Connection:
 
     def _connect_ldap(self):
         pass
-
-    def __init__(self, dbschema, commit=True, password=None, userid=None, host=None, port=None, database=None,
-                 dbtype='POSTGRES'):
-        """ Default to commit after every transaction
-        """
-        self._commit = commit
-        self.dbschema = dbschema
-        if database is not None:
-            self._database_name = database
-        if port is not None:
-            self._port = port
-        if userid is not None:
-            self._userid = userid
-        if password is not None:
-            self._password = password
-        if host is not None:
-            self._host = host
-
-        logging.debug("DB Connecting To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
-        self._dbtype = dbtype.upper()
-        if self._dbtype == 'POSTGRES':
-            self._conn = self._connect_postgres()
-        if self._dbtype == 'MSSQL':
-            self._conn = self._connect_mssql()
-        if self._dbtype == 'MYSQL':
-            self._conn = self._connect_mysql()
-        if self._dbtype == 'ORACLE':
-            self._conn = self._connect_oracle()
-        self._cur = self._conn.cursor()
-        logging.debug("DB Connected To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
 
     def __del__(self):
         try:
@@ -362,41 +415,46 @@ class Connection:
         logging.info("Total Rows Dumped: {0}".format(i[1]))
         return i[1]
 
-    def import_file_client_side(self, full_file_path, table_name, file_delimiter):
-        copy_command_client_side = """psql --dbname={3} --host={4} -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
-        #t = db_logging.db_logging.DbLogging(self)
-        data_file = full_file_path
-        '''error_log_entry = t.ErrorLog(program_unit=sys.argv[0], error_code=None, error_message=None,
-        #    error_timestamp=None, user_name=self._userid, sql_statement='')
-        #log_entry = t.LoadStatus(table_name=table_name, program_unit=sys.argv[0], program_unit_type_code='python',
-                                 file_path=data_file, records_inserted=0, success=1, start_date=dt.datetime.now(),
-                                 end_date=dt.datetime.now(), previous_record_count=0, current_record_count=0,
-                                 records_updated=0, records_deleted=0, created_by=self._userid,
-                                 created_date=dt.datetime.now())
-        '''
-        t = dt.datetime.now()
-
-        command_text = copy_command_client_side.format(table_name, data_file, file_delimiter, self._database_name,
-                                                       self._host)
-        logging.info("Copy Command STARTED:{0} Time:{1}".format(table_name, t))
-        txt_out = commands.getstatusoutput(command_text)
-        logging.debug("Copy Command Completed:{0} Time:{1}".format(txt_out, dt.datetime.now()))
-        logging.info("Total Time:{0} ".format(dt.datetime.now() - t))
-
-        if txt_out[0] > 0:
-            raise Exception
-
-        i = txt_out[1].split()
-        logging.info("Total Rows Loaded: {0}".format(i[1]))
-        return i[1]
-
     def get_conn_url(self):
-        url = 'postgresql://{}:{}@{}:{}/{}'
-        url = url.format(self._userid, self._password, self._host, self._port, self._database_name)
-        return url
+
+        return self.url
+
+    # @migrate_utils.static_func.timer
+    def get_table_list_via_query(self, dbschema):
+        sql = """SELECT table_name FROM information_schema.tables a
+            WHERE table_schema='{}' and table_type='BASE TABLE'""".format(dbschema)
+        result_set = self.query(sql)
+        return [r[0] for r in result_set]
+
+    # @migrate_utils.static_func.timer
+    def get_all_columns_schema(self, dbschema, table_name):
+        # print("----- wuh")
+        sql = """SELECT table_name,column_name,upper(data_type) as type, 
+        is_identity,
+        character_maximum_length 
+        FROM information_schema.columns
+        WHERE table_schema = '{}'
+        AND table_name   = '{}'
+        order by table_name,ordinal_position""".format(dbschema, table_name)
+        result_set = self.query(sql)
+        table = []
+        for table_name, column, type, autoincrement, length in result_set:
+            class data: pass
+
+            data.table_name = table_name
+            data.column_name = column
+            data.type = type
+            data.autoincrement = autoincrement
+            data.length = length
+
+            table.append(data)
+
+        return table
 
     # this one breaks w/ sqlserver
+    @migrate_utils.static_func.timer
     def get_table_list(self, dbschema=None):
+        print("getting schema: {}".format(dbschema))
         Base = automap_base()
 
         # from sqlalchemy.orm import Session
@@ -413,38 +471,35 @@ class Connection:
             l.append(t)
         return l
 
+    # @migrate_utils.static_func.timer
     def get_columns(self, table_name, dbschema):
+        """
+
+        :rtype: object
+        """
+        # type: (str, str) -> list
         import sqlalchemy
-
-        con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
-        # print dir(meta.tables)
-
-        # print(n, t.name)
-
-        # print(type(n), n, t.name)
-        #print(table_name, "-----------------", dbschema)
-        table = sqlalchemy.Table(table_name, meta, autoload=True, autoload_with=con)
-        # print(table)
-        column_list = [c.name for c in table.columns]
-        #print(column_list, "-----------------")
-        return list(column_list)
+        try:
+            con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
+            table = sqlalchemy.Table(table_name, meta, autoload=True, autoload_with=con)
+            column_list = [c.name for c in table.columns]
+            return list(column_list)
+        except:
+            logging.warning("No Columns found when trying to get Column List: Returning None")
+            return []
 
     # returns a list of table dict
+    # @migrate_utils.static_func.timer
     def get_tables(self, schema=None):
         import sqlalchemy
         dbschema = self.dbschema
         if schema is not None:
             dbschema = schema
 
-        print('---Getting tables info:', dbschema)
         con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
-        # print dir(meta.tables)
 
         table_obj = []
         for n, t in meta.tables.items():
-            # print(n, t.name)
-
-            # print(type(n), n, t.name)
             table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
             column_list = [c.name for c in table.columns]
             d = dict({"db": self._database_name, "schema": dbschema, "table_name": t.name, "columns": column_list})
@@ -452,6 +507,7 @@ class Connection:
 
         return table_obj
 
+    @migrate_utils.static_func.timer
     def get_table_row_count_fast(self, table_name, schema=None):
         x = 0
         if self.dbtype == 'POSTGRES':
@@ -482,6 +538,21 @@ class Connection:
 
         return table_obj
 
+    # given a table name we return the a list of columns that are part of the primary key
+    def get_primary_keys(self, table_name):
+        sql = """SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
+            FROM   pg_index i
+            JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                     AND a.attnum = ANY(i.indkey)
+            WHERE  i.indrelid = '{}'::regclass
+            AND    i.indisprimary;""".format(table_name)
+        result = self.query(sql)
+        field_list = []
+        for r in result:
+            field_name, data_type = r
+            field_list.append(field_name)
+        return field_list
+
     def print_table_info(self, table_name, dbschema):
         Base = automap_base()
         # from sqlalchemy.orm import Session
@@ -505,3 +576,28 @@ class Connection:
         z = df.to_sql(table_name, conn, schema=self.dbschema, index=False, if_exists='append', chunksize=None,
                       dtype=None)
         return z
+
+    # simple import using client side
+    # this assumes the csv has data exactly in the same structure as the target table
+    def import_file_client_side(self, full_file_path, table_name_fqn, file_delimiter):
+        copy_command_client_side = """psql --dbname={3} --host={4} -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
+
+        data_file = full_file_path
+
+        t = datetime.datetime.now()
+
+        command_text = copy_command_client_side.format(table_name_fqn, data_file, file_delimiter, self._database_name,
+                                                       self._host)
+        logging.info("Copy Command STARTED:{0} Time:{1}".format(table_name_fqn, t))
+        txt_out = commands.getstatusoutput(command_text)
+        logging.debug("Copy Command Completed:{0} Time:{1}".format(txt_out, datetime.datetime.now()))
+        logging.info("Total Time:{0} ".format(datetime.datetime.now() - t))
+
+        if txt_out[0] > 0:
+            raise Exception
+        else:
+            self.vacuum(table_name=table_name_fqn)
+
+        i = txt_out[1].split()
+        logging.info("Total Rows Loaded: {0}".format(i[1]))
+        return i[1]

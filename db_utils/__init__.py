@@ -1,1 +1,1 @@
-from .dbconn import Connection
+from . import dbconn

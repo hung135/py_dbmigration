@@ -1,1 +1,1 @@
-from .scrape_util import *
+from . import scrape_util

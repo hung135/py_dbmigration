@@ -1,1 +1,1 @@
-from .migrate_utils import *
+from . import static_func

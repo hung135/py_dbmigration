@@ -4,7 +4,6 @@ import db_utils
 import data_file_mgnt as dfm
 import pprint
 
-
 import logging
 
 logging.basicConfig(level='DEBUG')
@@ -24,16 +23,13 @@ db.truncate_table("logging.load_status")
 # regex = re.compile(r"^\d\d[1][2:3]q\d\.zip$", re.IGNORECASE)
 
 FILE_REGEX = r"^ComplianceAnalysis.*tar.gz$"
-COMPRESSED_FILE_TYPE = 'gzip'
-FILE_REGEX = r"^.*.csv$"
-COMPRESSED_FILE_TYPE = 'DATA'
 
+FILE_REGEX = r"^.*.csv$"
 file_path = '/home/dtwork/dw/file_transfers/compliance/allCSVs.zip/'
 FILE_ID_REGEX = r"\d\d\d\d\d\d\d\d"
-
 FILE_ID_REGEX = None
 df = dfm.DataFile(file_path, writable_path, FILE_REGEX, db, FILE_ID_REGEX,
-                  file_type=COMPRESSED_FILE_TYPE, compressed_file_type=COMPRESSED_FILE_TYPE)
+                  file_type=dfm.DataFile.FILE_TYPE_CSV)
 """
     Creating object to define the data file wee need to process and which table they need to be imported into
     DEFINE ALL FILE PATTERN AND MAPP TO OBJECT BELOW
@@ -43,30 +39,30 @@ SCHEMA = "stg"
 DELIMITER = ','
 COLUMN_LIST = ''
 
-datafiles = [dfm.DestinationDB('account', r'^Account\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True)]
+datafiles = [dfm.FileOfInterest('account', r'^Account\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True)]
 """
-datafiles.append(dfm.DestinationDB('AccountInterest', r'^AccountInterest\d.*.csv',
+datafiles.append(dfm.FileOfInterest('AccountInterest', r'^AccountInterest\d.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('AccountReview', r'^AccountReview\d.*.csv',
+datafiles.append(dfm.FileOfInterest('AccountReview', r'^AccountReview\d.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
 
-datafiles.append(dfm.DestinationDB('AccountStmt', r'^AccountStmt\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('Client_Address', r'^Client_Address\d.*.csv',
+datafiles.append(dfm.FileOfInterest('AccountStmt', r'^AccountStmt\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('Client_Address', r'^Client_Address\d.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('Client_User', r'^Client_User\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('Client', r'^Client\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('CR_DISCLOSURE_VIEW', r'^CR_DISCLOSURE_VIEW\d.*.csv',
+datafiles.append(dfm.FileOfInterest('Client_User', r'^Client_User\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('Client', r'^Client\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('CR_DISCLOSURE_VIEW', r'^CR_DISCLOSURE_VIEW\d.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('Fees', r'^Fees\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('MortgageCDE', r'^MortgageCDE\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('Review', r'^Review\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('TEST_RESULTS_DISCLOSURE_LEVEL',
+datafiles.append(dfm.FileOfInterest('Fees', r'^Fees\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('MortgageCDE', r'^MortgageCDE\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('Review', r'^Review\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('TEST_RESULTS_DISCLOSURE_LEVEL',
                                    r'^TEST_RESULTS_DISCLOSURE_LEVEL\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('XREF_User_Client_Access', r'^XREF_User_Client_Access\d.*.csv',
+datafiles.append(dfm.FileOfInterest('XREF_User_Client_Access', r'^XREF_User_Client_Access\d.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('STSDCDE', r'^STSDCDE\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('STSDCDE', r'^STSDCDE\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
 
-datafiles.append(dfm.DestinationDB('Loan', r'^Loan\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('Loan', r'^Loan\d.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
 
  
 truncate table stg.account;
@@ -84,80 +80,79 @@ truncate table stg.xref_uca_warehouse_export;
 
 """
 
-datafiles.append(dfm.DestinationDB('review_view', r'^REVIEW.*.csv',
+datafiles.append(dfm.FileOfInterest('review_view', r'^REVIEW.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
 
-datafiles.append(dfm.DestinationDB('account', r'^ACCOUNT_VW.*.csv',
+datafiles.append(dfm.FileOfInterest('account', r'^ACCOUNT_VW.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('accountreview', r'^ACCOUNT_REVIEW.*.csv',
+datafiles.append(dfm.FileOfInterest('accountreview', r'^ACCOUNT_REVIEW.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('accountinterest', r'^ACCOUNT_INT_VW.*.csv',
+datafiles.append(dfm.FileOfInterest('accountinterest', r'^ACCOUNT_INT_VW.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('accountstmt', r'^ACCOUNT_STMT.*.csv',
+datafiles.append(dfm.FileOfInterest('accountstmt', r'^ACCOUNT_STMT.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('cr_disclosure_view', r'^CR_DISCLOSURE_VW.*.csv',
-                                   DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-
-datafiles.append(dfm.DestinationDB('loan_view', r'^LOAN_VW.*.csv',
+datafiles.append(dfm.FileOfInterest('cr_disclosure_view', r'^CR_DISCLOSURE_VW.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
 
-datafiles.append(dfm.DestinationDB('xref_uca_warehouse_export', r'^XREF_UCA.*.csv',
-                                   DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('fees_view', r'^FEES_VW.*.csv',
-                                   DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('client_user_warehouse_export', r'^CLIENT_USER.*.csv',
-                                   DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('mortgage_warehouse_export', r'^MORTGAGE_WAREHOUSE.*.csv',
-                                   DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('test_results_review_level', r'^TEST_RESULT.*.csv',
+datafiles.append(dfm.FileOfInterest('loan_view', r'^LOAN_VW.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
 
-datafiles.append(dfm.DestinationDB('stsd_warehouse_export', r'^STSD_WAREHOUSE_EXPORT.*.csv',
+datafiles.append(dfm.FileOfInterest('xref_uca_warehouse_export', r'^XREF_UCA.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('test_results_disclosure_level', r'^TEST_RSLTS_DISCLOSURE.*.csv',
+datafiles.append(dfm.FileOfInterest('fees_view', r'^FEES_VW.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('mortgage_warehouse_export', r'^MRTG_WRHSE_EXP_VW.*.csv',
+datafiles.append(dfm.FileOfInterest('client_user_warehouse_export', r'^CLIENT_USER.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('mortgage_custrep_all_vw', r'^MORTGAGE_CUSTREP.*.csv',
+datafiles.append(dfm.FileOfInterest('mortgage_warehouse_export', r'^MORTGAGE_WAREHOUSE.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('client_add_warehouse_export', r'^CLIENT_ADDRESS.*.csv',
+datafiles.append(dfm.FileOfInterest('test_results_review_level', r'^TEST_RESULT.*.csv',
                                    DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
-datafiles.append(dfm.DestinationDB('client', r'^CLIENT-.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
 
-#df.reset_meta_table(db, 'ALL')
+datafiles.append(dfm.FileOfInterest('stsd_warehouse_export', r'^STSD_WAREHOUSE_EXPORT.*.csv',
+                                   DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('test_results_disclosure_level', r'^TEST_RSLTS_DISCLOSURE.*.csv',
+                                   DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('mortgage_warehouse_export', r'^MRTG_WRHSE_EXP_VW.*.csv',
+                                   DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('mortgage_custrep_all_vw', r'^MORTGAGE_CUSTREP.*.csv',
+                                   DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('client_add_warehouse_export', r'^CLIENT_ADDRESS.*.csv',
+                                   DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+datafiles.append(dfm.FileOfInterest('client', r'^CLIENT-.*.csv', DELIMITER, COLUMN_LIST, SCHEMA, has_header=True))
+
+# df.reset_meta_table(db, 'ALL')
 # df.do_work(db,datafiles,COMPRESSED_FILE_TYPE)
 
 
 FILE_REGEX = r"XFull.*\d\d\d\d\d.zip$"
-COMPRESSED_FILE_TYPE = 'zip'
+
 FILE_ID_REGEX = r"\d\d\d\d\d\d\d\d"
-df2 = dfm.DataFile(file_path, writable_path, FILE_REGEX, db, FILE_ID_REGEX,
-                   COMPRESSED_FILE_TYPE, compressed_file_type=COMPRESSED_FILE_TYPE)
+df2 = dfm.DataFile(file_path, writable_path, FILE_REGEX, db, FILE_ID_REGEX,dfm.DataFile.FILE_TYPE_ZIP)
 """
 # implmented folder regex to machine file to database table
-datafiles.append(dfm.DestinationDB('full_multi', r'.*fees.csv', DELIMITER,
+datafiles.append(dfm.FileOfInterest('full_multi', r'.*fees.csv', DELIMITER,
                                    COLUMN_LIST, SCHEMA, has_header=True, folder_regex=r'.*multi.*'))
-datafiles.append(dfm.DestinationDB('full_multi', r'.*uploaded.csv', DELIMITER,
+datafiles.append(dfm.FileOfInterest('full_multi', r'.*uploaded.csv', DELIMITER,
                                    COLUMN_LIST, SCHEMA, has_header=True, folder_regex=r'.*mult.*'))
-datafiles.append(dfm.DestinationDB('full_single', r'.*fees.csv', DELIMITER,
+datafiles.append(dfm.FileOfInterest('full_single', r'.*fees.csv', DELIMITER,
                                    COLUMN_LIST, SCHEMA, has_header=True, folder_regex=r'.*singl.*'))
-datafiles.append(dfm.DestinationDB('full_single', r'.*uploaded.csv', DELIMITER,
+datafiles.append(dfm.FileOfInterest('full_single', r'.*uploaded.csv', DELIMITER,
                                    COLUMN_LIST, SCHEMA, has_header=True, folder_regex=r'.*singl.*'))
 
 """
-#df.reset_meta_table(db, 'ALL')
+# df.reset_meta_table(db, 'ALL')
 
-#df2.reset_meta_table(db, 'FAILED')
+# df2.reset_meta_table(db, 'FAILED')
 # only need one of the instance to do work
 
-#df.do_work(db, datafiles, cleanup=False, limit_rows=None,import_type='Pandas')
-
+# df.do_work(db, datafiles, cleanup=False, limit_rows=None,import_type='Pandas')
+assert isinstance(datafiles, list)
+assert isinstance(datafiles[0], dfm.FileOfInterest)
 df.do_work(db, datafiles, cleanup=False, limit_rows=None, import_type='CopyCommand')
 
 # pprint.pprint(db.get_tables_row_count('stg'))
-#df.reset_meta_table(db, 'ALL')
-#df2.reset_meta_table(db, 'ALL')
-
+# df.reset_meta_table(db, 'ALL')
+# df2.reset_meta_table(db, 'ALL')
 
 
 """

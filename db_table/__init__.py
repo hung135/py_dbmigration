@@ -1,1 +1,1 @@
-from .db_table import *
+from . import db_table_def,db_table_func
