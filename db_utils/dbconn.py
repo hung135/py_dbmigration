@@ -251,10 +251,13 @@ class Connection:
         """ Default to commit after every transaction
                 Will check instance variable to decide if a commit is needed
         """
+        assert isinstance(table_name,str)
         if table_name is None or table_name == '':
             self._cur.execute("vacuum")
             logging.debug("Vacuuming Schema")
-
+        elif '.' in table_name:
+            logging.debug("Vacuuming Table:{0}".format(table_name))
+            self._cur.execute("vacuum {0}".format(table_name))
         else:
             logging.debug("Vacuuming Table:{0}".format(table_name))
             self._cur.execute("vacuum {0}.{1}".format(dbschema, table_name))
@@ -574,30 +577,26 @@ class Connection:
                       dtype=None)
         return z
 
-    # simple import using client side 
-    def import_file_client_side(self, full_file_path, table_name, file_delimiter):
+    # simple import using client side
+    # this assumes the csv has data exactly in the same structure as the target table
+    def import_file_client_side(self, full_file_path, table_name_fqn, file_delimiter):
         copy_command_client_side = """psql --dbname={3} --host={4} -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
-        #t = db_logging.db_logging.DbLogging(self)
+
         data_file = full_file_path
-        '''error_log_entry = t.ErrorLog(program_unit=sys.argv[0], error_code=None, error_message=None,
-        #    error_timestamp=None, user_name=self._userid, sql_statement='')
-        #log_entry = t.LoadStatus(table_name=table_name, program_unit=sys.argv[0], program_unit_type_code='python',
-                                 file_path=data_file, records_inserted=0, success=1, start_date=dt.datetime.now(),
-                                 end_date=dt.datetime.now(), previous_record_count=0, current_record_count=0,
-                                 records_updated=0, records_deleted=0, created_by=self._userid,
-                                 created_date=dt.datetime.now())
-        '''
+
         t = datetime.datetime.now()
 
-        command_text = copy_command_client_side.format(table_name, data_file, file_delimiter, self._database_name,
+        command_text = copy_command_client_side.format(table_name_fqn, data_file, file_delimiter, self._database_name,
                                                        self._host)
-        logging.info("Copy Command STARTED:{0} Time:{1}".format(table_name, t))
+        logging.info("Copy Command STARTED:{0} Time:{1}".format(table_name_fqn, t))
         txt_out = commands.getstatusoutput(command_text)
         logging.debug("Copy Command Completed:{0} Time:{1}".format(txt_out, datetime.datetime.now()))
         logging.info("Total Time:{0} ".format(datetime.datetime.now() - t))
 
         if txt_out[0] > 0:
             raise Exception
+        else:
+            self.vacuum(table_name=table_name_fqn)
 
         i = txt_out[1].split()
         logging.info("Total Rows Loaded: {0}".format(i[1]))
