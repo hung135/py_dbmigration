@@ -23,7 +23,7 @@ class RecordKeeper():
         """
         db_url = None
         self.engine = None # instance
-        assert isinstance(db, db_utils.dbconn.Connection)
+        #assert isinstance(db, db_utils.dbconn.Connection)
 
         key=str(table_def.DbSchema+table_def.__tablename__)
 

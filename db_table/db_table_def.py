@@ -74,7 +74,7 @@ class PublishLog(MetaBase):
     __tablename__ = 'publish_log'
     __table_args__ = {"schema": DbSchema}
     id = Column(c.Integer, primary_key=True)
-    data_id = Column(c.Integer)
+    data_id = Column(c.String(256))
     publish_start_time = Column(c.DateTime)
     publish_end_time = Column(c.DateTime)
     publish_status = Column(c.String(256))
