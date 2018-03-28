@@ -936,6 +936,13 @@ def make_html_meta_source_files(db, full_file_path, html_head):
     # gets all files that were attempted to be published that yield a failure
     # or no records
 
+    if not os.path.exists(os.path.dirname(full_file_path)):
+        try:
+            os.makedirs(os.path.dirname(full_file_path))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    os.chmod(os.path.dirname(full_file_path), 0o776)
     with open(full_file_path, 'w') as f:
         f.write(html)
     os.chmod(full_file_path, 0o666)
@@ -959,6 +966,13 @@ def make_html_publish_error(db, full_file_path, html_head):
     # gets all files that were attempted to be published that yield a failure
     # or no records
 
+    if not os.path.exists(os.path.dirname(full_file_path)):
+        try:
+            os.makedirs(os.path.dirname(full_file_path))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    os.chmod(os.path.dirname(full_file_path), 0o776)
     with open(full_file_path, 'w') as f:
         f.write(html)
     os.chmod(full_file_path, 0o666)
@@ -991,6 +1005,13 @@ def make_html_publish_log(db, full_file_path, html_head):
     # gets all files that were attempted to be published that yield a failure
     # or no records
 
+    if not os.path.exists(os.path.dirname(full_file_path)):
+        try:
+            os.makedirs(os.path.dirname(full_file_path))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    os.chmod(os.path.dirname(full_file_path), 0o776)
     with open(full_file_path, 'w') as f:
         f.write(html)
     os.chmod(full_file_path, 0o666)

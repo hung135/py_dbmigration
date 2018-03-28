@@ -596,7 +596,8 @@ class Connection:
         if txt_out[0] > 0:
             raise Exception
         else:
-            self.vacuum(table_name=table_name_fqn)
+            pass
+            #self.vacuum(table_name=table_name_fqn)
 
         i = txt_out[1].split()
         logging.info("Total Rows Loaded: {0}".format(i[1]))
