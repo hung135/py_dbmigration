@@ -46,7 +46,7 @@ class FilesOfInterest:
     # 2 scerios...given a path and a file pattern we walk the dir
     # gven table_name and a file regex we use it to map files from the meta source to a table
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
-                 has_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
+                 use_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
                  file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF-8',
                  append_crc=False, limit_rows=None, start_row=0,header_row=0,count_via=COUNT_VIA_PANDAS):
         # avoid trying to put any logic here
@@ -60,7 +60,7 @@ class FilesOfInterest:
             self.column_list=None
 
         self.file_delimiter = file_delimiter
-        self.has_header = has_header
+        self.use_header = use_header
         self.append_file_id = append_file_id
         self.append_column_name = append_column_name
         self.file_type = file_type
@@ -192,16 +192,16 @@ class DataFile:
 
     def insert_into_file(self,foi,file_id,db=None):
         assert isinstance(foi, FilesOfInterest)
-        # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,has_header,"<---Has Header"))
+        # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,use_header,"<---Has Header"))
         header_added = False
         # logging.debug("Appending File ID to File:{}".format(newfile))
 
-        newfile = os.path.join(self.working_path, "/appended/", self.curr_src_working_file)
+        newfile = os.path.join(self.working_path, "appended", self.curr_src_working_file)
         header_added, header_list_returned = migrate_utils.static_func.insert_each_line(
             foi.current_working_abs_file_name,
             newfile,
             str(file_id),
-            foi.file_delimiter, foi.has_header,foi.append_file_id,
+            foi.file_delimiter, foi.use_header,foi.append_file_id,
             foi.append_crc, db,foi.table_name,
             foi.limit_rows, foi.start_row
             )
@@ -420,7 +420,7 @@ class DataFile:
             # cols = db.get_columns(foi.table_name, foi.schema_name)
 
             header = ''
-            if foi.has_header or foi.header_added:
+            if foi.use_header or foi.header_added:
                 header = 'HEADER,'
             ###############THERE EXEC COMMAND LOGIC HERE########################################################
             envpwd = os.environ.get('PGPASSWORD', None)
@@ -531,7 +531,7 @@ class DataFile:
                                     quotechar='"', chunksize=chunk_size, header=header,index_col=False,
                                     dtype=object,skiprows=foi.start_row)):
 
-                    if not foi.has_header and len(foi.column_list)>0:
+                    if not foi.use_header and len(foi.column_list)>0:
                         dataframe.columns = map(str,
                                                 # foi.column_list
                                                 names

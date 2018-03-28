@@ -50,8 +50,8 @@ def dump_params(f):
 
 # function that will append data to a data file
 #@dump_params
-def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True,append_file_id=True,
-                     append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0):
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True,append_file_id=True,
+                     append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0,header_row=0):
     import os
     import errno
     import hashlib
@@ -83,18 +83,20 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
 
     columns_to_add_count = len(column_list)
 
-    if has_header is False and db is not None:
+    if use_header is False and db is not None:
         import db_utils
         assert isinstance(db, db_utils.dbconn.Connection)
         columns_from_db = db.get_columns(table_name, db.dbschema)
 
+        print("-------",columns_from_db)
         # if column count in db is more than columns in files
         # we drop the trailing columns in the database
         # if files has more columns than db error and need to make column in database
         for i, col in enumerate(columns_from_db):
             if col not in ['file_id', 'crc']:
                 column_list.append(col)
-        file_column_count = count_column_csv(orgfile) + columns_to_add_count
+        file_column_count = count_column_csv(orgfile,delimiter) + columns_to_add_count
+
         logging.info("\n\tFiles Columns Count:{}\n\tDB Column Count:{}".format(file_column_count, len(columns_from_db)))
         shrunk_list = []
         if len(columns_from_db) > file_column_count:
@@ -105,10 +107,12 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
         if len(shrunk_list) > 0:
             column_list = shrunk_list
     with open(newfile, 'w') as outfile:
-        # injecting a header because we are given a database connection and has_header is set to false
+        # injecting a header because we are given a database connection and use_header is set to false
         # this will assure file_id and crc will always be at the front of the file
-        if has_header is False and db is not None:
+        if use_header is False and db is not None:
             column_list = delimiter.join(column_list)
+            print("-------","writing in header")
+            print("-------",column_list + str(carriage_return))
             outfile.write(column_list + str(carriage_return))
             header_list_to_return = column_list
 
@@ -133,7 +137,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
 
                     if ii == start_row :
                         logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
-                        if has_header:
+                        if use_header:
                             outfile.write(header_to_add + delimiter + line)
                             header_list_to_return = str(header_to_add + delimiter + line)
 
@@ -1212,13 +1216,13 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
 
 
 # @timer
-def count_column_csv(full_file_path):
+def count_column_csv(full_file_path,delimiter=','):
     import pandas
 
     try:
         chunksize = 1
         chunk = None
-        for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize)):
+        for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,delimiter=delimiter)):
             # just run through the file to get number of chucks
             return len(chunk.columns)
     except Exception as e:
