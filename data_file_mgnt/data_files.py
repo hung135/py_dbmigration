@@ -196,11 +196,8 @@ class DataFile:
         header_added = False
         # logging.debug("Appending File ID to File:{}".format(newfile))
 
-<<<<<<< HEAD
         newfile = os.path.join(self.working_path, "appended", self.curr_src_working_file)
-=======
-        newfile = os.path.join(self.working_path, "appended/", self.curr_src_working_file)
->>>>>>> 30b0d0ce69194e56066a5515ff2e0074cd732549
+
         header_added, header_list_returned = migrate_utils.static_func.insert_each_line(
             foi.current_working_abs_file_name,
             newfile,
