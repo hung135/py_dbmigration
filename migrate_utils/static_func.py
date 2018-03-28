@@ -50,8 +50,10 @@ def dump_params(f):
 
 # function that will append data to a data file
 #@dump_params
+
 def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True,append_file_id=True,
                      append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0,header_row_location=None):
+
     import os
     import errno
     import hashlib
@@ -83,6 +85,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
 
     columns_to_add_count = len(column_list)
 
+
     file_column_count=0
     #if has_header or True:
     file_column_count = count_column_csv(orgfile,header_row_location) + columns_to_add_count
@@ -93,13 +96,17 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
         assert isinstance(db, db_utils.dbconn.Connection)
         columns_from_db = db.get_columns(table_name, db.dbschema)
         file_column_count=len(columns_from_db)
+
         # if column count in db is more than columns in files
         # we drop the trailing columns in the database
         # if files has more columns than db error and need to make column in database
         for i, col in enumerate(columns_from_db):
             if col not in ['file_id', 'crc']:
                 column_list.append(col)
- 
+
+        file_column_count = count_column_csv(orgfile,delimiter) + columns_to_add_count
+
+
         logging.info("\n\tFiles Columns Count:{}\n\tDB Column Count:{}".format(file_column_count, len(columns_from_db)))
         #stores the list of column from DB that is
         shrunk_list = []
@@ -114,10 +121,12 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             column_list = shrunk_list
     #print("--------",header_to_add,column_list)
     with open(newfile, 'w') as outfile:
-        # injecting a header because we are given a database connection and has_header is set to false
+        # injecting a header because we are given a database connection and use_header is set to false
         # this will assure file_id and crc will always be at the front of the file
-        if has_header is False and db is not None:
+        if use_header is False and db is not None:
             column_list = delimiter.join(column_list)
+            print("-------","writing in header")
+            print("-------",column_list + str(carriage_return))
             outfile.write(column_list + str(carriage_return))
             header_list_to_return = column_list
 
@@ -142,7 +151,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
 
                     if ii == start_row :
                         logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
-                        if has_header:
+                        if use_header:
                             outfile.write(header_to_add + delimiter + line)
                             header_list_to_return = str(header_to_add + delimiter + line)
 
@@ -259,10 +268,11 @@ def set_postgres_checksum_rows(db, schema, table_name,column_list=None, where_cl
     logging.info("Note order of columns matter else will result in different checksum")
     db.execute(checksum_sql.format(schema,table_name,col_list,where_clause))
 
+#WIP
 def do_postgres_upsert_insert(db, source_tbl_fqn, target_tbl_fqn):
     checksum_sql=generate_postgres_upsert(db,source_tbl_fqn,target_tbl_fqn)
     db.execute(checksum_sql.format(schema,table_name,col_list,where_clause))
-
+#WIP
 def do_postgres_upsert_update(db, source_tbl_fqn, target_tbl_fqn):
     checksum_sql=generate_postgres_upsert(db,source_tbl_fqn,target_tbl_fqn)
     db.execute(checksum_sql.format(schema,table_name,col_list,where_clause))
@@ -1221,9 +1231,11 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
 
 
 # @timer
+
 # run through the first 200 lines of a file and count the columns
 # puts the counts in a list and returns the median value
-def count_column_csv(full_file_path,header_row_location=0,sample_size=200):
+def count_column_csv(full_file_path,header_row_location=0,sample_size=200,delimiter=','):
+
     import pandas
     import statistics
     column_count=0
@@ -1232,8 +1244,10 @@ def count_column_csv(full_file_path,header_row_location=0,sample_size=200):
     try:
         chunksize = 1
         chunk = None
+
         count_list=[]
-        for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,header=header_row_location)):
+        for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,delimiter=delimiter,header=header_row_location)):
+
             # just run through the file to get number of chucks
             count_list.append(len(chunk.columns))
             if i>sample_size:
