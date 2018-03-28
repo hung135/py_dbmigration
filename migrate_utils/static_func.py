@@ -50,8 +50,13 @@ def dump_params(f):
 
 # function that will append data to a data file
 #@dump_params
+<<<<<<< HEAD
 def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True,append_file_id=True,
                      append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0,header_row=0):
+=======
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True,append_file_id=True,
+                     append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0,header_row_location=None):
+>>>>>>> 30b0d0ce69194e56066a5515ff2e0074cd732549
     import os
     import errno
     import hashlib
@@ -83,29 +88,50 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
 
     columns_to_add_count = len(column_list)
 
+<<<<<<< HEAD
     if use_header is False and db is not None:
         import db_utils
         assert isinstance(db, db_utils.dbconn.Connection)
         columns_from_db = db.get_columns(table_name, db.dbschema)
 
         print("-------",columns_from_db)
+=======
+    file_column_count=0
+    #if has_header or True:
+    file_column_count = count_column_csv(orgfile,header_row_location) + columns_to_add_count
+     
+    #if we have no header and a db connection pull column list from db
+    if has_header is False and db is not None:
+        import db_utils
+        assert isinstance(db, db_utils.dbconn.Connection)
+        columns_from_db = db.get_columns(table_name, db.dbschema)
+        file_column_count=len(columns_from_db)
+>>>>>>> 30b0d0ce69194e56066a5515ff2e0074cd732549
         # if column count in db is more than columns in files
         # we drop the trailing columns in the database
         # if files has more columns than db error and need to make column in database
         for i, col in enumerate(columns_from_db):
             if col not in ['file_id', 'crc']:
                 column_list.append(col)
+<<<<<<< HEAD
         file_column_count = count_column_csv(orgfile,delimiter) + columns_to_add_count
 
+=======
+ 
+>>>>>>> 30b0d0ce69194e56066a5515ff2e0074cd732549
         logging.info("\n\tFiles Columns Count:{}\n\tDB Column Count:{}".format(file_column_count, len(columns_from_db)))
+        #stores the list of column from DB that is
         shrunk_list = []
         if len(columns_from_db) > file_column_count:
+            #pulling left most column until we line up with db column_list
+            #if db has less columns than file we error out anyway
             for i in range(file_column_count):
                 shrunk_list.append(column_list[i])
             logging.warning("Database has more columns than File, Ignoring trailing columns:")
 
         if len(shrunk_list) > 0:
             column_list = shrunk_list
+    #print("--------",header_to_add,column_list)
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and use_header is set to false
         # this will assure file_id and crc will always be at the front of the file
@@ -148,7 +174,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
                     else:
                         outfile.write(data_to_prepend + line)
 
-
+    count_column_csv(newfile,0) 
     header_list_to_return = header_list_to_return.split(str(delimiter))
 
     return header_added, header_list_to_return
@@ -1216,18 +1242,43 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
 
 
 # @timer
+<<<<<<< HEAD
 def count_column_csv(full_file_path,delimiter=','):
+=======
+# run through the first 200 lines of a file and count the columns
+# puts the counts in a list and returns the median value
+def count_column_csv(full_file_path,header_row_location=0,sample_size=200):
+>>>>>>> 30b0d0ce69194e56066a5515ff2e0074cd732549
     import pandas
-
+    import statistics
+    column_count=0
+    if header_row_location is None:
+        header_row_location=0
     try:
         chunksize = 1
         chunk = None
+<<<<<<< HEAD
         for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,delimiter=delimiter)):
+=======
+        count_list=[]
+        for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,header=header_row_location)):
+>>>>>>> 30b0d0ce69194e56066a5515ff2e0074cd732549
             # just run through the file to get number of chucks
-            return len(chunk.columns)
+            count_list.append(len(chunk.columns))
+            if i>sample_size:
+                break
+        print(max(count_list))
+        column_count=statistics.median(count_list)
     except Exception as e:
-        pass
-    return 0
+        logging.error("Error Counting csv columns:{} \nReturning: 0".format(e))
+        import time
+        time.sleep(10)
+
+    #import time
+    print("---column_count:",column_count)
+    #time.sleep(10)
+
+    return column_count
 
 # this will read the first line of a file and determin if the file has a windows carriage return or unix
 def check_file_for_carriage_return(full_file_path):
@@ -1248,12 +1299,18 @@ def check_file_for_carriage_return(full_file_path):
 
 
 # @timer
-def profile_csv_directory(path,delimiter=',',file_pattern=None):
+def profile_csv_directory(path,delimiter=',',file_pattern=None,header_row_location=0):
     import os
     #path = './_sample_data'
     file_list=[]
+    total_cols_profile={}
+    if os.path.isdir(path):
+        print("Starting Dir:{}".format(path))
+    else:
+        print("Invalid Directory")
+
     # traverse root directory, and list directories as dirs and files as files
-    for root, dirs, files in os.walk(os.path.abspath(path)):
+    for root, dirs, files in os.walk(os.path.abspath(path),topdown=True):
         path = root.split(os.sep)
         print((len(path) - 1) * '---', os.path.basename(root))
         for file in files:
@@ -1261,10 +1318,61 @@ def profile_csv_directory(path,delimiter=',',file_pattern=None):
             file_list.append(os.path.join(root,file))
     for f in file_list:
         if file_pattern in f:
-            print("Profiling file:{}".format(f))
-            profile_csv(f,delimiter)
+            try:
+                c=None
+                print("Profiling file:{}".format(f))
+                c=profile_csv(f,delimiter)
+                for key,val  in c.iteritems():
+                    if total_cols_profile.get(key,0)<val:
+                        total_cols_profile[key]=val
+            except Exception as e:
+                print("Error for file:{}".format(e))
+    for key,value in sorted(total_cols_profile.items(), key=lambda x:x[1]):
+        print("Total:",key,value)
 
-def profile_csv(full_file_path,delimiter=','):
+def profile_csv(full_file_path,delimiter=',',header_row_location=0):
+    """
+    Given a CSV with a header:
+    The function will find the max len for each column
+    :param full_file_path:
+    :return: dict
+    """
+    def strlen(x):
+        return len(str(x))
+
+    import pandas.core.series
+    count_size = 0
+    chunksize = 10 ** 5
+
+    column_profile={}
+    for i, chunk in enumerate(pandas.read_csv(full_file_path,header=header_row_location,engine='c' ,chunksize=chunksize,
+        dtype=object,index_col=False,sep=delimiter)):
+        #print("process chunk:{} Delimiter:{}".format(i,delimiter))
+        assert isinstance(chunk,pandas.core.frame.DataFrame)
+        #print(chunk)
+
+        for j,col in enumerate(chunk.iteritems()):
+            x = col[1]
+            #assert isinstance(x,pandas.core.series.Series)
+            x_len=0
+
+            if x.dtype=='object':
+                
+                x_len=x.map(strlen).max()
+                
+            #print(x.map(len).max(),x.name)
+            y=column_profile.get(x.name,0)
+            if x_len>=y:
+                column_profile[x.name]=x_len
+   
+    #for key,value in sorted(column_profile.items(), key=lambda x:x[1]):
+        #print(key,value)
+         
+    #print(column_profile)
+    #print(full_file_path)
+    return (column_profile)
+
+def profile_csv_testing(full_file_path,delimiter=',',header_row_location=0):
     """
     Given a CSV with a header:
     The function will find the max len for each column
@@ -1277,27 +1385,23 @@ def profile_csv(full_file_path,delimiter=','):
     chunksize = 10 ** 5
 
     column_profile={}
-    for i, chunk in enumerate(pandas.read_csv(full_file_path,header=1,engine='c' ,chunksize=chunksize,
+    for i, chunk in enumerate(pandas.read_csv(full_file_path,header=header_row_location,engine='c' ,chunksize=chunksize,
         dtype=object,index_col=False,sep=delimiter)):
         #print("process chunk:{} Delimiter:{}".format(i,delimiter))
         assert isinstance(chunk,pandas.core.frame.DataFrame)
-        #print(chunk)
+        print(chunk['Location'],chunk['Location'].map(len))
+        #print(chunk.columns.values.tolist())
+        for row in chunk.iterrows():
+            pass
+            #print(row['Location'])
+            #print(type(row),row[0],row[1][0],row[1][1],row[1][2],row[1][3])
 
-        for j,col in enumerate(chunk.iteritems()):
-            x = col[1]
-            #assert isinstance(x,pandas.core.series.Series)
-            x_len=0
 
-            if x.dtype=='object':
-                try:
-                    x_len=x.map(len).max()
-                except:
-                    # eception occurs because we cannnot take a len of a number
-                    x_len=0
-            #print(x.map(len).max(),x.name)
-            y=column_profile.get(x.name,0)
-            if x_len>=y:
-                column_profile[x.name]=x_len
+            
+   
+    for key,value in sorted(column_profile.items(), key=lambda x:x[1]):
+        print(key,value)
+         
     print(column_profile)
     print(full_file_path)
     return (column_profile)

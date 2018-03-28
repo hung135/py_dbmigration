@@ -93,7 +93,7 @@ def get_mapped_table(file_name, foi_list):
     for i in foi_list:
         if i.table_name is not None:
             assert isinstance(i, FilesOfInterest)
-            print("***FOI.regex:",i.regex,i.table_name,file_name)
+            #print("***FOI.regex:",i.regex,i.table_name,file_name)
             if re.match(i.regex, file_name, re.IGNORECASE):
                 logging.info("\t\tFile->Table mapping found: {}".format(i.table_name))
                 return i
@@ -196,14 +196,18 @@ class DataFile:
         header_added = False
         # logging.debug("Appending File ID to File:{}".format(newfile))
 
+<<<<<<< HEAD
         newfile = os.path.join(self.working_path, "appended", self.curr_src_working_file)
+=======
+        newfile = os.path.join(self.working_path, "appended/", self.curr_src_working_file)
+>>>>>>> 30b0d0ce69194e56066a5515ff2e0074cd732549
         header_added, header_list_returned = migrate_utils.static_func.insert_each_line(
             foi.current_working_abs_file_name,
             newfile,
             str(file_id),
             foi.file_delimiter, foi.use_header,foi.append_file_id,
             foi.append_crc, db,foi.table_name,
-            foi.limit_rows, foi.start_row
+            foi.limit_rows, foi.start_row,foi.header_row
             )
         # return fullpath to new file
         return newfile, header_added, header_list_returned
@@ -562,6 +566,10 @@ class DataFile:
                 import_status = 'failed'
                 additional_info = (','.join(cols) + str(e))[:2000]
                 db.commit()
+                migrate_utils.static_func.profile_csv(foi.current_working_abs_file_name,',',0)
+                import time
+                print("sleeping so you can read:")
+                time.sleep(30)
 
         status_dict = {}
         status_dict['rows_inserted'] = self.rows_inserted
@@ -789,7 +797,7 @@ class DataFile:
                 foi = get_mapped_table(os.path.join(self.source_file_path,self.curr_src_working_file), self.foi_list)
 
                 logging.debug("Getting Mapped table:{}\n{}".format(self.curr_src_working_file, foi))
-                print(foi,"--------got one")
+                #print(foi,"--------got one")
                 if foi is not None:
                     # we found a table that is mapped to file of interest so we
                     
@@ -809,9 +817,9 @@ class DataFile:
 
                     if foi.insert_option and len(foi.column_list)>0:
                         try:
-                            print("Truncatingxxx Data:{}.{}".format(foi.schema_name, foi.table_name))
-                            db.truncate_table(foi.schema_name, foi.table_name)
                             print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
+                            db.truncate_table(foi.schema_name, foi.table_name)
+                            #print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
                         except Exception as e:
                             print(e)
                     else:
@@ -840,7 +848,7 @@ class DataFile:
 
                     # print(""df.row_count, min_row)
                     logging.debug("File Row Count:{}".format(df.row_count))
-                    print(foi.regex, foi.folder_regex,"------match regex")
+                    #print(foi.regex, foi.folder_regex,"------match regex")
                      
                     try:
 
