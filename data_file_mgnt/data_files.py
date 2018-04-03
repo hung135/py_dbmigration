@@ -93,8 +93,9 @@ def get_mapped_table(file_name, foi_list):
     for i in foi_list:
         if i.table_name is not None:
             assert isinstance(i, FilesOfInterest)
-            #print("***FOI.regex:",i.regex,i.table_name,file_name)
+            
             if re.match(i.regex, file_name, re.IGNORECASE):
+                print("***FOI.regex:",i.regex,i.table_name,file_name)
                 logging.info("\t\tFile->Table mapping found: {}".format(i.table_name))
                 return i
     return None
@@ -530,7 +531,7 @@ class DataFile:
                 for counter, dataframe in enumerate(
                         pd.read_csv(foi.current_working_abs_file_name, delimiter=foi.file_delimiter, nrows=limit_rows,
                                     quotechar='"', chunksize=chunk_size, header=header,index_col=False,
-                                    dtype=object,skiprows=foi.start_row)):
+                                    dtype=object)):
 
                     if not foi.use_header and len(foi.column_list)>0:
                         dataframe.columns = map(str,
@@ -669,7 +670,7 @@ class DataFile:
                     current_worker_host='{1}', current_worker_host_pid={2}, process_start_dtm=now()
                     WHERE (file_path ||file_name) in (select file_path ||file_name
                         FROM {0}.meta_source_files WHERE  current_worker_host is null order by
-                        id asc, file_size asc, file_name_data desc ,file_type asc limit 1)
+                        file_type asc,id asc, file_size asc, file_name_data desc  limit 1)
                     """).format(db_table.db_table_def.MetaSourceFiles.DbSchema, self.host, self.curr_pid))
         t.session.commit()
 
@@ -750,7 +751,11 @@ class DataFile:
     def extract_file(self, db, full_file_path, abs_writable_path):
         status_dict = {}
         try:
-            self.files = zip_utils.unzipper.extract_file(full_file_path, abs_writable_path, False, self.work_file_type)
+            logging.info("Creating MD5 checksum")
+            md5=migrate_utils.static_func.md5_file(full_file_path)
+            logging.info("MD5 checksum: {}".format(md5))
+            modified_write_path=os.path.join(abs_writable_path,md5)
+            self.files = zip_utils.unzipper.extract_file(full_file_path, modified_write_path, False, self.work_file_type)
             t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
             row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
             self.total_files = len(self.files)
@@ -767,6 +772,9 @@ class DataFile:
 
             DataFile(new_src_dir, db, file_table_map, parent_file_id=self.meta_source_file_id)
         except Exception as e:
+            import time
+            print(e)
+            time.sleep(30)
             status_dict['import_status'] = 'failed'
             status_dict['error_msg'] = 'Error During Unziping File'
         else:

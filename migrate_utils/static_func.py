@@ -51,7 +51,7 @@ def dump_params(f):
 # function that will append data to a data file
 #@dump_params
 
-def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True,append_file_id=True,
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True,append_file_id=True,
                      append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0,header_row_location=None):
 
     import os
@@ -87,14 +87,15 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
 
 
     file_column_count=0
-    #if has_header or True:
-    file_column_count = count_column_csv(orgfile,header_row_location) + columns_to_add_count
+    #if use_header or True:
+    file_column_count = count_column_csv(orgfile,header_row_location=header_row_location,delimiter=delimiter) + columns_to_add_count
      
     #if we have no header and a db connection pull column list from db
-    if has_header is False and db is not None:
+    if use_header is False and db is not None:
         import db_utils
         assert isinstance(db, db_utils.dbconn.Connection)
         columns_from_db = db.get_columns(table_name, db.dbschema)
+        print(columns_from_db,"-----------xxxxxx")
         file_column_count=len(columns_from_db)
 
         # if column count in db is more than columns in files
@@ -104,7 +105,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             if col not in ['file_id', 'crc']:
                 column_list.append(col)
 
-        file_column_count = count_column_csv(orgfile,delimiter) + columns_to_add_count
+        file_column_count = count_column_csv(orgfile,header_row_location=header_row_location,delimiter=delimiter) + columns_to_add_count
 
 
         logging.info("\n\tFiles Columns Count:{}\n\tDB Column Count:{}".format(file_column_count, len(columns_from_db)))
@@ -162,7 +163,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
                     else:
                         outfile.write(data_to_prepend + line)
 
-    count_column_csv(newfile,0) 
+    count_column_csv(newfile,header_row_location=header_row_location,delimiter=delimiter) 
     header_list_to_return = header_list_to_return.split(str(delimiter))
 
     return header_added, header_list_to_return
@@ -1265,7 +1266,7 @@ def count_column_csv(full_file_path,header_row_location=0,sample_size=200,delimi
     try:
         chunksize = 1
         chunk = None
-
+        print("---------",header_row_location)
         count_list=[]
         for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,delimiter=delimiter,header=header_row_location)):
 
@@ -1278,13 +1279,13 @@ def count_column_csv(full_file_path,header_row_location=0,sample_size=200,delimi
     except Exception as e:
         logging.error("Error Counting csv columns:{} \nReturning: 0".format(e))
         import time
-        time.sleep(10)
+        time.sleep(30)
 
     #import time
     print("---column_count:",column_count)
     #time.sleep(10)
 
-    return column_count
+    return int(column_count)
 
 # this will read the first line of a file and determin if the file has a windows carriage return or unix
 def check_file_for_carriage_return(full_file_path):
@@ -1433,6 +1434,15 @@ def count_csv(full_file_path):
     logging.debug("File Row Count:{0}".format(count_size))
     return count_size, column_count
 
+def md5_file(full_file_path):
+    import commands
+    record_count=0
+    status_code,msg = commands.getstatusoutput("md5sum '{}'".format(full_file_path))
+    print(status_code,msg,"xxxxx")
+    x=msg.split(' ')
+    print(x[0], 'md5') 
+
+    return x[0]
 
 def count_file_lines_wc(file):
     import commands
