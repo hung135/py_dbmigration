@@ -633,7 +633,7 @@ class DataFile:
         t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
         row.process_end_dtm = datetime.datetime.now()
-        print("type status_dict",status_dict)
+
         if status_dict is None:
             row.file_process_state = 'Uknown ERR'
         elif status_dict.get('import_status',None)== 'success':
@@ -647,6 +647,8 @@ class DataFile:
             row.last_error_msg = str(status_dict)[:2000]
             row.file_process_state = 'Failed'
             row.rows_inserted = 0
+            logging.error("Failed Importing: \n\t{}\n\t{}".format(self.curr_src_working_file,status_dict))
+            self.curr_file_success=False
 
 
         if vacuum and file_of_interest is not None and status_dict is None:
@@ -700,7 +702,7 @@ class DataFile:
                 row.file_size = self.file_size
                 t.session.commit()
 
-                print(self.work_file_type,self.row_count,"Inside Getwork")
+                logging.debug("Inside Getwork: FileType:{} :RowCount{}".format(self.work_file_type,self.row_count))
                 if self.work_file_type in ('DATA', 'CSV') and self.row_count == 0:
                     # logging.debug("Working DATAFILE:{0}:".format(self.curr_src_working_file))
                     row.total_files = 1
