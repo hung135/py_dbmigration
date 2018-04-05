@@ -269,13 +269,13 @@ def set_postgres_checksum_rows(db, schema, table_name, column_list=None, where_c
 # WIP
 def do_postgres_upsert_insert(db, source_tbl_fqn, target_tbl_fqn):
     checksum_sql = generate_postgres_upsert(db, source_tbl_fqn, target_tbl_fqn)
-    db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
+    #db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
 
 
 # WIP
 def do_postgres_upsert_update(db, source_tbl_fqn, target_tbl_fqn):
     checksum_sql = generate_postgres_upsert(db, source_tbl_fqn, target_tbl_fqn)
-    db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
+    #db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
 
 
 def pivot_table(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
@@ -942,7 +942,7 @@ def make_html_meta_source_files(db, full_file_path, html_head):
         try:
             os.makedirs(os.path.dirname(full_file_path))
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
+            if exc.errno != exc.errno.EEXIST:
                 raise
     os.chmod(os.path.dirname(full_file_path), 0o776)
     with open(full_file_path, 'w') as f:
@@ -972,7 +972,7 @@ def make_html_publish_error(db, full_file_path, html_head):
         try:
             os.makedirs(os.path.dirname(full_file_path))
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
+            if exc.errno != exc.errno.EEXIST:
                 raise
     os.chmod(os.path.dirname(full_file_path), 0o776)
     with open(full_file_path, 'w') as f:
@@ -1011,7 +1011,7 @@ def make_html_publish_log(db, full_file_path, html_head):
         try:
             os.makedirs(os.path.dirname(full_file_path))
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
+            if exc.errno != exc.errno.EEXIST:
                 raise
     os.chmod(os.path.dirname(full_file_path), 0o776)
     with open(full_file_path, 'w') as f:
@@ -1027,6 +1027,7 @@ def gen_data(col):
     import datetime
     from lorem.text import TextLorem
     from random_words import lorem_ipsum, RandomWords
+    import operator
     assert isinstance(col, sqlalchemy.Column)
 
     # print(col.type,col.type.python_type)
