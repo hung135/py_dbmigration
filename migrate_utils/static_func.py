@@ -1547,3 +1547,29 @@ def check_pii(db, ):
 
             print(sql_none.format(str(id), db._userid, table_name,id, field_name, z_list.lower()))
             db.execute(sql_insert + sql_none.format(str(id), db._userid, table_name,id, field_name, z_list.lower()))
+
+
+
+
+def send_email(sender, recipient_list, message):
+    import smtplib
+    from email.mime.text import MIMEText
+    import logging
+
+    DISTRIBUTION_LIST = ['salim.zayat@cfpb.gov']
+    logger = logging.getLogger('email_helper')
+    msg = MIMEText(message)
+    msg['Subject'] = subject
+    msg['From'] = sender
+    msg['To'] = ','.join(recipient_list)
+    
+    try:
+        # Send the message via local SMTP server.
+        s = smtplib.SMTP('wdcmgtl02.cfpb.local')
+        # sendmail function takes 3 arguments: sender's address, recipient's address
+        # and message to send - here it is sent as one string.
+        s.sendmail(sender, recipient_list, msg.as_string())
+        s.quit()
+    except Exception as e:
+        # do not re-throw this exception.  It is not crucial, so log the error and move on
+        logger.warn('unable to send email, e={0}'.format(str(e)))
