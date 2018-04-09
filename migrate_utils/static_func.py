@@ -21,7 +21,6 @@ def timer(f):
 
 # decorator function to time a function
 def dump_params(f):
-    import sys
     def wrapper(*args, **kwargs):
         # print('# In function:', sys._getframe().f_code.co_name)
 
@@ -269,13 +268,13 @@ def set_postgres_checksum_rows(db, schema, table_name, column_list=None, where_c
 # WIP
 def do_postgres_upsert_insert(db, source_tbl_fqn, target_tbl_fqn):
     checksum_sql = generate_postgres_upsert(db, source_tbl_fqn, target_tbl_fqn)
-    db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
+    # db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
 
 
 # WIP
 def do_postgres_upsert_update(db, source_tbl_fqn, target_tbl_fqn):
     checksum_sql = generate_postgres_upsert(db, source_tbl_fqn, target_tbl_fqn)
-    db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
+    # db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
 
 
 def pivot_table(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
@@ -504,10 +503,8 @@ def appdend_to_readme(db, folder=None, targetschema=None):
 
 
 def print_postgres_table(db, folder=None, targetschema=None):
-    import migrate_utils as mig
-    import sqlalchemy
     import os
-    from sqlalchemy.dialects import postgresql
+
     import subprocess
 
     con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
@@ -796,7 +793,6 @@ def print_table_dict(db, folder='.', targetschema=None):
 
 
 def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
-    import migrate_utils as mig
     import sqlalchemy
     import os
 
@@ -888,7 +884,6 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
 
 
 def reset_migration(db):
-    import sys
     db._cur.execute("""
     Drop schema if exists enforce cascade;
     Drop schema if exists stg cascade;
@@ -942,7 +937,7 @@ def make_html_meta_source_files(db, full_file_path, html_head):
         try:
             os.makedirs(os.path.dirname(full_file_path))
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
+            if exc.errno != exc.errno.EEXIST:
                 raise
     os.chmod(os.path.dirname(full_file_path), 0o776)
     with open(full_file_path, 'w') as f:
@@ -972,7 +967,7 @@ def make_html_publish_error(db, full_file_path, html_head):
         try:
             os.makedirs(os.path.dirname(full_file_path))
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
+            if exc.errno != exc.errno.EEXIST:
                 raise
     os.chmod(os.path.dirname(full_file_path), 0o776)
     with open(full_file_path, 'w') as f:
@@ -1011,7 +1006,7 @@ def make_html_publish_log(db, full_file_path, html_head):
         try:
             os.makedirs(os.path.dirname(full_file_path))
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
+            if exc.errno != exc.errno.EEXIST:
                 raise
     os.chmod(os.path.dirname(full_file_path), 0o776)
     with open(full_file_path, 'w') as f:
@@ -1022,25 +1017,25 @@ def make_html_publish_log(db, full_file_path, html_head):
 # given a columna_name,type tubple return a data word for that type
 def gen_data(col):
     import random
-    import string
+
     import sqlalchemy
     import datetime
-    from lorem.text import TextLorem
-    from random_words import lorem_ipsum, RandomWords
+
+    from random_words import RandomWords
+    import operator
     assert isinstance(col, sqlalchemy.Column)
 
     # print(col.type,col.type.python_type)
-    if (str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']):
+    if str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']:
         # print("----", str(col[1]),"".join([random.choice(string.digits) for i in xrange(2)]))
         data = random.randint(1, 2000)
-    elif ('PRECISION' in str(col.type)
-          or 'NUMERIC' in str(col.type)):
+    elif 'PRECISION' in str(col.type) or 'NUMERIC' in str(col.type):
         # print("----", str(col[1]),"".join([random.choice(string.digits) for i in xrange(2)]))
         data = random.randrange(1, 100)
 
-    elif ('TIMESTAMP' in str(col.type)):
+    elif 'TIMESTAMP' in str(col.type):
         data = str(datetime.datetime.now())
-    elif ('TEXT' in str(col.type)):
+    elif 'TEXT' in str(col.type):
         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
         limit = min([100])
         if limit == 0:
@@ -1051,7 +1046,7 @@ def gen_data(col):
         data = data.replace('p ', r'\"')
         data = '"' + data.replace('r ', '\n') + '"'
 
-    elif ('CHAR' in str(col.type)):
+    elif 'CHAR' in str(col.type):
         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
         limit = min([5, operator.div(col.type.length, 5)])
         if limit == 0:
@@ -1071,24 +1066,24 @@ def gen_data(col):
 def get_func(col):
     import random
     import string
-    import sqlalchemy
+
     import datetime
-    from lorem.text import TextLorem
-    from random_words import lorem_ipsum, RandomWords
+
+    from random_words import  RandomWords
     # assert isinstance(col, sqlalchemy.Column)
 
-    if (str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']):
+    if str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']:
         def gen_data():
             return random.randint(1, 2000)
 
         return gen_data
-    elif (str(col.type) in ['BYTEA']):
+    elif str(col.type) in ['BYTEA']:
         def gen_data():
 
             return "'NULL'"
 
         return gen_data
-    elif (str(col.type) in ['UUID']):
+    elif str(col.type) in ['UUID']:
 
         def gen_data():
             import hashlib
@@ -1498,8 +1493,10 @@ def add_column(db, table_name, column_name, data_type, nullable=''):
     print(sql_command)
     db.execute(sql_command)
 
+
 def reset_pii(db, ):
     pass
+
 
 def check_pii(db, ):
     import datetime
@@ -1508,7 +1505,7 @@ def check_pii(db, ):
 
     sql = """SELECT id,table_name,field_name,acceptable_values from compliance.health_check_rules m"""
     sql_insert = """insert into compliance.health_check_violations(health_check_rule_id,data_record_id,active,created_dt,created_by) """
-    sql_on_conflict =   """ ON CONFLICT (health_check_rule_id,data_record_id) DO UPDATE
+    sql_on_conflict = """ ON CONFLICT (health_check_rule_id,data_record_id) DO UPDATE
                             set active=True,
                             updated_dt=now(),
                             updated_by_id='{}'
@@ -1525,7 +1522,7 @@ def check_pii(db, ):
             cast(h.health_check_rule_id as integer)= {} and h.data_record_id=cast(m.id as integer) and h.active=True 
             where
             (h.id is null) and {} not in (NULL) """
-            y = db.query(sql_none.format(table_name, field_name, field_name, table_name,id, field_name))
+            y = db.query(sql_none.format(table_name, field_name, field_name, table_name, id, field_name))
             for i in y:
                 print(i)
         else:
@@ -1545,6 +1542,7 @@ def check_pii(db, ):
                         where
                         (h.id is null) and lower({}) not in ({}) """
 
+<<<<<<< HEAD
             print(sql_none.format(str(id), db._userid, table_name,id, field_name, z_list.lower()))
             db.execute(sql_insert + sql_none.format(str(id), db._userid, table_name,id, field_name, z_list.lower()))
 
@@ -1573,3 +1571,7 @@ def send_email(sender, recipient_list, message):
     except Exception as e:
         # do not re-throw this exception.  It is not crucial, so log the error and move on
         logger.warn('unable to send email, e={0}'.format(str(e)))
+=======
+            print(sql_none.format(str(id), db._userid, table_name, id, field_name, z_list.lower()))
+            db.execute(sql_insert + sql_none.format(str(id), db._userid, table_name, id, field_name, z_list.lower()))
+>>>>>>> 3c0ce7128b6eb5466db9f1d9869fabeb68fc0308
