@@ -1530,44 +1530,59 @@ def check_pii(db):
     # iterate through the rules table
     for id, table_name, field_name, acceptable_values in x:
         print("Iterating through",table_name,field_name)
-        try:
-            primay_key = get_primary_key(db, db.dbschema,
-                                         table_name)
-            #print(primay_key,type(primay_key))
+        #try:
+        primay_key = get_primary_key(db, db.dbschema,
+                                     table_name)
+        #print(primay_key,type(primay_key))
 
-            if len(primay_key)>1:
-                logging.error("More than 1 Primary Key not supported:{}".format(primay_key))
+        if len(primay_key)>1:
+            logging.error("More than 1 Primary Key not supported:{}".format(primay_key))
 
-            if len(primay_key)==0:
-                logging.error("Need Primary Key:{}".format(table_name))
+        if len(primay_key)==0:
+            logging.error("Need Primary Key:{}".format(table_name))
 
-            key_colums_to_sql = str(primay_key[0])
-            fqn_table_name=table_name
-            if '.' not in table_name:
-                fqn_table_name=db.dbschema+"."+table_name
-            jj=acceptable_values.split(';')
-            for acceptable_value in jj:
+        key_colums_to_sql = str(primay_key[0])
+        fqn_table_name=table_name
+        if '.' not in table_name:
+            fqn_table_name=db.dbschema+"."+table_name
+        jj=acceptable_values.split(';')
 
-                values = acceptable_value.split(',')
-                z_list = ','.join(("'{}'".format(x)) for x in values)
-                print(values, z_list)
-                # health_checkrule_id, data_record_id, active, created_dt, created_by
-                sql_none = """select 
-                            '{0}' as health_checkrule_id,
-                            {1} as data_record_id,  
-                            True as active,
-                            now() as dtm, 
-                            '{2}' as created_by
-                            from {3} m
-                            left outer join compliance.health_check_violations h on 
-                            cast(h.health_check_rule_id as integer)= {4} and h.data_record_id=cast(m.{1} as integer) and h.active=True
-                            where
-                            (h.id is null) and lower(cast({5} as varchar))not in ({6}) """
+        where_clause=None
+        where_null=None
+        in_clause=[]
+        for i in jj:
+            if i=='NULL':
+                where_null=field_name + ' is NULL '
+            else:
+                in_clause.append(i)
+
+        z_list = ','.join(("'{}'".format(x)) for x in in_clause)
+
+        if z_list=='':
+            if where_null is not None:
+                where_clause = where_null
+        else:
+            where_clause="lower(cast({} as varchar)) not in ({})".format(field_name,z_list)
+            if where_null is not None:
+                where_clause = where_clause + ' AND\n NOT ({}) '.format( where_null)
+
+        #print(values, z_list)
+        # health_checkrule_id, data_record_id, active, created_dt, created_by
+        sql_none = """select 
+                    '{0}' as health_checkrule_id,
+                    {1} as data_record_id,  
+                    True as active,
+                    now() as dtm, 
+                    '{2}' as created_by
+                    from {3} m
+                    left outer join compliance.health_check_violations h on 
+                    cast(h.health_check_rule_id as integer)= {4} and h.data_record_id=cast(m.{1} as integer) and h.active=True
+                    where
+                    (h.id is null) AND\n (\n{5}\n) """
 
 
-
-                #print(sql_none.format(str(id), key_colums_to_sql,db._userid, fqn_table_name, field_name, z_list.lower()))
-                db.execute(
-                    sql_insert + sql_none.format(str(id), key_colums_to_sql,db._userid, fqn_table_name, id, field_name, z_list.lower()))
-        except Exception as e:
-            logging.error("Error processing table:{} \n{}".format(table_name,e))
+        sql_to_exe=sql_insert + sql_none.format(str(id), key_colums_to_sql,db._userid, fqn_table_name, id,   where_clause)
+        print(sql_to_exe)
+        db.execute(sql_to_exe)
+        #except Exception as e:
+            #logging.error("Error processing table:{} \n{}".format(table_name,e))
