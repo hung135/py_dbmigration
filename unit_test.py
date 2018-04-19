@@ -17,7 +17,7 @@ class Test_db_utils_postgres(unittest.TestCase):
     DATABASE = 'postgres'
     USERID = 'postgres'
     DBTYPE = 'POSTGRES'
-    DATA_SCHEMA = 'test'
+    DATA_SCHEMA = 'prey'
     DBPASSWORD = 'docker'
     DBPORT = 5432
     SAMPLE_DATA_LINE_COUNT = 1500
@@ -105,7 +105,7 @@ class Test_db_utils_postgres(unittest.TestCase):
                                                         )
 
 
-    #@unittest.skip("Skipping for now")
+    @unittest.skip("Skipping for now")
     def test_08_walkdir_data_file(self):
         print('# In function:', sys._getframe().f_code.co_name)
         # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
@@ -241,8 +241,13 @@ class Test_db_utils_postgres(unittest.TestCase):
 
 
     def test_profile_csv(self):
+        print('# In function:', sys._getframe().f_code.co_name)
         #migrate_utils.static_func.profile_csv(full_file_path="/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data/test_city2018.csv")
         migrate_utils.static_func.profile_csv_directory("/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data")
-        pass
+
+
+    def test_check_iii(self):
+        print('# In function:', sys._getframe().f_code.co_name)
+        migrate_utils.static_func.check_pii(self.db)
 if __name__ == '__main__':
     unittest.main()

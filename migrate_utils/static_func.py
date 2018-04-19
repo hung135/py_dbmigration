@@ -19,29 +19,25 @@ def timer(f):
     return wrapper
 
 
-
 # decorator function to time a function
 def dump_params(f):
-    import sys
     def wrapper(*args, **kwargs):
-        #print('# In function:', sys._getframe().f_code.co_name)
+        # print('# In function:', sys._getframe().f_code.co_name)
 
-        print("Fucntion Name",f.__name__)
-        #print(f.__code__.co_argcount)
+        print("Fucntion Name", f.__name__)
+        # print(f.__code__.co_argcount)
         print(f.__code__.co_varnames[:f.func_code.co_argcount])
-        fields =(f.__code__.co_varnames[:f.func_code.co_argcount])
-        #print(dir(f.__code__))
-        #for a in fields:
+        fields = (f.__code__.co_varnames[:f.func_code.co_argcount])
+        # print(dir(f.__code__))
+        # for a in fields:
         #    print(a,kwargs.get(a,''))
 
         for x in kwargs:
-            print(x,"kwargs")
+            print(x, "kwargs")
 
-        for arg in zip(fields,args):
-            print( str(arg))
+        for arg in zip(fields, args):
+            print(str(arg))
         x = f(*args, **kwargs)
-
-
 
         return x
 
@@ -49,11 +45,11 @@ def dump_params(f):
 
 
 # function that will append data to a data file
-#@dump_params
+# @dump_params
 
-def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True,append_file_id=True,
-                     append_crc=False, db=None, table_name=None, limit_rows=None,start_row=0,header_row_location=None):
-
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True, append_file_id=True,
+                     append_crc=False, db=None, table_name=None, limit_rows=None, start_row=0,
+                     header_row_location=None):
     import os
     import errno
     import hashlib
@@ -61,7 +57,6 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
     header_list_to_return = None
     return_char_unix = '\n'
     return_char_windows = '\r\n'
-
 
     carriage_return = check_file_for_carriage_return(orgfile)
 
@@ -78,24 +73,24 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
     if append_file_id:
         column_list.append('file_id')
 
-
     if append_crc:
         column_list.append('crc')
-    header_to_add=delimiter.join(column_list)
+    header_to_add = delimiter.join(column_list)
 
     columns_to_add_count = len(column_list)
 
+    file_column_count = 0
+    # if use_header or True:
+    file_column_count = count_column_csv(orgfile, header_row_location=header_row_location,
+                                         delimiter=delimiter) + columns_to_add_count
 
-    file_column_count=0
-    #if has_header or True:
-    file_column_count = count_column_csv(orgfile,header_row_location) + columns_to_add_count
-     
-    #if we have no header and a db connection pull column list from db
-    if has_header is False and db is not None:
+    # if we have no header and a db connection pull column list from db
+    if use_header is False and db is not None:
         import db_utils
         assert isinstance(db, db_utils.dbconn.Connection)
         columns_from_db = db.get_columns(table_name, db.dbschema)
-        file_column_count=len(columns_from_db)
+        print(columns_from_db, "-----------xxxxxx")
+        file_column_count = len(columns_from_db)
 
         # if column count in db is more than columns in files
         # we drop the trailing columns in the database
@@ -104,29 +99,29 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             if col not in ['file_id', 'crc']:
                 column_list.append(col)
 
-        file_column_count = count_column_csv(orgfile,delimiter) + columns_to_add_count
-
+        file_column_count = count_column_csv(orgfile, header_row_location=header_row_location,
+                                             delimiter=delimiter) + columns_to_add_count
 
         logging.info("\n\tFiles Columns Count:{}\n\tDB Column Count:{}".format(file_column_count, len(columns_from_db)))
-        #stores the list of column from DB that is
+        # stores the list of column from DB that is
         shrunk_list = []
         if len(columns_from_db) > file_column_count:
-            #pulling left most column until we line up with db column_list
-            #if db has less columns than file we error out anyway
+            # pulling left most column until we line up with db column_list
+            # if db has less columns than file we error out anyway
             for i in range(file_column_count):
                 shrunk_list.append(column_list[i])
             logging.warning("Database has more columns than File, Ignoring trailing columns:")
 
         if len(shrunk_list) > 0:
             column_list = shrunk_list
-    #print("--------",header_to_add,column_list)
+    # print("--------",header_to_add,column_list)
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and use_header is set to false
         # this will assure file_id and crc will always be at the front of the file
         if use_header is False and db is not None:
             column_list = delimiter.join(column_list)
-            print("-------","writing in header")
-            print("-------",column_list + str(carriage_return))
+            print("-------", "writing in header")
+            print("-------", column_list + str(carriage_return))
             outfile.write(column_list + str(carriage_return))
             header_list_to_return = column_list
 
@@ -139,30 +134,30 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, has_header=True
             # making version of very similar logic so we don't have to check for append_cc on each row to do checksum
             # take care of the header first
             # if the file doesn't have a header and we have a header added it
-            file_id_to_add=''
+            file_id_to_add = ''
             if append_file_id:
-                file_id_to_add+=pre_pend_data+delimiter
+                file_id_to_add += pre_pend_data + delimiter
 
             for ii, line in enumerate(src_file):
-                    # local variable to accrue data before we write file
-                    data_to_prepend=file_id_to_add
-                    if append_crc:
-                        data_to_prepend+=str(hashlib.md5(line).hexdigest())+delimiter
+                # local variable to accrue data before we write file
+                data_to_prepend = file_id_to_add
+                if append_crc:
+                    data_to_prepend += str(hashlib.md5(line).hexdigest()) + delimiter
 
-                    if ii == start_row :
-                        logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
-                        if use_header:
-                            outfile.write(header_to_add + delimiter + line)
-                            header_list_to_return = str(header_to_add + delimiter + line)
+                if ii == start_row:
+                    logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
+                    if use_header:
+                        outfile.write(header_to_add + delimiter + line)
+                        header_list_to_return = str(header_to_add + delimiter + line)
 
-                    if ii<start_row:
-                        pass
-                    elif limit_rows is not None and ii > limit_rows:
-                        break
-                    else:
-                        outfile.write(data_to_prepend + line)
+                if ii < start_row:
+                    pass
+                elif limit_rows is not None and ii > limit_rows:
+                    break
+                else:
+                    outfile.write(data_to_prepend + line)
 
-    count_column_csv(newfile,0) 
+    count_column_csv(newfile, header_row_location=header_row_location, delimiter=delimiter)
     header_list_to_return = header_list_to_return.split(str(delimiter))
 
     return header_added, header_list_to_return
@@ -254,28 +249,33 @@ def dd_lookup(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep
             db.execute(sqlx)
             db.execute(sqlx2)
 
+
 # this function will add a crc column to the table if not existing and will generate a checksum based on columns passed in
 #  else it will pull list of columns from db and generate checksum for those columns and set the crc
-def set_postgres_checksum_rows(db, schema, table_name,column_list=None, where_clause='1=1'):
-    checksum_sql="""update {}.{} set crc=md5(row({})::text)::uuid where {}"""
-    add_column(db, schema+'.'+table_name, 'crc', 'uuid', nullable='')
+def set_postgres_checksum_rows(db, schema, table_name, column_list=None, where_clause='1=1'):
+    checksum_sql = """update {}.{} set crc=md5(row({})::text)::uuid where {}"""
+    add_column(db, schema + '.' + table_name, 'crc', 'uuid', nullable='')
 
     if column_list is None:
-        col_list=db.get_columns(table_name,schema)
+        col_list = db.get_columns(table_name, schema)
     else:
-        col_list=column_list
+        col_list = column_list
     logging.info("Running Checksum on These columns: {}".format(col_list))
     logging.info("Note order of columns matter else will result in different checksum")
-    db.execute(checksum_sql.format(schema,table_name,col_list,where_clause))
+    db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
 
-#WIP
+
+# WIP
 def do_postgres_upsert_insert(db, source_tbl_fqn, target_tbl_fqn):
-    checksum_sql=generate_postgres_upsert(db,source_tbl_fqn,target_tbl_fqn)
-    db.execute(checksum_sql.format(schema,table_name,col_list,where_clause))
-#WIP
+    checksum_sql = generate_postgres_upsert(db, source_tbl_fqn, target_tbl_fqn)
+    # db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
+
+
+# WIP
 def do_postgres_upsert_update(db, source_tbl_fqn, target_tbl_fqn):
-    checksum_sql=generate_postgres_upsert(db,source_tbl_fqn,target_tbl_fqn)
-    db.execute(checksum_sql.format(schema,table_name,col_list,where_clause))
+    checksum_sql = generate_postgres_upsert(db, source_tbl_fqn, target_tbl_fqn)
+    # db.execute(checksum_sql.format(schema, table_name, col_list, where_clause))
+
 
 def pivot_table(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep_nulls=False):
     tables = db.get_tables(schema=schema)
@@ -453,9 +453,10 @@ def show_users(db):
         ;""".format(db._database_name, db.dbschema)
     return db.query(sql)
 
-def print_padded(pad_size=10,*args):
+
+def print_padded(pad_size=10, *args):
     import sys
-    #sys.stdout.write('.')
+    # sys.stdout.write('.')
     for arg in args:
         sys.stdout.write(str(arg).ljust(pad_size))
     sys.stdout.write('\n')
@@ -502,10 +503,8 @@ def appdend_to_readme(db, folder=None, targetschema=None):
 
 
 def print_postgres_table(db, folder=None, targetschema=None):
-    import migrate_utils as mig
-    import sqlalchemy
     import os
-    from sqlalchemy.dialects import postgresql
+
     import subprocess
 
     con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
@@ -695,9 +694,7 @@ def print_table_dict(db, folder='.', targetschema=None):
             f.write(','.join("{0}".format(x) for x in r) + '\n')
 
 
-
-
-#todo dump all types of objects to sqitch format
+# todo dump all types of objects to sqitch format
 """def print_create_db_obj(db, folder=None, targetschema=None, file_prefix=None,object='Tables'):
     import migrate_utils as mig
     import sqlalchemy
@@ -793,8 +790,9 @@ def print_table_dict(db, folder='.', targetschema=None):
 
     print("Total Tables:{}".format(table_count))
 """
+
+
 def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
-    import migrate_utils as mig
     import sqlalchemy
     import os
 
@@ -886,7 +884,6 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
 
 
 def reset_migration(db):
-    import sys
     db._cur.execute("""
     Drop schema if exists enforce cascade;
     Drop schema if exists stg cascade;
@@ -937,15 +934,18 @@ def make_html_meta_source_files(db, full_file_path, html_head):
     # or no records
 
     if not os.path.exists(os.path.dirname(full_file_path)):
+        import commands
         try:
-            os.makedirs(os.path.dirname(full_file_path))
+            os.makedirs(os.path.dirname(full_file_path),0775)
+ 
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
+            if exc.errno != exc.errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0o776)
+    os.chmod(os.path.dirname(full_file_path), 0776)
+
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0o666)
+    os.chmod(full_file_path, 0776)
 
 
 def make_html_publish_error(db, full_file_path, html_head):
@@ -968,14 +968,16 @@ def make_html_publish_error(db, full_file_path, html_head):
 
     if not os.path.exists(os.path.dirname(full_file_path)):
         try:
-            os.makedirs(os.path.dirname(full_file_path))
+             
+            os.makedirs(os.path.dirname(full_file_path),0775) 
+ 
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
+            if exc.errno != exc.errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0o776)
+    os.chmod(os.path.dirname(full_file_path), 0776)
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0o666)
+    os.chmod(full_file_path, 0776)
 
 
 def make_html_publish_log(db, full_file_path, html_head):
@@ -1007,38 +1009,40 @@ def make_html_publish_log(db, full_file_path, html_head):
 
     if not os.path.exists(os.path.dirname(full_file_path)):
         try:
-            os.makedirs(os.path.dirname(full_file_path))
+             
+            os.makedirs(os.path.dirname(full_file_path),0775)
+       
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
+            if exc.errno != exc.errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0o776)
+    os.chmod(os.path.dirname(full_file_path), 0776)
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0o666)
+    os.chmod(full_file_path, 0776)
 
 
 # given a columna_name,type tubple return a data word for that type
 def gen_data(col):
     import random
-    import string
+
     import sqlalchemy
     import datetime
-    from lorem.text import TextLorem
-    from random_words import lorem_ipsum, RandomWords
+
+    from random_words import RandomWords
+    import operator
     assert isinstance(col, sqlalchemy.Column)
 
     # print(col.type,col.type.python_type)
-    if (str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']):
+    if str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']:
         # print("----", str(col[1]),"".join([random.choice(string.digits) for i in xrange(2)]))
         data = random.randint(1, 2000)
-    elif ('PRECISION' in str(col.type)
-          or 'NUMERIC' in str(col.type)):
+    elif 'PRECISION' in str(col.type) or 'NUMERIC' in str(col.type):
         # print("----", str(col[1]),"".join([random.choice(string.digits) for i in xrange(2)]))
         data = random.randrange(1, 100)
 
-    elif ('TIMESTAMP' in str(col.type)):
+    elif 'TIMESTAMP' in str(col.type):
         data = str(datetime.datetime.now())
-    elif ('TEXT' in str(col.type)):
+    elif 'TEXT' in str(col.type):
         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
         limit = min([100])
         if limit == 0:
@@ -1049,7 +1053,7 @@ def gen_data(col):
         data = data.replace('p ', r'\"')
         data = '"' + data.replace('r ', '\n') + '"'
 
-    elif ('CHAR' in str(col.type)):
+    elif 'CHAR' in str(col.type):
         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
         limit = min([5, operator.div(col.type.length, 5)])
         if limit == 0:
@@ -1069,22 +1073,24 @@ def gen_data(col):
 def get_func(col):
     import random
     import string
-    import sqlalchemy
+
     import datetime
-    from lorem.text import TextLorem
-    from random_words import lorem_ipsum, RandomWords
+
+    from random_words import  RandomWords
     # assert isinstance(col, sqlalchemy.Column)
 
-    if (str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']):
+    if str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']:
         def gen_data():
             return random.randint(1, 2000)
+
         return gen_data
-    elif (str(col.type) in ['BYTEA']):
+    elif str(col.type) in ['BYTEA']:
         def gen_data():
 
             return "'NULL'"
+
         return gen_data
-    elif (str(col.type) in ['UUID']):
+    elif str(col.type) in ['UUID']:
 
         def gen_data():
             import hashlib
@@ -1094,7 +1100,7 @@ def get_func(col):
     elif ('PRECISION' in str(col.type)
           or 'NUMERIC' in str(col.type)):
         def gen_data():
-            x=random.randrange(1, 100)
+            x = random.randrange(1, 100)
             return x
 
         return gen_data
@@ -1141,7 +1147,7 @@ def get_func(col):
     else:
 
         def gen_data():
-            print("gen-fuc",str(col.type))
+            print("gen-fuc", str(col.type))
             return random.randint(1, 32000)
 
         return gen_data
@@ -1226,6 +1232,7 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
             os.makedirs(zip_directory)
         zipdir(data_directory, os.path.abspath(zip_file_name))
 
+
 # this will return sql to do upsert based on the primary keys
 def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
     import db_utils.dbconn
@@ -1255,36 +1262,37 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
 
 # run through the first 200 lines of a file and count the columns
 # puts the counts in a list and returns the median value
-def count_column_csv(full_file_path,header_row_location=0,sample_size=200,delimiter=','):
-
+def count_column_csv(full_file_path, header_row_location=0, sample_size=200, delimiter=','):
     import pandas
     import statistics
-    column_count=0
+    column_count = 0
     if header_row_location is None:
-        header_row_location=0
+        header_row_location = 0
     try:
         chunksize = 1
         chunk = None
-
-        count_list=[]
-        for i, chunk in enumerate(pandas.read_csv(full_file_path, chunksize=chunksize,delimiter=delimiter,header=header_row_location)):
+        print("---------", header_row_location)
+        count_list = []
+        for i, chunk in enumerate(
+                pandas.read_csv(full_file_path, chunksize=chunksize, delimiter=delimiter, header=header_row_location)):
 
             # just run through the file to get number of chucks
             count_list.append(len(chunk.columns))
-            if i>sample_size:
+            if i > sample_size:
                 break
         print(max(count_list))
-        column_count=statistics.median(count_list)
+        column_count = statistics.median(count_list)
     except Exception as e:
         logging.error("Error Counting csv columns:{} \nReturning: 0".format(e))
         import time
-        time.sleep(10)
+        time.sleep(30)
 
-    #import time
-    print("---column_count:",column_count)
-    #time.sleep(10)
+    # import time
+    print("---column_count:", column_count)
+    # time.sleep(10)
 
-    return column_count
+    return int(column_count)
+
 
 # this will read the first line of a file and determin if the file has a windows carriage return or unix
 def check_file_for_carriage_return(full_file_path):
@@ -1305,44 +1313,47 @@ def check_file_for_carriage_return(full_file_path):
 
 
 # @timer
-def profile_csv_directory(path,delimiter=',',file_pattern=None,header_row_location=0):
+def profile_csv_directory(path, delimiter=',', file_pattern=None, header_row_location=0):
     import os
-    #path = './_sample_data'
-    file_list=[]
-    total_cols_profile={}
+    # path = './_sample_data'
+    file_list = []
+    total_cols_profile = {}
     if os.path.isdir(path):
-        print("Starting Dir:{}".format(path))
+
+        logging.info("Starting Dir:{}".format(path))
     else:
-        print("Invalid Directory")
+        logging.error("Invalid Directory")
 
     # traverse root directory, and list directories as dirs and files as files
-    for root, dirs, files in os.walk(os.path.abspath(path),topdown=True):
+    for root, dirs, files in os.walk(os.path.abspath(path), topdown=True):
         path = root.split(os.sep)
         print((len(path) - 1) * '---', os.path.basename(root))
         for file in files:
             print(root, file)
-            file_list.append(os.path.join(root,file))
+            file_list.append(os.path.join(root, file))
     for f in file_list:
         if file_pattern in f:
             try:
-                c=None
-                print("Profiling file:{}".format(f))
-                c=profile_csv(f,delimiter)
-                for key,val  in c.iteritems():
-                    if total_cols_profile.get(key,0)<val:
-                        total_cols_profile[key]=val
+                c = None
+                logging.info("Profiling file:{}".format(f))
+                c = profile_csv(f, delimiter)
+                for key, val in c.iteritems():
+                    if total_cols_profile.get(key, 0) < val:
+                        total_cols_profile[key] = val
             except Exception as e:
-                print("Error for file:{}".format(e))
-    for key,value in sorted(total_cols_profile.items(), key=lambda x:x[1]):
-        print("Total:",key,value)
+                logging.error("Error for file:{}".format(e))
+    for key, value in sorted(total_cols_profile.items(), key=lambda x: x[1]):
+        logging.info("Total:", key, value)
 
-def profile_csv(full_file_path,delimiter=',',header_row_location=0):
+
+def profile_csv(full_file_path, delimiter=',', header_row_location=0):
     """
     Given a CSV with a header:
     The function will find the max len for each column
     :param full_file_path:
     :return: dict
     """
+
     def strlen(x):
         return len(str(x))
 
@@ -1350,35 +1361,36 @@ def profile_csv(full_file_path,delimiter=',',header_row_location=0):
     count_size = 0
     chunksize = 10 ** 5
 
-    column_profile={}
-    for i, chunk in enumerate(pandas.read_csv(full_file_path,header=header_row_location,engine='c' ,chunksize=chunksize,
-        dtype=object,index_col=False,sep=delimiter)):
-        #print("process chunk:{} Delimiter:{}".format(i,delimiter))
-        assert isinstance(chunk,pandas.core.frame.DataFrame)
-        #print(chunk)
+    column_profile = {}
+    for i, chunk in enumerate(
+            pandas.read_csv(full_file_path, header=header_row_location, engine='c', chunksize=chunksize,
+                            dtype=object, index_col=False, sep=delimiter)):
+        # print("process chunk:{} Delimiter:{}".format(i,delimiter))
+        assert isinstance(chunk, pandas.core.frame.DataFrame)
+        # print(chunk)
 
-        for j,col in enumerate(chunk.iteritems()):
+        for j, col in enumerate(chunk.iteritems()):
             x = col[1]
-            #assert isinstance(x,pandas.core.series.Series)
-            x_len=0
+            # assert isinstance(x,pandas.core.series.Series)
+            x_len = 0
 
-            if x.dtype=='object':
-                
-                x_len=x.map(strlen).max()
-                
-            #print(x.map(len).max(),x.name)
-            y=column_profile.get(x.name,0)
-            if x_len>=y:
-                column_profile[x.name]=x_len
-   
-    #for key,value in sorted(column_profile.items(), key=lambda x:x[1]):
-        #print(key,value)
-         
-    #print(column_profile)
-    #print(full_file_path)
+            if x.dtype == 'object':
+                x_len = x.map(strlen).max()
+
+            # print(x.map(len).max(),x.name)
+            y = column_profile.get(x.name, 0)
+            if x_len >= y:
+                column_profile[x.name] = x_len
+
+    # for key,value in sorted(column_profile.items(), key=lambda x:x[1]):
+    # print(key,value)
+
+    # print(column_profile)
+    # print(full_file_path)
     return (column_profile)
 
-def profile_csv_testing(full_file_path,delimiter=',',header_row_location=0):
+
+def profile_csv_testing(full_file_path, delimiter=',', header_row_location=0):
     """
     Given a CSV with a header:
     The function will find the max len for each column
@@ -1390,27 +1402,26 @@ def profile_csv_testing(full_file_path,delimiter=',',header_row_location=0):
     count_size = 0
     chunksize = 10 ** 5
 
-    column_profile={}
-    for i, chunk in enumerate(pandas.read_csv(full_file_path,header=header_row_location,engine='c' ,chunksize=chunksize,
-        dtype=object,index_col=False,sep=delimiter)):
-        #print("process chunk:{} Delimiter:{}".format(i,delimiter))
-        assert isinstance(chunk,pandas.core.frame.DataFrame)
-        print(chunk['Location'],chunk['Location'].map(len))
-        #print(chunk.columns.values.tolist())
+    column_profile = {}
+    for i, chunk in enumerate(
+            pandas.read_csv(full_file_path, header=header_row_location, engine='c', chunksize=chunksize,
+                            dtype=object, index_col=False, sep=delimiter)):
+        # print("process chunk:{} Delimiter:{}".format(i,delimiter))
+        assert isinstance(chunk, pandas.core.frame.DataFrame)
+        print(chunk['Location'], chunk['Location'].map(len))
+        # print(chunk.columns.values.tolist())
         for row in chunk.iterrows():
             pass
-            #print(row['Location'])
-            #print(type(row),row[0],row[1][0],row[1][1],row[1][2],row[1][3])
+            # print(row['Location'])
+            # print(type(row),row[0],row[1][0],row[1][1],row[1][2],row[1][3])
 
+    for key, value in sorted(column_profile.items(), key=lambda x: x[1]):
+        print(key, value)
 
-            
-   
-    for key,value in sorted(column_profile.items(), key=lambda x:x[1]):
-        print(key,value)
-         
     print(column_profile)
     print(full_file_path)
     return (column_profile)
+
 
 # @timer
 def count_csv(full_file_path):
@@ -1434,16 +1445,43 @@ def count_csv(full_file_path):
     return count_size, column_count
 
 
+def md5_file(full_file_path):
+    import commands
+    import platform
+    md5_string = None
+    os_specific_cmd = 'md5sum'
+
+    if platform.system() == 'Linux':
+        os_specific_cmd = 'md5sum'
+        status_code, msg = commands.getstatusoutput("{} '{}'".format(os_specific_cmd, full_file_path))
+        x = msg.split(' ')
+        md5_string = x[0]
+    elif platform.system() == 'Darwin':
+        os_specific_cmd = 'md5'
+        status_code, msg = commands.getstatusoutput("{} '{}'".format(os_specific_cmd, full_file_path))
+        x = msg.split(' = ')
+        md5_string = x[1]
+    logging.info("File CheckSum: {}".format(md5_string))
+
+    return md5_string
+
+
 def count_file_lines_wc(file):
     import commands
-    record_count=0
-    status_code,status_text = commands.getstatusoutput("wc -l '{}'".format(file))
-    if status_code==0:
-        record_count,txt=status_text.split(' ')
-    print(file, record_count,"----FileCount linux-------")
-    logging.debug("FileName:{0} RowCount:{1}".format( txt,record_count))
+    import platform
+    record_count = 0
+    split_by = ' '
 
-    return record_count
+    if platform.system() == 'Linux':
+        split_by = ' '
+    elif platform.system() == 'Darwin':
+        split_by = ' /'
+    status_code, status_text = commands.getstatusoutput("wc -l '{}'".format(file))
+    if status_code == 0:
+        record_count, txt = status_text.split(split_by)
+    # print(file, record_count,"----FileCount linux-------",int(record_count))
+    logging.debug("FileName:{0} RowCount:{1}".format(txt, record_count))
+    return int(record_count)
 
 
 # adds a column to a table in datbase
@@ -1461,3 +1499,97 @@ def add_column(db, table_name, column_name, data_type, nullable=''):
                                       nullable=nullable)
     print(sql_command)
     db.execute(sql_command)
+
+
+def reset_pii(db):
+    pass
+
+def get_primary_key(db,schema,table_name):
+    sql="""SELECT a.attname 
+            FROM   pg_index i
+            JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                                 AND a.attnum = ANY(i.indkey)
+            WHERE   i.indisprimary and
+            i.indrelid='{}.{}'::regclass""".format(schema,table_name)
+    keys=db.query(sql)
+    cols=[]
+    for i in keys:
+        for j in i:
+            cols.append(j)
+
+    return cols
+
+
+def check_pii(db):
+    import datetime
+
+    now = datetime.datetime.now()
+
+    sql = """SELECT id,table_name,field_name,acceptable_values from compliance.health_check_rules m"""
+    sql_insert = """insert into compliance.health_check_violations(health_check_rule_id,data_record_id,active,created_dt,created_by) """
+    sql_on_conflict = """ ON CONFLICT (health_check_rule_id,data_record_id) DO UPDATE
+                            set active=True,
+                            updated_dt=now(),
+                            updated_by_id='{}'
+                        """.format(db._userid)
+
+    x = db.query(sql)
+    # iterate through the rules table
+    for id, table_name, field_name, acceptable_values in x:
+        print("Iterating through",table_name,field_name)
+        #try:
+        primay_key = get_primary_key(db, db.dbschema,
+                                     table_name)
+        #print(primay_key,type(primay_key))
+
+        if len(primay_key)>1:
+            logging.error("More than 1 Primary Key not supported:{}".format(primay_key))
+
+        if len(primay_key)==0:
+            logging.error("Need Primary Key:{}".format(table_name))
+
+        key_colums_to_sql = str(primay_key[0])
+        fqn_table_name=table_name
+        if '.' not in table_name:
+            fqn_table_name=db.dbschema+"."+table_name
+        jj=acceptable_values.split(';')
+
+        where_clause=None
+        where_null=None
+        in_clause=[]
+        for i in jj:
+            if i=='NULL':
+                where_null=field_name + ' is NULL '
+            else:
+                in_clause.append(i)
+
+        z_list = ','.join(("'{}'".format(x)) for x in in_clause)
+
+        if z_list=='':
+            if where_null is not None:
+                where_clause = where_null
+        else:
+            where_clause="lower(cast({} as varchar)) not in ({})".format(field_name,z_list)
+            if where_null is not None:
+                where_clause = where_clause + ' AND\n NOT ({}) '.format( where_null)
+
+        #print(values, z_list)
+        # health_checkrule_id, data_record_id, active, created_dt, created_by
+        sql_none = """select 
+                    '{0}' as health_checkrule_id,
+                    {1} as data_record_id,  
+                    True as active,
+                    now() as dtm, 
+                    '{2}' as created_by
+                    from {3} m
+                    left outer join compliance.health_check_violations h on 
+                    cast(h.health_check_rule_id as integer)= {4} and h.data_record_id=cast(m.{1} as integer) and h.active=True
+                    where
+                    (h.id is null) AND\n (\n{5}\n) """
+
+
+        sql_to_exe=sql_insert + sql_none.format(str(id), key_colums_to_sql,db._userid, fqn_table_name, id,   where_clause)
+        print(sql_to_exe)
+        db.execute(sql_to_exe)
+        #except Exception as e:
+            #logging.error("Error processing table:{} \n{}".format(table_name,e))
