@@ -938,15 +938,18 @@ def make_html_meta_source_files(db, full_file_path, html_head):
     # or no records
 
     if not os.path.exists(os.path.dirname(full_file_path)):
+        import commands
         try:
-            os.makedirs(os.path.dirname(full_file_path))
+            os.makedirs(os.path.dirname(full_file_path),0775)
+ 
         except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0o776)
+    os.chmod(os.path.dirname(full_file_path), 0776)
+
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0o666)
+    os.chmod(full_file_path, 0776)
 
 
 def make_html_publish_error(db, full_file_path, html_head):
@@ -969,14 +972,16 @@ def make_html_publish_error(db, full_file_path, html_head):
 
     if not os.path.exists(os.path.dirname(full_file_path)):
         try:
-            os.makedirs(os.path.dirname(full_file_path))
+             
+            os.makedirs(os.path.dirname(full_file_path),0775) 
+ 
         except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0o776)
+    os.chmod(os.path.dirname(full_file_path), 0776)
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0o666)
+    os.chmod(full_file_path, 0776)
 
 
 def make_html_publish_log(db, full_file_path, html_head):
@@ -1008,14 +1013,16 @@ def make_html_publish_log(db, full_file_path, html_head):
 
     if not os.path.exists(os.path.dirname(full_file_path)):
         try:
-            os.makedirs(os.path.dirname(full_file_path))
+             
+            os.makedirs(os.path.dirname(full_file_path),0775)
+       
         except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0o776)
+    os.chmod(os.path.dirname(full_file_path), 0776)
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0o666)
+    os.chmod(full_file_path, 0776)
 
 
 # given a columna_name,type tubple return a data word for that type
