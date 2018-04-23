@@ -17,7 +17,7 @@ class Test_db_utils_postgres(unittest.TestCase):
     DATABASE = 'postgres'
     USERID = 'postgres'
     DBTYPE = 'POSTGRES'
-    DATA_SCHEMA = 'test'
+    DATA_SCHEMA = 'prey'
     DBPASSWORD = 'docker'
     DBPORT = 5432
     SAMPLE_DATA_LINE_COUNT = 1500

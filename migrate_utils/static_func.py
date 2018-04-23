@@ -934,15 +934,18 @@ def make_html_meta_source_files(db, full_file_path, html_head):
     # or no records
 
     if not os.path.exists(os.path.dirname(full_file_path)):
+        import commands
         try:
-            os.makedirs(os.path.dirname(full_file_path))
+            os.makedirs(os.path.dirname(full_file_path),0775)
+ 
         except OSError as exc:  # Guard against race condition
             if exc.errno != exc.errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0o776)
+    os.chmod(os.path.dirname(full_file_path), 0776)
+
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0o666)
+    os.chmod(full_file_path, 0776)
 
 
 def make_html_publish_error(db, full_file_path, html_head):
@@ -965,14 +968,16 @@ def make_html_publish_error(db, full_file_path, html_head):
 
     if not os.path.exists(os.path.dirname(full_file_path)):
         try:
-            os.makedirs(os.path.dirname(full_file_path))
+             
+            os.makedirs(os.path.dirname(full_file_path),0775) 
+ 
         except OSError as exc:  # Guard against race condition
             if exc.errno != exc.errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0o776)
+    os.chmod(os.path.dirname(full_file_path), 0776)
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0o666)
+    os.chmod(full_file_path, 0776)
 
 
 def make_html_publish_log(db, full_file_path, html_head):
@@ -1004,14 +1009,16 @@ def make_html_publish_log(db, full_file_path, html_head):
 
     if not os.path.exists(os.path.dirname(full_file_path)):
         try:
-            os.makedirs(os.path.dirname(full_file_path))
+             
+            os.makedirs(os.path.dirname(full_file_path),0775)
+       
         except OSError as exc:  # Guard against race condition
             if exc.errno != exc.errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0o776)
+    os.chmod(os.path.dirname(full_file_path), 0776)
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0o666)
+    os.chmod(full_file_path, 0776)
 
 
 # given a columna_name,type tubple return a data word for that type
@@ -1494,11 +1501,26 @@ def add_column(db, table_name, column_name, data_type, nullable=''):
     db.execute(sql_command)
 
 
-def reset_pii(db, ):
+def reset_pii(db):
     pass
 
+def get_primary_key(db,schema,table_name):
+    sql="""SELECT a.attname 
+            FROM   pg_index i
+            JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                                 AND a.attnum = ANY(i.indkey)
+            WHERE   i.indisprimary and
+            i.indrelid='{}.{}'::regclass""".format(schema,table_name)
+    keys=db.query(sql)
+    cols=[]
+    for i in keys:
+        for j in i:
+            cols.append(j)
 
-def check_pii(db, ):
+    return cols
+
+
+def check_pii(db):
     import datetime
 
     now = datetime.datetime.now()
@@ -1514,18 +1536,40 @@ def check_pii(db, ):
     x = db.query(sql)
     # iterate through the rules table
     for id, table_name, field_name, acceptable_values in x:
+        print("Iterating through",table_name,field_name)
+        #try:
+        primay_key = get_primary_key(db, db.dbschema,
+                                     table_name)
+        #print(primay_key,type(primay_key))
 
-        if acceptable_values is None:
+        if len(primay_key)>1:
+            logging.error("More than 1 Primary Key not supported:{}".format(primay_key))
 
-            sql_none = """select '{}' as table_name,'{}'as field_name, m.id as pkey,{} as field from {} m
-            left outer join compliance.health_check_violations h on 
-            cast(h.health_check_rule_id as integer)= {} and h.data_record_id=cast(m.id as integer) and h.active=True 
-            where
-            (h.id is null) and {} not in (NULL) """
-            y = db.query(sql_none.format(table_name, field_name, field_name, table_name, id, field_name))
-            for i in y:
-                print(i)
+        if len(primay_key)==0:
+            logging.error("Need Primary Key:{}".format(table_name))
+
+        key_colums_to_sql = str(primay_key[0])
+        fqn_table_name=table_name
+        if '.' not in table_name:
+            fqn_table_name=db.dbschema+"."+table_name
+        jj=acceptable_values.split(';')
+
+        where_clause=None
+        where_null=None
+        in_clause=[]
+        for i in jj:
+            if i=='NULL':
+                where_null=field_name + ' is NULL '
+            else:
+                in_clause.append(i)
+
+        z_list = ','.join(("'{}'".format(x)) for x in in_clause)
+
+        if z_list=='':
+            if where_null is not None:
+                where_clause = where_null
         else:
+<<<<<<< HEAD
             values = acceptable_values.split(',')
             z_list = ','.join(("'{}'".format(x)) for x in values)
             print(values, z_list)
@@ -1575,3 +1619,29 @@ def send_email(sender, recipient_list, message):
             print(sql_none.format(str(id), db._userid, table_name, id, field_name, z_list.lower()))
             db.execute(sql_insert + sql_none.format(str(id), db._userid, table_name, id, field_name, z_list.lower()))
 >>>>>>> 3c0ce7128b6eb5466db9f1d9869fabeb68fc0308
+=======
+            where_clause="lower(cast({} as varchar)) not in ({})".format(field_name,z_list)
+            if where_null is not None:
+                where_clause = where_clause + ' AND\n NOT ({}) '.format( where_null)
+
+        #print(values, z_list)
+        # health_checkrule_id, data_record_id, active, created_dt, created_by
+        sql_none = """select 
+                    '{0}' as health_checkrule_id,
+                    {1} as data_record_id,  
+                    True as active,
+                    now() as dtm, 
+                    '{2}' as created_by
+                    from {3} m
+                    left outer join compliance.health_check_violations h on 
+                    cast(h.health_check_rule_id as integer)= {4} and h.data_record_id=cast(m.{1} as integer) and h.active=True
+                    where
+                    (h.id is null) AND\n (\n{5}\n) """
+
+
+        sql_to_exe=sql_insert + sql_none.format(str(id), key_colums_to_sql,db._userid, fqn_table_name, id,   where_clause)
+        print(sql_to_exe)
+        db.execute(sql_to_exe)
+        #except Exception as e:
+            #logging.error("Error processing table:{} \n{}".format(table_name,e))
+>>>>>>> 6af68ddaaeff4338694ce6a836b8c55b0b6a5b5e
