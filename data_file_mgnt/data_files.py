@@ -48,7 +48,7 @@ class FilesOfInterest:
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
                  use_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
                  file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF-8',
-                 append_crc=False, limit_rows=None, start_row=0,header_row=0,count_via=COUNT_VIA_PANDAS):
+                 append_crc=False, limit_rows=None,  header_row=0,count_via=COUNT_VIA_PANDAS):
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -81,7 +81,7 @@ class FilesOfInterest:
         self.limit_rows = limit_rows
         self.header_list_returned = None
         self.header_added = None
-        self.start_row = start_row
+        #self.start_row = start_row
         self.header_row=header_row
         self.count_via=count_via
 
@@ -205,7 +205,7 @@ class DataFile:
             str(file_id),
             foi.file_delimiter, foi.use_header,foi.append_file_id,
             foi.append_crc, db,foi.table_name,
-            foi.limit_rows, foi.start_row,foi.header_row
+            foi.limit_rows,  foi.header_row
             )
         # return fullpath to new file
         return newfile, header_added, header_list_returned

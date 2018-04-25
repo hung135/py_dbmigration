@@ -48,7 +48,7 @@ def dump_params(f):
 # @dump_params
 
 def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True, append_file_id=True,
-                     append_crc=False, db=None, table_name=None, limit_rows=None, start_row=0,
+                     append_crc=False, db=None, table_name=None, limit_rows=None,
                      header_row_location=None):
     import os
     import errno
@@ -57,7 +57,14 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
     header_list_to_return = None
     return_char_unix = '\n'
     return_char_windows = '\r\n'
+    start_row=0
+    if use_header:
+        if header_row_location is not None:
+            start_row=header_row_location+1
+        else:
+            start_row=1
 
+    print("start row:",start_row)
     carriage_return = check_file_for_carriage_return(orgfile)
 
     if not os.path.exists(os.path.dirname(newfile)):
@@ -80,7 +87,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
     columns_to_add_count = len(column_list)
 
     file_column_count = 0
-    # if use_header or True:
+    
     file_column_count = count_column_csv(orgfile, header_row_location=header_row_location,
                                          delimiter=delimiter) + columns_to_add_count
 
@@ -129,6 +136,8 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
             logging.info("\t\tFile Header:\n\t\t\t{}".format(column_list))
             if limit_rows is not None:
                 logging.info("Limiting Rows was set: {}".format(limit_rows))
+        
+
         with open(orgfile, 'r') as src_file:
 
             # making version of very similar logic so we don't have to check for append_cc on each row to do checksum
@@ -140,16 +149,14 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
 
             for ii, line in enumerate(src_file):
                 # local variable to accrue data before we write file
+                if ii==header_row_location and use_header:
+                    outfile.write(header_to_add + delimiter + line)
+                    header_list_to_return = str(header_to_add + delimiter + line)
+
                 data_to_prepend = file_id_to_add
                 if append_crc:
                     data_to_prepend += str(hashlib.md5(line).hexdigest()) + delimiter
-
-                if ii == start_row:
-                    logging.info("Creating file_id & crc for Every Row: {}".format(newfile))
-                    if use_header:
-                        outfile.write(header_to_add + delimiter + line)
-                        header_list_to_return = str(header_to_add + delimiter + line)
-
+ 
                 if ii < start_row:
                     pass
                 elif limit_rows is not None and ii > limit_rows:
@@ -1271,21 +1278,23 @@ def count_column_csv(full_file_path, header_row_location=0, sample_size=200, del
     try:
         chunksize = 1
         chunk = None
-        print("---------", header_row_location)
+        print("----header row location-----", header_row_location,delimiter,full_file_path)
         count_list = []
         for i, chunk in enumerate(
-                pandas.read_csv(full_file_path, chunksize=chunksize, delimiter=delimiter, header=header_row_location)):
+                pandas.read_table(full_file_path, chunksize=chunksize, sep=delimiter, header=header_row_location)):
 
             # just run through the file to get number of chucks
+
+            print(full_file_path, chunksize, delimiter, header_row_location)
+
             count_list.append(len(chunk.columns))
             if i > sample_size:
                 break
-        print(max(count_list))
+        print("------max------",max(count_list))
         column_count = statistics.median(count_list)
     except Exception as e:
         logging.error("Error Counting csv columns:{} \nReturning: 0".format(e))
-        import time
-        time.sleep(30)
+        
 
     # import time
     print("---column_count:", column_count)
@@ -1569,57 +1578,6 @@ def check_pii(db):
             if where_null is not None:
                 where_clause = where_null
         else:
-<<<<<<< HEAD
-            values = acceptable_values.split(',')
-            z_list = ','.join(("'{}'".format(x)) for x in values)
-            print(values, z_list)
-            # health_checkrule_id, data_record_id, active, created_dt, created_by
-            sql_none = """select 
-                        '{}' as health_checkrule_id,
-                        m.id as data_record_id, -- for now
-                        True as active,
-                        now() as dtm, 
-                        '{}' as created_by
-                        from {} m
-                        left outer join compliance.health_check_violations h on 
-                        cast(h.health_check_rule_id as integer)= {} and h.data_record_id=cast(m.id as integer) and h.active=True
-                        where
-                        (h.id is null) and lower({}) not in ({}) """
-
-<<<<<<< HEAD
-            print(sql_none.format(str(id), db._userid, table_name,id, field_name, z_list.lower()))
-            db.execute(sql_insert + sql_none.format(str(id), db._userid, table_name,id, field_name, z_list.lower()))
-
-
-
-
-def send_email(sender, recipient_list, message):
-    import smtplib
-    from email.mime.text import MIMEText
-    import logging
-
-    DISTRIBUTION_LIST = ['salim.zayat@cfpb.gov']
-    logger = logging.getLogger('email_helper')
-    msg = MIMEText(message)
-    msg['Subject'] = subject
-    msg['From'] = sender
-    msg['To'] = ','.join(recipient_list)
-    
-    try:
-        # Send the message via local SMTP server.
-        s = smtplib.SMTP('wdcmgtl02.cfpb.local')
-        # sendmail function takes 3 arguments: sender's address, recipient's address
-        # and message to send - here it is sent as one string.
-        s.sendmail(sender, recipient_list, msg.as_string())
-        s.quit()
-    except Exception as e:
-        # do not re-throw this exception.  It is not crucial, so log the error and move on
-        logger.warn('unable to send email, e={0}'.format(str(e)))
-=======
-            print(sql_none.format(str(id), db._userid, table_name, id, field_name, z_list.lower()))
-            db.execute(sql_insert + sql_none.format(str(id), db._userid, table_name, id, field_name, z_list.lower()))
->>>>>>> 3c0ce7128b6eb5466db9f1d9869fabeb68fc0308
-=======
             where_clause="lower(cast({} as varchar)) not in ({})".format(field_name,z_list)
             if where_null is not None:
                 where_clause = where_clause + ' AND\n NOT ({}) '.format( where_null)
@@ -1644,4 +1602,3 @@ def send_email(sender, recipient_list, message):
         db.execute(sql_to_exe)
         #except Exception as e:
             #logging.error("Error processing table:{} \n{}".format(table_name,e))
->>>>>>> 6af68ddaaeff4338694ce6a836b8c55b0b6a5b5e
