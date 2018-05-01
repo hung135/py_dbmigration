@@ -48,7 +48,7 @@ class FilesOfInterest:
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
                  use_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
                  file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF-8',
-                 append_crc=False, limit_rows=None, start_row=0,header_row=0,count_via=COUNT_VIA_PANDAS):
+                 append_crc=False, limit_rows=None,  header_row=0,count_via=COUNT_VIA_PANDAS,new_delimiter=None):
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -81,9 +81,10 @@ class FilesOfInterest:
         self.limit_rows = limit_rows
         self.header_list_returned = None
         self.header_added = None
-        self.start_row = start_row
+        #self.start_row = start_row
         self.header_row=header_row
         self.count_via=count_via
+        self.new_delimiter=new_delimiter
 
     # def __str__(self):
 
@@ -205,7 +206,7 @@ class DataFile:
             str(file_id),
             foi.file_delimiter, foi.use_header,foi.append_file_id,
             foi.append_crc, db,foi.table_name,
-            foi.limit_rows, foi.start_row,foi.header_row
+            foi.limit_rows,  foi.header_row
             )
         # return fullpath to new file
         return newfile, header_added, header_list_returned
@@ -433,11 +434,13 @@ class DataFile:
             copy_command_sql = "call op_dba.copy_from_host('{0}','{1}','DELIMITER ''|'' CSV')"
             copy_command_connection_flags = " -h {} -p {} -U {} {}".format(db._host, db._port, db._userid, password)
             copy_command_client_side = """psql {6} -c "\copy {0} FROM '{1}' with (format csv,{4} FORCE_NULL ({3}),delimiter '{2}', ENCODING '{5}')" """
-
+            delmin=foi.file_delimiter
+            if foi.new_delimiter is not None:
+                    delim=foi.new_delimiter
             command_text = copy_command_client_side.format(
-                copy_string,
+                copy_string.replace('"',''),
                 data_file,
-                foi.file_delimiter,
+                delim,
                 # ",".join(cols),
                 cols,
                 header,
@@ -498,6 +501,7 @@ class DataFile:
     #@migrate_utils.static_func.dump_params
     def import_file_pandas(self, foi, db, lowercase=True, limit_rows=None, chunk_size=10000):
 
+
         full_file_path = None
         self.rows_inserted = 0
         import_status = None
@@ -528,8 +532,12 @@ class DataFile:
                 
                 logging.debug(sys._getframe().f_code.co_name + " : " + foi.current_working_abs_file_name)
                 
+                delim=foi.file_delimiter
+                if foi.new_delimiter is not None:
+                    delim=foi.new_delimiter
+ 
                 for counter, dataframe in enumerate(
-                        pd.read_csv(foi.current_working_abs_file_name, delimiter=foi.file_delimiter, nrows=limit_rows,
+                        pd.read_csv(foi.current_working_abs_file_name, sep=delim, nrows=limit_rows,
                                     quotechar='"', chunksize=chunk_size, header=header,index_col=False,
                                     dtype=object)):
 
@@ -844,6 +852,8 @@ class DataFile:
                         # print(self.working_path, "/appended/", self.curr_src_working_file)
                         ################################################################################################
                         new_file_name, header_added, header_list_returned = self.insert_into_file( foi,self.meta_source_file_id,db=db)
+                        if foi.new_delimiter is not None:
+                            migrate_utils.static_func.sed_file_delimiter(new_file_name,None,foi.file_delimiter,foi.new_delimiter)
                         ################################################################################################
                         foi.working_path = os.path.dirname(new_file_name)
                         foi.current_working_abs_file_name = new_file_name
