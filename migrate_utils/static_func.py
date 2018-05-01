@@ -46,9 +46,15 @@ def dump_params(f):
 #invokes SED to replace every deliminter in a file to another
 def sed_file_delimiter(orgfile, newfile=None, delimiter=',', new_delimiter=','):
     import subprocess
-    cmd_string="sed -i -e 's/{0}/{1}/g' {2}".format(delimiter,new_delimiter,orgfile)
+    cmd_string_double_quote="sed -i -e 's/\"/\"\"/g' {}".format(orgfile)
+    cmd_string_begin="sed -i -e 's/^\"\"/\"/g' {}".format(orgfile)
+    cmd_string_end="sed -i -e 's/\"\"$/\"/g' {}".format(orgfile)
+    cmd_string="sed -i -e 's/\"\"{0}\"\"/\"{1}\"/g' {2}".format(delimiter,new_delimiter,orgfile)
 
     print("----SED---Delimiter",delimiter,new_delimiter,cmd_string)
+    subprocess.call([cmd_string_double_quote], shell=True)
+    subprocess.call([cmd_string_begin], shell=True)
+    subprocess.call([cmd_string_end], shell=True)
     subprocess.call([cmd_string], shell=True)
 
 # function that will append data to a data file
@@ -143,7 +149,6 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
             logging.info("\t\tFile Header:\n\t\t\t{}".format(column_list))
             if limit_rows is not None:
                 logging.info("Limiting Rows was set: {}".format(limit_rows))
-        
 
         with open(orgfile, 'r') as src_file:
 
@@ -152,7 +157,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
             # if the file doesn't have a header and we have a header added it
             file_id_to_add = ''
             if append_file_id:
-                file_id_to_add += pre_pend_data + delimiter
+                file_id_to_add += '"'+pre_pend_data +'"'+ delimiter
 
             for ii, line in enumerate(src_file):
                 # local variable to accrue data before we write file
