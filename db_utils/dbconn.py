@@ -251,7 +251,7 @@ class Connection:
         """ Default to commit after every transaction
                 Will check instance variable to decide if a commit is needed
         """
-        assert isinstance(table_name,str)
+        assert isinstance(table_name, str)
         if table_name is None or table_name == '':
             self._cur.execute("vacuum")
             logging.debug("Vacuuming Schema")
@@ -283,7 +283,7 @@ class Connection:
     def truncate_table(self, dbschema, table_name):
         logging.debug(
             "Truncating Table: \n\tHost:{0}\n\tDatabase:{1}\n\tTablename:{2}\n\tSchema:{3}".format(self._host, self._database_name,
-                                                                                     table_name,dbschema))
+                                                                                                   table_name, dbschema))
         self._cur.execute('TRUNCATE table {0}.{1} cascade'.format(dbschema, table_name))
 
         self.commit()
@@ -395,6 +395,9 @@ class Connection:
         # save the Current shell password
         prev_password = os.environ['PGPASSWORD']
         os.environ['PGPASSWORD'] = self._password
+        prev_pguser = os.environ['PGUSER']
+        os.environ['PGUSER'] = self._userid
+
         # copy_command_client_side = """psql -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
         shell_command = """psql -c "\copy ({0}) to '{1}' WITH DELIMITER AS '{2}' CSV QUOTE AS '\\"' " """
 
@@ -409,6 +412,7 @@ class Connection:
         logging.debug("Dumping Data to CSV COMPLETED:{0}".format(txt_out))
         # put the password back
         os.environ['PGPASSWORD'] = prev_password
+        os.environ['PGUSER'] = prev_pguser
         if txt_out[0] > 0:
             raise Exception
         i = txt_out[1].split()
@@ -439,7 +443,8 @@ class Connection:
         result_set = self.query(sql)
         table = []
         for table_name, column, type, autoincrement, length in result_set:
-            class data: pass
+            class data:
+                pass
 
             data.table_name = table_name
             data.column_name = column
@@ -597,7 +602,7 @@ class Connection:
             raise Exception
         else:
             pass
-            #self.vacuum(table_name=table_name_fqn)
+            # self.vacuum(table_name=table_name_fqn)
 
         i = txt_out[1].split()
         logging.info("Total Rows Loaded: {0}".format(i[1]))
