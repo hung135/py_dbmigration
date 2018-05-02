@@ -45,19 +45,20 @@ class FilesOfInterest:
     COUNT_VIA_LINUX = 'WC'
     # 2 scerios...given a path and a file pattern we walk the dir
     # gven table_name and a file regex we use it to map files from the meta source to a table
+
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
                  use_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
                  file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF-8',
-                 append_crc=False, limit_rows=None,  header_row=0,count_via=COUNT_VIA_PANDAS,new_delimiter=None):
+                 append_crc=False, limit_rows=None, header_row=0, count_via=COUNT_VIA_PANDAS, new_delimiter=None):
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
         self.table_name = table_name
         self.schema_name = schema_name
         if column_list is not None:
-            self.column_list = column_list.replace(' ','').replace('\n','').split(',')
+            self.column_list = column_list.replace(' ', '').replace('\n', '').split(',')
         else:
-            self.column_list=None
+            self.column_list = None
 
         self.file_delimiter = file_delimiter
         self.use_header = use_header
@@ -82,21 +83,20 @@ class FilesOfInterest:
         self.header_list_returned = None
         self.header_added = None
         #self.start_row = start_row
-        self.header_row=header_row
-        self.count_via=count_via
-        self.new_delimiter=new_delimiter
+        self.header_row = header_row
+        self.count_via = count_via
+        self.new_delimiter = new_delimiter
 
     # def __str__(self):
-
 
 
 def get_mapped_table(file_name, foi_list):
     for i in foi_list:
         if i.table_name is not None:
             assert isinstance(i, FilesOfInterest)
-            
+
             if re.match(i.regex, file_name, re.IGNORECASE):
-                print("***FOI.regex:",i.regex,i.table_name,file_name)
+                print("***FOI.regex:", i.regex, i.table_name, file_name)
                 logging.info("\t\tFile->Table mapping found: {}".format(i.table_name))
                 return i
     return None
@@ -192,7 +192,7 @@ class DataFile:
     # function that will append the file id passed in to every row in a data file.
     # also adding fucntion to generate a checksum of that row for later use
 
-    def insert_into_file(self,foi,file_id,db=None):
+    def insert_into_file(self, foi, file_id, db=None):
         assert isinstance(foi, FilesOfInterest)
         # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file, header_name, text_append,use_header,"<---Has Header"))
         header_added = False
@@ -204,10 +204,10 @@ class DataFile:
             foi.current_working_abs_file_name,
             newfile,
             str(file_id),
-            foi.file_delimiter, foi.use_header,foi.append_file_id,
-            foi.append_crc, db,foi.table_name,
-            foi.limit_rows,  foi.header_row
-            )
+            foi.file_delimiter, foi.use_header, foi.append_file_id,
+            foi.append_crc, db, foi.table_name,
+            foi.limit_rows, foi.header_row
+        )
         # return fullpath to new file
         return newfile, header_added, header_list_returned
 
@@ -283,7 +283,6 @@ class DataFile:
                                                         file_type=file_of_interest_obj.file_type,
                                                         parent_file_id=parent_file_id)
             t.add_record(row, commit=True)
-
 
     def dump_delimited_file(self, db, file_name, delimiter):
         shell_command = """psql -c "copy data_table FROM '{0}}' WITH DELIMITER AS '{1}' CSV QUOTE AS '"' """
@@ -398,7 +397,6 @@ class DataFile:
             # if re.match(dest.regex, dest.full_file_name):
             cols = (foi.column_list)
 
-
             if foi.header_list_returned is not None:
 
                 cols = ','.join(foi.header_list_returned)
@@ -406,7 +404,6 @@ class DataFile:
                 # remove file_id in the case we got headers from db
 
                 cols = ','.join(cols)
-
 
             copy_string = None
             if foi.column_list is not None:
@@ -434,11 +431,11 @@ class DataFile:
             copy_command_sql = "call op_dba.copy_from_host('{0}','{1}','DELIMITER ''|'' CSV')"
             copy_command_connection_flags = " -h {} -p {} -U {} {}".format(db._host, db._port, db._userid, password)
             copy_command_client_side = """psql {6} -c "\copy {0} FROM '{1}' with (format csv,{4} FORCE_NULL ({3}),delimiter '{2}', ENCODING '{5}')" """
-            delmin=foi.file_delimiter
+            delim = foi.file_delimiter
             if foi.new_delimiter is not None:
-                    delim=foi.new_delimiter
+                delim = foi.new_delimiter
             command_text = copy_command_client_side.format(
-                copy_string.replace('"',''),
+                copy_string.replace('"', ''),
                 data_file,
                 delim,
                 # ",".join(cols),
@@ -501,12 +498,11 @@ class DataFile:
     #@migrate_utils.static_func.dump_params
     def import_file_pandas(self, foi, db, lowercase=True, limit_rows=None, chunk_size=10000):
 
-
         full_file_path = None
         self.rows_inserted = 0
         import_status = None
         additional_info = None
-        dataframe_columns=''
+        dataframe_columns = ''
 
         names = None
         error_msg = None
@@ -518,7 +514,7 @@ class DataFile:
             if lowercase:
                 table_name = str.lower(str(table_name))
             try:
-                print("----limit rows------",limit_rows)
+                print("----limit rows------", limit_rows)
                 if limit_rows is not None:
                     logging.debug("Pandas Read Limit SET: {0}:ROWS".format(limit_rows))
 
@@ -529,19 +525,19 @@ class DataFile:
                     names = foi.header_list_returned
                 else:
                     names = foi.column_list
-                
+
                 logging.debug(sys._getframe().f_code.co_name + " : " + foi.current_working_abs_file_name)
-                
-                delim=foi.file_delimiter
+
+                delim = foi.file_delimiter
                 if foi.new_delimiter is not None:
-                    delim=foi.new_delimiter
- 
+                    delim = foi.new_delimiter
+
                 for counter, dataframe in enumerate(
                         pd.read_csv(foi.current_working_abs_file_name, sep=delim, nrows=limit_rows,
-                                    quotechar='"', chunksize=chunk_size, header=header,index_col=False,
+                                    quotechar='"', chunksize=chunk_size, header=header, index_col=False,
                                     dtype=object)):
 
-                    if not foi.use_header and len(foi.column_list)>0:
+                    if not foi.use_header and len(foi.column_list) > 0:
                         dataframe.columns = map(str,
                                                 # foi.column_list
                                                 names
@@ -559,7 +555,7 @@ class DataFile:
                     self.rows_inserted = (counter) * chunk_size + (len(dataframe))
 
                 import_status = 'success'
-                dataframe_columns=dataframe.columns.tolist()
+                dataframe_columns = dataframe.columns.tolist()
             except Exception as e:
 
                 cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
@@ -572,7 +568,7 @@ class DataFile:
                 import_status = 'failed'
                 additional_info = (','.join(cols) + str(e))[:2000]
                 db.commit()
-                migrate_utils.static_func.profile_csv(foi.current_working_abs_file_name,',',0)
+                migrate_utils.static_func.profile_csv(foi.current_working_abs_file_name, ',', 0)
                 import time
                 print("sleeping so you can read:")
                 time.sleep(30)
@@ -644,20 +640,19 @@ class DataFile:
 
         if status_dict is None:
             row.file_process_state = 'Uknown ERR'
-        elif status_dict.get('import_status',None)== 'success':
+        elif status_dict.get('import_status', None) == 'success':
             row.file_process_state = 'Processed'
             if file_of_interest is not None:
                 row.database_table = ".".join([str(file_of_interest.schema_name), str(file_of_interest.table_name)])
             row.rows_inserted = self.rows_inserted
             row.last_error_msg = ''
-            self.curr_file_success=True
+            self.curr_file_success = True
         else:
             row.last_error_msg = str(status_dict)[:2000]
             row.file_process_state = 'Failed'
             row.rows_inserted = 0
-            logging.error("Failed Importing: \n\t{}\n\t{}".format(self.curr_src_working_file,status_dict))
-            self.curr_file_success=False
-
+            logging.error("Failed Importing: \n\t{}\n\t{}".format(self.curr_src_working_file, status_dict))
+            self.curr_file_success = False
 
         if vacuum and file_of_interest is not None and status_dict is None:
             db.vacuum(file_of_interest.schema_name, file_of_interest.table_name)
@@ -710,7 +705,7 @@ class DataFile:
                 row.file_size = self.file_size
                 t.session.commit()
 
-                logging.debug("Inside Getwork: FileType:{} :RowCount{}".format(self.work_file_type,self.row_count))
+                logging.debug("Inside Getwork: FileType:{} :RowCount{}".format(self.work_file_type, self.row_count))
                 if self.work_file_type in ('DATA', 'CSV') and self.row_count == 0:
                     # logging.debug("Working DATAFILE:{0}:".format(self.curr_src_working_file))
                     row.total_files = 1
@@ -731,11 +726,10 @@ class DataFile:
                     """
                     "Counting File-Linux WC : {}".format(os.path.join(self.source_file_path, self.curr_src_working_file))
                     self.row_count = migrate_utils.static_func.count_file_lines_wc(
-                            os.path.join(self.source_file_path, self.curr_src_working_file))
+                        os.path.join(self.source_file_path, self.curr_src_working_file))
 
                     row.total_rows = self.row_count
                     logging.debug("Counting File Result:{0}:".format(self.row_count))
-
 
             except Exception as e:
                 # print(type(e))
@@ -762,9 +756,9 @@ class DataFile:
         status_dict = {}
         try:
             logging.info("Creating MD5 checksum")
-            md5=migrate_utils.static_func.md5_file(full_file_path)
+            md5 = migrate_utils.static_func.md5_file(full_file_path)
             logging.info("MD5 checksum: {}".format(md5))
-            modified_write_path=os.path.join(abs_writable_path,md5)
+            modified_write_path = os.path.join(abs_writable_path, md5)
             self.files = zip_utils.unzipper.extract_file(full_file_path, modified_write_path, False, self.work_file_type)
             t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
             row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
@@ -778,7 +772,7 @@ class DataFile:
             logging.debug("WALKING EXTRACTED FILES:\src_dir:{0}\nworking_dir:{1}:".format(new_src_dir, self.working_path))
 
             file_table_map = [FilesOfInterest('DATA', '', file_path=abs_writable_path, file_name_data_regex=None,
-                                          parent_file_id=self.meta_source_file_id)]
+                                              parent_file_id=self.meta_source_file_id)]
 
             DataFile(new_src_dir, db, file_table_map, parent_file_id=self.meta_source_file_id)
         except Exception as e:
@@ -809,13 +803,13 @@ class DataFile:
                 # check the current file against our list of regex to see if it
                 # matches any table mapping
 
-                foi = get_mapped_table(os.path.join(self.source_file_path,self.curr_src_working_file), self.foi_list)
+                foi = get_mapped_table(os.path.join(self.source_file_path, self.curr_src_working_file), self.foi_list)
 
                 logging.debug("Getting Mapped table:{}\n{}".format(self.curr_src_working_file, foi))
                 #print(foi,"--------got one")
                 if foi is not None:
                     # we found a table that is mapped to file of interest so we
-                    
+
                     if foi.column_list is None:
                         foi.column_list = db.get_columns(foi.table_name, foi.schema_name)
                     # if 2 column_names are reserved file_id and crc
@@ -830,55 +824,43 @@ class DataFile:
                     except:
                         pass
 
-                    if foi.insert_option and len(foi.column_list)>0:
-                        try:
-                            print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
-                            db.truncate_table(foi.schema_name, foi.table_name)
-                            #print("Truncating Data:{}.{}".format(foi.schema_name, foi.table_name))
-                        except Exception as e:
-                            print(e)
-                    else:
-                        print("passsing")
-                        pass
-                        # print("Appending  Data:{}.{}".format(foi.schema_name, foi.table_name))
-                    logging.debug("DATA-File:{}".format(self.curr_src_working_file))
-
-                    # use the line below if we need to stamp the data file w/ a
-                    # column that has additional data
-                    foi.current_working_abs_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
-                    header_added = None
-                    if foi.append_file_id or foi.append_crc:
-                        # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
-                        # print(self.working_path, "/appended/", self.curr_src_working_file)
-                        ################################################################################################
-                        new_file_name, header_added, header_list_returned = self.insert_into_file( foi,self.meta_source_file_id,db=db)
-                        if foi.new_delimiter is not None:
-                            migrate_utils.static_func.sed_file_delimiter(new_file_name,None,foi.file_delimiter,foi.new_delimiter)
-                        ################################################################################################
-                        foi.working_path = os.path.dirname(new_file_name)
-                        foi.current_working_abs_file_name = new_file_name
-                    else:
-                        print("Not inserting anything to file",foi.append_crc,foi.append_file_id)
-                    if header_added is not None:
-                        foi.header_added = header_added
-                        foi.header_list_returned = header_list_returned
-
-                    # print(""df.row_count, min_row)
-                    logging.debug("File Row Count:{}".format(df.row_count))
-                    #print(foi.regex, foi.folder_regex,"------match regex")
-                     
                     try:
+                        # print("Appending  Data:{}.{}".format(foi.schema_name, foi.table_name))
+                        logging.debug("DATA-File:{}".format(self.curr_src_working_file))
+
+                        # use the line below if we need to stamp the data file w/ a
+                        # column that has additional data
+                        foi.current_working_abs_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
+                        header_added = None
+                        if foi.append_file_id or foi.append_crc:
+                            # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
+                            # print(self.working_path, "/appended/", self.curr_src_working_file)
+                            ################################################################################################
+                            new_file_name, header_added, header_list_returned = self.insert_into_file(foi, self.meta_source_file_id, db=db)
+                            if foi.new_delimiter is not None:
+                                migrate_utils.static_func.sed_file_delimiter(new_file_name, None, foi.file_delimiter, foi.new_delimiter)
+                            ################################################################################################
+                            foi.working_path = os.path.dirname(new_file_name)
+                            foi.current_working_abs_file_name = new_file_name
+                        else:
+                            print("Not inserting anything to file", foi.append_crc, foi.append_file_id)
+                        if header_added is not None:
+                            foi.header_added = header_added
+                            foi.header_list_returned = header_list_returned
+
+                        # print(""df.row_count, min_row)
+                        logging.debug("File Row Count:{}".format(df.row_count))
+                        #print(foi.regex, foi.folder_regex,"------match regex")
 
                         if import_type == self.IMPORT_VIA_PANDAS:
-                            limit=None
+                            limit = None
                             if limit_rows is not None:
 
-                                limit=limit_rows
+                                limit = limit_rows
                             elif foi.limit_rows is not None:
-                                limit=foi.limit_rows
+                                limit = foi.limit_rows
                             else:
                                 limit = None
-
 
                             ####################################################################################
                             status_dict = self.import_file_pandas(foi, db, limit_rows=limit,
@@ -960,14 +942,14 @@ class DataFile:
                         logging_handler.session.commit()
                         logging_handler.session.close()
                     finally:
-                        assert isinstance(status_dict,dict)
+                        assert isinstance(status_dict, dict)
 
                         df.finish_work(db, status_dict=status_dict, file_of_interest=foi,
                                        vacuum=True)
 
                 # no matching pattern for regext and db_tablename
                 else:
-                    status_dict={}
+                    status_dict = {}
                     status_dict['import_status'] = 'failed'
                     status_dict['error_msg'] = 'No Pattern Mapping Found'
                     df.finish_work(db, status_dict=status_dict, file_of_interest=foi, vacuum=vacuum)
@@ -975,7 +957,7 @@ class DataFile:
             else:
                 full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
 
-                status_dict=self.extract_file(db, full_file_name, os.path.join(self.working_path, self.curr_src_working_file))
-                self.finish_work(db, status_dict=status_dict,vacuum=vacuum)
+                status_dict = self.extract_file(db, full_file_name, os.path.join(self.working_path, self.curr_src_working_file))
+                self.finish_work(db, status_dict=status_dict, vacuum=vacuum)
             if cleanup:
                 self.cleanup_files()  # import_files(files,loan_acquisition)
