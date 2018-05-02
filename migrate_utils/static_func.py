@@ -43,6 +43,19 @@ def dump_params(f):
 
     return wrapper
 
+#invokes SED to replace every deliminter in a file to another
+def sed_file_delimiter(orgfile, newfile=None, delimiter=',', new_delimiter=','):
+    import subprocess
+    cmd_string_double_quote="sed -i -e 's/\"/\"\"/g' {}".format(orgfile)
+    cmd_string_begin="sed -i -e 's/^\"\"/\"/g' {}".format(orgfile)
+    cmd_string_end="sed -i -e 's/\"\"$/\"/g' {}".format(orgfile)
+    cmd_string="sed -i -e 's/\"\"{0}\"\"/\"{1}\"/g' {2}".format(delimiter,new_delimiter,orgfile)
+
+    print("----SED---Delimiter",delimiter,new_delimiter,cmd_string)
+    subprocess.call([cmd_string_double_quote], shell=True)
+    subprocess.call([cmd_string_begin], shell=True)
+    subprocess.call([cmd_string_end], shell=True)
+    subprocess.call([cmd_string], shell=True)
 
 # function that will append data to a data file
 # @dump_params
@@ -78,10 +91,10 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
     column_list = []
 
     if append_file_id:
-        column_list.append('file_id')
+        column_list.append('"file_id"')
 
     if append_crc:
-        column_list.append('crc')
+        column_list.append('"crc"')
     header_to_add = delimiter.join(column_list)
 
     columns_to_add_count = len(column_list)
@@ -136,7 +149,6 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
             logging.info("\t\tFile Header:\n\t\t\t{}".format(column_list))
             if limit_rows is not None:
                 logging.info("Limiting Rows was set: {}".format(limit_rows))
-        
 
         with open(orgfile, 'r') as src_file:
 
@@ -145,12 +157,12 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
             # if the file doesn't have a header and we have a header added it
             file_id_to_add = ''
             if append_file_id:
-                file_id_to_add += pre_pend_data + delimiter
+                file_id_to_add += '"'+pre_pend_data +'"'+ delimiter
 
             for ii, line in enumerate(src_file):
                 # local variable to accrue data before we write file
                 if ii==header_row_location and use_header:
-                    outfile.write(header_to_add + delimiter + line)
+                    outfile.write(header_to_add.replace('"','') + delimiter + line.replace('"',''))
                     header_list_to_return = str(header_to_add + delimiter + line)
 
                 data_to_prepend = file_id_to_add
@@ -166,7 +178,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
 
     count_column_csv(newfile, header_row_location=header_row_location, delimiter=delimiter)
     header_list_to_return = header_list_to_return.split(str(delimiter))
-
+    
     return header_added, header_list_to_return
 
 
@@ -802,6 +814,7 @@ def print_table_dict(db, folder='.', targetschema=None):
 def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     import sqlalchemy
     import os
+    from sqlalchemy.dialects import postgresql
 
     con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
     # print dir(meta.tables)
@@ -843,9 +856,11 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
         basefilename = t.name.lower()
         # print(type(n), n, t.name)
         table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
-        stmt = sqlalchemy.schema.CreateTable(table)
+        stmt = sqlalchemy.schema.CreateTable(table).compile(dialect=postgresql.dialect())
         column_list = [c.name for c in table.columns]
         createsql = convert_sql_snake_case(str(stmt), column_list)
+        createsql=createsql.replace('"','')
+
         logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
 
         line = ("\nsqitch add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
@@ -867,6 +882,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
             print(folder_deploy + i["table"])
             with open(folder_deploy + i["filename"], "wb") as f:
                 f.write(bytes(i["sql"]))
+                f.write("ALTER TABLE {}.{}\n\tOWNER TO operational_dba;".format(dbschema,i["table"]))
 
             drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
             print(dbschema, "-----db---")
@@ -1272,20 +1288,23 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
 def count_column_csv(full_file_path, header_row_location=0, sample_size=200, delimiter=','):
     import pandas
     import statistics
+
+
     column_count = 0
     if header_row_location is None:
         header_row_location = 0
     try:
         chunksize = 1
         chunk = None
-        print("----header row location-----", header_row_location,delimiter,full_file_path)
+        #print("----header row location-----", header_row_location,delimiter,full_file_path)
         count_list = []
+        delim=delimiter 
         for i, chunk in enumerate(
-                pandas.read_table(full_file_path, chunksize=chunksize, sep=delimiter, header=header_row_location)):
+                pandas.read_table(full_file_path, chunksize=chunksize, sep=delim, header=header_row_location)):
 
             # just run through the file to get number of chucks
 
-            print(full_file_path, chunksize, delimiter, header_row_location)
+            #print(full_file_path, chunksize, delimiter, header_row_location)
 
             count_list.append(len(chunk.columns))
             if i > sample_size:
