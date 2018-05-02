@@ -833,31 +833,35 @@ class DataFile:
                         print("passsing")
                         pass
                         # print("Appending  Data:{}.{}".format(foi.schema_name, foi.table_name))
-                    logging.debug("DATA-File:{}".format(self.curr_src_working_file))
 
-                    # use the line below if we need to stamp the data file w/ a
-                    # column that has additional data
-                    foi.current_working_abs_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
-                    header_added = None
-                    if foi.append_file_id or foi.append_crc:
-                        # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
-                        # print(self.working_path, "/appended/", self.curr_src_working_file)
-                        ################################################################################################
-                        new_file_name, header_added, header_list_returned = self.insert_into_file( foi,self.meta_source_file_id,db=db)
-                        ################################################################################################
-                        foi.working_path = os.path.dirname(new_file_name)
-                        foi.current_working_abs_file_name = new_file_name
-                    else:
-                        print("Not inserting anything to file",foi.append_crc,foi.append_file_id)
-                    if header_added is not None:
-                        foi.header_added = header_added
-                        foi.header_list_returned = header_list_returned
 
-                    # print(""df.row_count, min_row)
-                    logging.debug("File Row Count:{}".format(df.row_count))
-                    #print(foi.regex, foi.folder_regex,"------match regex")
-                     
+                    # will need to rethink this later
                     try:
+                        logging.debug("DATA-File:{}".format(self.curr_src_working_file))
+
+                        # use the line below if we need to stamp the data file w/ a
+                        # column that has additional data
+                        foi.current_working_abs_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
+                        header_added = None
+                        if foi.append_file_id or foi.append_crc:
+                            # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
+                            # print(self.working_path, "/appended/", self.curr_src_working_file)
+                            ################################################################################################
+                            new_file_name, header_added, header_list_returned = self.insert_into_file( foi,self.meta_source_file_id,db=db)
+                            ################################################################################################
+                            foi.working_path = os.path.dirname(new_file_name)
+                            foi.current_working_abs_file_name = new_file_name
+                        else:
+                            print("Not inserting anything to file",foi.append_crc,foi.append_file_id)
+                        if header_added is not None:
+                            foi.header_added = header_added
+                            foi.header_list_returned = header_list_returned
+
+                        # print(""df.row_count, min_row)
+                        logging.debug("File Row Count:{}".format(df.row_count))
+                        #print(foi.regex, foi.folder_regex,"------match regex")
+                     
+                    
 
                         if import_type == self.IMPORT_VIA_PANDAS:
                             limit=None
