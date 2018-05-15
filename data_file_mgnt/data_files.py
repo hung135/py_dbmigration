@@ -38,36 +38,59 @@ def diff_list(list1, list2):
             delta.append(i)
     return l1 - l2
 
+# object to run through series of rule to change the data
+# only works when import using pandas at this time
+
 
 class RedactionRules:
 
-    def make_null(data_frame, column_name):
-        print("droping column", column_name)
-        data_frame.drop(column_name)
+    def make_null(self, data_frame, column_name):
+        print("Droping column", column_name)
+        data_frame.drop(column_name, axis=1, inplace=True)
 
-    def process_redaction(self, data_frame, dataset_name):
+    def make_hash(self, data_frame, column_name):
+        import hashlib
+        print("Hashing column", column_name)
+        data_frame[column_name] = data_frame[column_name].apply(lambda x: hashlib.md5(str(x)).hexdigest())
 
-        df_rules = self.df_rules.loc[self.df_rules['data_set'] == dataset_name]
+    def make_increment(self, data_frame, column_name):
+        import hashlib
+        print("Incrementing column", column_name)
+        data_frame[column_name] = data_frame[column_name].apply(lambda x: x + 1)
+
+    def process_redaction(self, data_frame):
+
+        df_rules = self.df_rules.loc[self.df_rules['data_set'] == self.dataset_name]
         print(type(df_rules))
         redacted_data_frame = data_frame
+        # print(redacted_data_frame.columns)
         for idx, series in df_rules.iterrows():
 
-            print(type(idx),  type(series), series.column_name)
-            redacted_data_frame.drop[series.column_name]
+            # rule 1 drop the column
+            if series.rule != series.rule or series.rule == 'Drop':  # checking for Nan
+                self.make_null(redacted_data_frame, series.column_name)
+            # rule 2 drop the column
+            if series.rule == 'Hash':  # checking for Nan
+                self.make_hash(redacted_data_frame, series.column_name)
+            if series.rule == 'Increment':  # checking for Nan
+                self.make_increment(redacted_data_frame, series.column_name)
+
+        # print(redacted_data_frame.columns)
         return redacted_data_frame
 
-    def __init__(self, full_file_path):
-        print(full_file_path)
-        dfstr = u'/home/dtwork/dw/file_transfers/d_id/_RT.11.b- RTR Data.zip/ec113c2ec31800a502eb4f38e75e7b86/RTR_2015_Oct_26_27.xlsx'
-        df = pd.read_excel(dfstr, encoding='unicode',  header=0)
-
-        self.full_file_path = full_file_path
-        self.df_rules = pd.read_csv(self.full_file_path)
+    def __init__(self, rules_file_path, dataset_name, data_frame=None):
+        print(rules_file_path)
+        self.rules_file_path = rules_file_path
+        self.df_rules = pd.read_csv(self.rules_file_path)
+        self.dataset_name = dataset_name
         print(self.df_rules)
-        x = self.process_redaction(df, 'paypal')
+        if data_frame is not None:
+            self.process_redaction(data_frame)
         # print(x)
 
 # Struct used to group parameters to define files of interests
+
+
 class FilesOfInterest:
     COUNT_VIA_PANDAS = 'PANDAS'
     COUNT_VIA_LINUX = 'WC'
@@ -77,7 +100,7 @@ class FilesOfInterest:
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
                  use_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
                  file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF-8',
-                 append_crc=False, limit_rows=None, header_row=0, count_via=COUNT_VIA_PANDAS, new_delimiter=None):
+                 append_crc=False, limit_rows=None, header_row=0, count_via=COUNT_VIA_PANDAS, new_delimiter=None, dataset_name=None, redaction_file=None):
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -110,10 +133,12 @@ class FilesOfInterest:
         self.limit_rows = limit_rows
         self.header_list_returned = None
         self.header_added = None
-        #self.start_row = start_row
+        # self.start_row = start_row
         self.header_row = header_row
         self.count_via = count_via
         self.new_delimiter = new_delimiter
+        self.dataset_name = dataset_name
+        self.redaction_file = redaction_file
 
     # def __str__(self):
 
@@ -202,7 +227,6 @@ class DataFile:
                 assert isinstance(files_of_interest, FilesOfInterest)
 
                 self.FilesOfInterest = self.walk_dir(files_of_interest, level=5, db=db)
-               
 
                 self.FilesOfInterest.parent_file_id = self.meta_source_file_id
 
@@ -294,9 +318,9 @@ class DataFile:
             file_path = os.path.dirname(full_file_path)
 
             x = db.query("select count(*) from logging.meta_source_files where file_name='{}' and file_path='{}'".format(file_name, file_path))
-            file_found=x[0][0]
-            if file_found==0:
-                print("New file found",full_file_path)
+            file_found = x[0][0]
+            if file_found == 0:
+                print("New file found", full_file_path)
                 # if get_mapped_table(walked_filed_name, self.file_pattern_list):
                 if id_regex is not None:
                     p = re.compile(id_regex)
@@ -309,13 +333,15 @@ class DataFile:
                             file_id = extracted_id[0]
                     except Exception as e:
                         logging.warning("No Embedded ID Found in FileName: id_REGEX = {}".format(id_regex))
-
-                row = db_table.db_table_def.MetaSourceFiles(file_path=file_path,
-                                                            file_name=file_name,
-                                                            file_name_data=file_id,
-                                                            file_type=file_of_interest_obj.file_type,
-                                                            parent_file_id=parent_file_id)
-                t.add_record(row, commit=True)
+            v_file_type = file_of_interest_obj.file_type
+            if file_of_interest_obj.file_type == 'DATA':
+                v_file_type = file_name.split(".")[-1].upper()
+            row = db_table.db_table_def.MetaSourceFiles(file_path=file_path,
+                                                        file_name=file_name,
+                                                        file_name_data=file_id,
+                                                        file_type=v_file_type,
+                                                        parent_file_id=parent_file_id)
+            t.add_record(row, commit=True)
 
     def dump_delimited_file(self, db, file_name, delimiter):
         shell_command = """psql -c "copy data_table FROM '{0}}' WITH DELIMITER AS '{1}' CSV QUOTE AS '"' """
@@ -580,6 +606,10 @@ class DataFile:
                                                                                    counter * chunk_size))
 
                         ####################################################################################################
+                        # Applying Redaction if exists
+                        if foi.dataset_name is not None and foi.redaction_file is not None:
+                            RedactionRules(foi.redaction_file, foi.dataset_name, dataframe)
+                        ####################################################################################################
                         dataframe.to_sql(table_name, sqlalchemy_conn, schema=foi.schema_name, if_exists='append',
                                          index=False, index_label=names)
                         ####################################################################################################
@@ -590,7 +620,7 @@ class DataFile:
 
                     dataframe_columns = dataframe.columns.tolist()
                 else:  # assume everything else is Excel for now
-
+                    print("Reading Excel File")
                     df = pd.read_excel(foi.current_working_abs_file_name, encoding='unicode',  header=0)
                     # xl = pd.ExcelFile(foi.current_working_abs_file_name)
                     # df = xl.parse(1)
@@ -613,13 +643,18 @@ class DataFile:
                         df[col] = df[col].astype(str)
                         print("Converting Column:", col)
                     """
-                    print("Writing to Database")
 
+                    ####################################################################################################
+                    # Applying Redaction if exists
+                    if foi.dataset_name is not None and foi.redaction_file is not None:
+                        RedactionRules(foi.redaction_file, foi.dataset_name, df)
+                    print("Writing to Database")
                     df.to_sql(table_name, sqlalchemy_conn, schema=foi.schema_name, if_exists='append',
                               index=False, index_label=names)
+                    dataframe_columns = df.columns.tolist()
 
                 import_status = 'success'
-                dataframe_columns = dataframe.columns.tolist()
+
             except Exception as e:
                 print("----execption---", e)
                 cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
@@ -831,6 +866,7 @@ class DataFile:
 
             # logging.info("MD5 checksum: {}".format(md5))
             modified_write_path = os.path.join(abs_writable_path, md5)
+
             self.files = zip_utils.unzipper.extract_file(full_file_path, modified_write_path, False, self.work_file_type)
             t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
             row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
@@ -879,7 +915,7 @@ class DataFile:
                 foi = get_mapped_table(os.path.join(self.source_file_path, self.curr_src_working_file), self.foi_list)
 
                 logging.debug("Getting Mapped table:{}\n{}".format(self.curr_src_working_file, foi))
-                #print(foi,"--------got one")
+                # print(foi,"--------got one")
                 if foi is not None:
                     # we found a table that is mapped to file of interest so we
 
