@@ -1452,7 +1452,25 @@ def profile_csv_testing(full_file_path, delimiter=',', header_row_location=0):
     return (column_profile)
 
 
+
+def count_excel(full_file_path, sheet_number=0):
+    import pandas
+
+    logging.debug("Counting File: {}".format(datetime.datetime.now()))
+    chunksize = 10 ** 5
+    chunk = None
+    column_count = 0
+    df = pandas.read_excel(full_file_path, sheet_name=sheet_number)
+    count_size = df.shape[0]
+    column_count = df.shape[1]
+
+    #print(df.columns, "^^^^ data frame columns")
+    #logging.debug("Excel File Row Count:{0}".format(count_size))
+    return count_size, column_count
+
 # @timer
+
+
 def count_csv(full_file_path):
     import pandas
 
@@ -1622,3 +1640,36 @@ def check_pii(db):
         db.execute(sql_to_exe)
         # except Exception as e:
         #logging.error("Error processing table:{} \n{}".format(table_name,e))
+
+
+def convert_sqlite_sql_to_csv(full_file_path):
+    sql = """select type, name, tbl_name, sql
+				FROM sqlite_master
+					WHERE type='index'"""
+    import sqlite3
+
+    with open('sqlite_idx.csv', 'w+') as write_file:
+        # open a file to write to
+        conn = sqlite3.connect(full_file_path)
+        # connect to your database
+        cursor = conn.cursor()
+        # create a cursor object (which lets you address the table results individually)
+        for row in cursor.execute(sql):
+            # use the cursor as an iterable
+            # write_file.write(row)
+            print(row)
+
+
+# stole from stack overflow
+# https://stackoverflow.com/questions/305378/list-of-tables-db-schema-dump-etc-using-the-python-sqlite3-api
+def sqlite_to_csv(full_file_path):
+    import sqlite3
+    import pandas as pd
+    db = sqlite3.connect(full_file_path)
+    cursor = db.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = cursor.fetchall()
+    for table_name in tables:
+        table_name = table_name[0]
+        table = pd.read_sql_query("SELECT * from %s" % table_name, db)
+        table.to_csv(table_name + '.csv', index_label='index', header=True, index=False, encoding='utf-8')

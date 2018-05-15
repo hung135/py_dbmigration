@@ -39,6 +39,34 @@ def diff_list(list1, list2):
     return l1 - l2
 
 
+class RedactionRules:
+
+    def make_null(data_frame, column_name):
+        print("droping column", column_name)
+        data_frame.drop(column_name)
+
+    def process_redaction(self, data_frame, dataset_name):
+
+        df_rules = self.df_rules.loc[self.df_rules['data_set'] == dataset_name]
+        print(type(df_rules))
+        redacted_data_frame = data_frame
+        for idx, series in df_rules.iterrows():
+
+            print(type(idx),  type(series), series.column_name)
+            redacted_data_frame.drop[series.column_name]
+        return redacted_data_frame
+
+    def __init__(self, full_file_path):
+        print(full_file_path)
+        dfstr = u'/home/dtwork/dw/file_transfers/d_id/_RT.11.b- RTR Data.zip/ec113c2ec31800a502eb4f38e75e7b86/RTR_2015_Oct_26_27.xlsx'
+        df = pd.read_excel(dfstr, encoding='unicode',  header=0)
+
+        self.full_file_path = full_file_path
+        self.df_rules = pd.read_csv(self.full_file_path)
+        print(self.df_rules)
+        x = self.process_redaction(df, 'paypal')
+        # print(x)
+
 # Struct used to group parameters to define files of interests
 class FilesOfInterest:
     COUNT_VIA_PANDAS = 'PANDAS'
@@ -173,7 +201,8 @@ class DataFile:
             if files_of_interest.file_path is not None:
                 assert isinstance(files_of_interest, FilesOfInterest)
 
-                self.FilesOfInterest = self.walk_dir(files_of_interest, level=5)
+                self.FilesOfInterest = self.walk_dir(files_of_interest, level=5, db=db)
+               
 
                 self.FilesOfInterest.parent_file_id = self.meta_source_file_id
 
@@ -260,29 +289,33 @@ class DataFile:
             p = None
             extracted_id = None
             file_id = '0'
-
-            # if get_mapped_table(walked_filed_name, self.file_pattern_list):
-            if id_regex is not None:
-                p = re.compile(id_regex)
-
-            # apply regex pattern to extract data FROM the file name (date, month, year....etc...filename_2018-01-01.csv)
-            if id_regex is not None:
-                try:
-                    extracted_id = p.findall(walked_filed_name)
-                    if len(extracted_id) > 0:
-                        file_id = extracted_id[0]
-                except Exception as e:
-                    logging.warning("No Embedded ID Found in FileName: id_REGEX = {}".format(id_regex))
             full_file_path = os.path.join(file_of_interest_obj.file_path, walked_filed_name)
             file_name = os.path.basename(full_file_path)
             file_path = os.path.dirname(full_file_path)
 
-            row = db_table.db_table_def.MetaSourceFiles(file_path=file_path,
-                                                        file_name=file_name,
-                                                        file_name_data=file_id,
-                                                        file_type=file_of_interest_obj.file_type,
-                                                        parent_file_id=parent_file_id)
-            t.add_record(row, commit=True)
+            x = db.query("select count(*) from logging.meta_source_files where file_name='{}' and file_path='{}'".format(file_name, file_path))
+            file_found=x[0][0]
+            if file_found==0:
+                print("New file found",full_file_path)
+                # if get_mapped_table(walked_filed_name, self.file_pattern_list):
+                if id_regex is not None:
+                    p = re.compile(id_regex)
+
+                # apply regex pattern to extract data FROM the file name (date, month, year....etc...filename_2018-01-01.csv)
+                if id_regex is not None:
+                    try:
+                        extracted_id = p.findall(walked_filed_name)
+                        if len(extracted_id) > 0:
+                            file_id = extracted_id[0]
+                    except Exception as e:
+                        logging.warning("No Embedded ID Found in FileName: id_REGEX = {}".format(id_regex))
+
+                row = db_table.db_table_def.MetaSourceFiles(file_path=file_path,
+                                                            file_name=file_name,
+                                                            file_name_data=file_id,
+                                                            file_type=file_of_interest_obj.file_type,
+                                                            parent_file_id=parent_file_id)
+                t.add_record(row, commit=True)
 
     def dump_delimited_file(self, db, file_name, delimiter):
         shell_command = """psql -c "copy data_table FROM '{0}}' WITH DELIMITER AS '{1}' CSV QUOTE AS '"' """
@@ -296,7 +329,7 @@ class DataFile:
                 ,process_end_dtm=null
                 ,current_worker_host=null
                 ,current_worker_host_pid=null
-                WHERE  1=1 
+                WHERE  1=1
                 AND {}
                 """.format(where_clause))
         if option == 'FAILED':
@@ -339,7 +372,7 @@ class DataFile:
         db.commit()
 
     @staticmethod
-    def walk_dir(foi, level=4):
+    def walk_dir(foi, level=4, db=None):
         """Walks a directory structure and returns all files that match the regex pattern
         :rtype: FilesOfInterest
         """
@@ -365,7 +398,7 @@ class DataFile:
                 for x in files:
 
                     rel_path = root.replace(file_path, "")
-                    logging.debug("Walking Directory:{}:{}".format(subdirs, x))
+                    # logging.debug("Walking Directory:{}:{}".format(subdirs, x))
                     if rel_path == "":
                         files_list.append(x)
                     else:
@@ -514,7 +547,7 @@ class DataFile:
             if lowercase:
                 table_name = str.lower(str(table_name))
             try:
-                print("----limit rows------", limit_rows)
+
                 if limit_rows is not None:
                     logging.debug("Pandas Read Limit SET: {0}:ROWS".format(limit_rows))
 
@@ -531,33 +564,64 @@ class DataFile:
                 delim = foi.file_delimiter
                 if foi.new_delimiter is not None:
                     delim = foi.new_delimiter
+                if foi.file_type == 'CSV':
+                    for counter, dataframe in enumerate(
+                            pd.read_csv(foi.current_working_abs_file_name, sep=delim, nrows=limit_rows,
+                                        quotechar='"', chunksize=chunk_size, header=header, index_col=False,
+                                        dtype=object)):
 
-                for counter, dataframe in enumerate(
-                        pd.read_csv(foi.current_working_abs_file_name, sep=delim, nrows=limit_rows,
-                                    quotechar='"', chunksize=chunk_size, header=header, index_col=False,
-                                    dtype=object)):
+                        if not foi.use_header and len(foi.column_list) > 0:
+                            dataframe.columns = map(str,
+                                                    # foi.column_list
+                                                    names
+                                                    )  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
+                        logging.debug(
+                            "Pandas Insert Into DB: {0}->{1}-->Records:{2}".format(foi.schema_name, foi.table_name,
+                                                                                   counter * chunk_size))
 
-                    if not foi.use_header and len(foi.column_list) > 0:
-                        dataframe.columns = map(str,
-                                                # foi.column_list
-                                                names
-                                                )  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
-                    logging.debug(
-                        "Pandas Insert Into DB: {0}->{1}-->Records:{2}".format(foi.schema_name, foi.table_name,
-                                                                               counter * chunk_size))
-                    ####################################################################################################
-                    dataframe.to_sql(table_name, sqlalchemy_conn, schema=foi.schema_name, if_exists='append',
-                                     index=False, index_label=names)
-                    ####################################################################################################
-                if counter == 0:
-                    self.rows_inserted = (len(dataframe))
-                else:
-                    self.rows_inserted = (counter) * chunk_size + (len(dataframe))
+                        ####################################################################################################
+                        dataframe.to_sql(table_name, sqlalchemy_conn, schema=foi.schema_name, if_exists='append',
+                                         index=False, index_label=names)
+                        ####################################################################################################
+                    if counter == 0:
+                        self.rows_inserted = (len(dataframe))
+                    else:
+                        self.rows_inserted = (counter) * chunk_size + (len(dataframe))
+
+                    dataframe_columns = dataframe.columns.tolist()
+                else:  # assume everything else is Excel for now
+
+                    df = pd.read_excel(foi.current_working_abs_file_name, encoding='unicode',  header=0)
+                    # xl = pd.ExcelFile(foi.current_working_abs_file_name)
+                    # df = xl.parse(1)
+                    col_list = df.columns.tolist()
+
+                    # cols_new = [i.split(' ', 1)[1].replace(" ", "_").lower() for i in col_list]
+                    cols_new = [i.replace(" ", "_").lower() for i in col_list]
+                    # df.columns = df.columns.str.split(' ', 1)
+                    df.columns = cols_new
+                    dataframe_columns = cols_new
+                    # df = df[1: 10]
+                    if foi.append_file_id:
+                        df['file_id'] = self.meta_source_file_id
+                    # print("-----", df.columns)
+                    import numpy as np
+                    zz = """ converter = lambda x: x.encode('utf-8')
+                    types = df.apply(lambda x:  pd.api.types.infer_dtype(x.values))
+                    print(types, "-----", [types == 'mixed-integer'])
+                    for col in types[types == 'mixed-integer'].index:
+                        df[col] = df[col].astype(str)
+                        print("Converting Column:", col)
+                    """
+                    print("Writing to Database")
+
+                    df.to_sql(table_name, sqlalchemy_conn, schema=foi.schema_name, if_exists='append',
+                              index=False, index_label=names)
 
                 import_status = 'success'
                 dataframe_columns = dataframe.columns.tolist()
             except Exception as e:
-
+                print("----execption---", e)
                 cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
                 delta = diff_list(dataframe_columns, cols_tb)
                 cols = list(delta)
@@ -695,7 +759,7 @@ class DataFile:
             self.total_files = row.total_files
             self.file_size = row.file_size
             self.meta_source_file_id = row.id
-            self.append_file_id = row.id
+
             self.row_count = row.total_rows
 
             try:
@@ -705,8 +769,8 @@ class DataFile:
                 row.file_size = self.file_size
                 t.session.commit()
 
-                logging.debug("Inside Getwork: FileType:{} :RowCount{}".format(self.work_file_type, self.row_count))
-                if self.work_file_type in ('DATA', 'CSV') and self.row_count == 0:
+                logging.debug("Inside Getwork: FileType:{} : RowCount: {}".format(self.work_file_type, self.row_count))
+                if self.work_file_type in ('CSV') and self.row_count == 0:
                     # logging.debug("Working DATAFILE:{0}:".format(self.curr_src_working_file))
                     row.total_files = 1
                     """
@@ -724,12 +788,17 @@ class DataFile:
                         self.row_count=0
                         logging.info("No Counting Method provided")
                     """
+
                     "Counting File-Linux WC : {}".format(os.path.join(self.source_file_path, self.curr_src_working_file))
                     self.row_count = migrate_utils.static_func.count_file_lines_wc(
                         os.path.join(self.source_file_path, self.curr_src_working_file))
+                if self.work_file_type in ('XLSX', 'XLS') and self.row_count == 0:
+
+                    self.row_count, dummy_column_count = migrate_utils.static_func.count_excel(
+                        os.path.join(self.source_file_path, self.curr_src_working_file))
 
                     row.total_rows = self.row_count
-                    logging.debug("Counting File Result:{0}:".format(self.row_count))
+                    logging.debug("Counting File Result: {0}".format(self.row_count))
 
             except Exception as e:
                 # print(type(e))
@@ -740,7 +809,9 @@ class DataFile:
                 status_dict = {}
                 status_dict['import_status'] = 'failed'
                 status_dict['error_msg'] = e
-
+                import time
+                print("sleeping so you can read")
+                time.sleep(30)
                 self.finish_work(db, status_dict=status_dict, file_of_interest=None, vacuum=True)
 
             else:
@@ -757,7 +828,8 @@ class DataFile:
         try:
             logging.info("Creating MD5 checksum")
             md5 = migrate_utils.static_func.md5_file(full_file_path)
-            logging.info("MD5 checksum: {}".format(md5))
+
+            # logging.info("MD5 checksum: {}".format(md5))
             modified_write_path = os.path.join(abs_writable_path, md5)
             self.files = zip_utils.unzipper.extract_file(full_file_path, modified_write_path, False, self.work_file_type)
             t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
@@ -768,17 +840,18 @@ class DataFile:
             t.session.commit()
 
         # We walk the tmp dir and add those data files to list of to do
-            new_src_dir = abs_writable_path
-            logging.debug("WALKING EXTRACTED FILES:\src_dir:{0}\nworking_dir:{1}:".format(new_src_dir, self.working_path))
+            new_src_dir = modified_write_path
+            logging.debug(
+                "WALKING EXTRACTED FILES:\src_dir:{0}\nworking_dir:{1}: --{2}".format(new_src_dir, self.working_path, modified_write_path))
 
-            file_table_map = [FilesOfInterest('DATA', '', file_path=abs_writable_path, file_name_data_regex=None,
+            file_table_map = [FilesOfInterest('DATA', '', file_path=modified_write_path, file_name_data_regex=None,
                                               parent_file_id=self.meta_source_file_id)]
 
             DataFile(new_src_dir, db, file_table_map, parent_file_id=self.meta_source_file_id)
         except Exception as e:
-            import time
-            print(e)
-            time.sleep(30)
+            # import time
+            # print("---error occured--sleeping so you can read", e)
+            # time.sleep(30)
             status_dict['import_status'] = 'failed'
             status_dict['error_msg'] = 'Error During Unziping File'
         else:
@@ -799,7 +872,7 @@ class DataFile:
 
             logging.debug("Got New Working File:{0}:".format(self.curr_src_working_file))
 
-            if self.work_file_type in ('DATA', 'CSV'):
+            if self.work_file_type in ('DATA', 'CSV', 'XLSX'):
                 # check the current file against our list of regex to see if it
                 # matches any table mapping
 
