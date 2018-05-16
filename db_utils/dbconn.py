@@ -477,7 +477,7 @@ class Connection:
         return l
 
     # @migrate_utils.static_func.timer
-    def get_columns(self, table_name, dbschema):
+    def get_columns(self, table_name, table_schema):
         """
 
         :rtype: object
@@ -485,7 +485,8 @@ class Connection:
         # type: (str, str) -> list
         import sqlalchemy
         try:
-            con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
+            print("Getting Column List from DB: {}.{}".format(table_schema, table_name))
+            con, meta = self.connect_sqlalchemy(table_schema, self._dbtype)
             table = sqlalchemy.Table(table_name, meta, autoload=True, autoload_with=con)
             column_list = [c.name for c in table.columns]
             return list(column_list)

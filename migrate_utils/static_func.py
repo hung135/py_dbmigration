@@ -64,7 +64,7 @@ def sed_file_delimiter(orgfile, newfile=None, delimiter=',', new_delimiter=','):
 
 
 def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True, append_file_id=True,
-                     append_crc=False, db=None, table_name=None, limit_rows=None,
+                     append_crc=False, db=None, table_schema=None, table_name=None, limit_rows=None,
                      header_row_location=None):
     import os
     import errno
@@ -80,7 +80,6 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
         else:
             start_row = 1
 
-    print("start row:", start_row)
     carriage_return = check_file_for_carriage_return(orgfile)
 
     if not os.path.exists(os.path.dirname(newfile)):
@@ -111,8 +110,9 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
     if use_header is False and db is not None:
         import db_utils
         assert isinstance(db, db_utils.dbconn.Connection)
-        columns_from_db = db.get_columns(table_name, db.dbschema)
-        print(columns_from_db, "-----------xxxxxx")
+
+        columns_from_db = db.get_columns(table_name, table_schema)
+        #print(columns_from_db, "-----------xxxxxx")
         file_column_count = len(columns_from_db)
 
         # if column count in db is more than columns in files
@@ -143,8 +143,8 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
         # this will assure file_id and crc will always be at the front of the file
         if use_header is False and db is not None:
             column_list = delimiter.join(column_list)
-            print("-------", "writing in header")
-            print("-------", column_list + str(carriage_return))
+            #print("-------", "writing in header")
+            #print("-------", column_list + str(carriage_return))
             outfile.write(column_list + str(carriage_return))
             header_list_to_return = column_list
 
@@ -1316,10 +1316,6 @@ def count_column_csv(full_file_path, header_row_location=0, sample_size=200, del
     except Exception as e:
         logging.error("Error Counting csv columns:{} \nReturning: 0".format(e))
 
-    # import time
-    print("---column_count:", column_count)
-    # time.sleep(10)
-
     return int(column_count)
 
 
@@ -1450,7 +1446,6 @@ def profile_csv_testing(full_file_path, delimiter=',', header_row_location=0):
     print(column_profile)
     print(full_file_path)
     return (column_profile)
-
 
 
 def count_excel(full_file_path, sheet_number=0):

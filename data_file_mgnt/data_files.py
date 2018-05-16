@@ -145,12 +145,13 @@ class FilesOfInterest:
 
 def get_mapped_table(file_name, foi_list):
     for i in foi_list:
+
         if i.table_name is not None:
             assert isinstance(i, FilesOfInterest)
 
             if re.match(i.regex, file_name, re.IGNORECASE):
-                print("***FOI.regex:", i.regex, i.table_name, file_name)
-                logging.info("\t\tFile->Table mapping found: {}".format(i.table_name))
+                #print("***FOI.regex:", i.regex, i.table_name, file_name)
+                logging.info("\t\tFile->Table mapping found: {}.{}".format(i.schema_name, i.table_name))
                 return i
     return None
 
@@ -230,20 +231,20 @@ class DataFile:
 
                 self.FilesOfInterest.parent_file_id = self.meta_source_file_id
 
-                logging.debug(self.FilesOfInterest.file_list)
+                # logging.debug(self.FilesOfInterest.file_list)
 
                 if not 0 >= len(list(self.FilesOfInterest.file_list)):
                     # print(self.FilesOfInterest.file_list, "----Match-----",self.FilesOfInterest.regex)
                     self.insert_working_files(db, self.FilesOfInterest, self.parent_file_id)
-                else:
+                # else:
                     # print(self.FilesOfInterest.files_list,"<--------->",FilesOfInterest.files_list)
 
-                    logging.debug(
-                        "No Files Found while walking source directory: file_type= {} \n file_path= '{}' \n REGEX= '{}'".format(
-                            self.FilesOfInterest.file_type, self.FilesOfInterest.file_path, self.FilesOfInterest.regex))
+                    # logging.debug(
+                    #    "No Files Found while walking source directory: file_type= {} \n file_path= '{}' \n REGEX= '{}'".format(
+                    #       self.FilesOfInterest.file_type, self.FilesOfInterest.file_path, self.FilesOfInterest.regex))
 
-    # function that will append the file id passed in to every row in a data file.
-    # also adding fucntion to generate a checksum of that row for later use
+                    # function that will append the file id passed in to every row in a data file.
+                    # also adding fucntion to generate a checksum of that row for later use
 
     def insert_into_file(self, foi, file_id, db=None):
         assert isinstance(foi, FilesOfInterest)
@@ -258,7 +259,7 @@ class DataFile:
             newfile,
             str(file_id),
             foi.file_delimiter, foi.use_header, foi.append_file_id,
-            foi.append_crc, db, foi.table_name,
+            foi.append_crc, db, foi.schema_name, foi.table_name,
             foi.limit_rows, foi.header_row
         )
         # return fullpath to new file
@@ -317,8 +318,10 @@ class DataFile:
             file_name = os.path.basename(full_file_path)
             file_path = os.path.dirname(full_file_path)
 
+            # If the file already exists in the database we don't need to insert again
             x = db.query("select count(*) from logging.meta_source_files where file_name='{}' and file_path='{}'".format(file_name, file_path))
             file_found = x[0][0]
+
             if file_found == 0:
                 print("New file found", full_file_path)
                 # if get_mapped_table(walked_filed_name, self.file_pattern_list):
@@ -333,15 +336,15 @@ class DataFile:
                             file_id = extracted_id[0]
                     except Exception as e:
                         logging.warning("No Embedded ID Found in FileName: id_REGEX = {}".format(id_regex))
-            v_file_type = file_of_interest_obj.file_type
-            if file_of_interest_obj.file_type == 'DATA':
-                v_file_type = file_name.split(".")[-1].upper()
-            row = db_table.db_table_def.MetaSourceFiles(file_path=file_path,
-                                                        file_name=file_name,
-                                                        file_name_data=file_id,
-                                                        file_type=v_file_type,
-                                                        parent_file_id=parent_file_id)
-            t.add_record(row, commit=True)
+                v_file_type = file_of_interest_obj.file_type
+                if file_of_interest_obj.file_type == 'DATA':
+                    v_file_type = file_name.split(".")[-1].upper()
+                row = db_table.db_table_def.MetaSourceFiles(file_path=file_path,
+                                                            file_name=file_name,
+                                                            file_name_data=file_id,
+                                                            file_type=v_file_type,
+                                                            parent_file_id=parent_file_id)
+                t.add_record(row, commit=True)
 
     def dump_delimited_file(self, db, file_name, delimiter):
         shell_command = """psql -c "copy data_table FROM '{0}}' WITH DELIMITER AS '{1}' CSV QUOTE AS '"' """
@@ -405,6 +408,7 @@ class DataFile:
         assert isinstance(foi, FilesOfInterest)
 
         file_path = foi.file_path
+        logging.debug("Walking Directory: '{}' : Search Pattern: {}".format(file_path, foi.regex))
 
         regex = re.compile('zip')
         try:
@@ -433,7 +437,7 @@ class DataFile:
             ii += 1
         # logging.debug("Done Walking Directory:")
         match_list = list(filter(regex.match, files_list))
-        logging.debug("Done Walking Directory:{}".format(list(match_list)))
+        #logging.debug("Done Walking Directory---------------------------------:{}".format(list(match_list)))
         foi.file_list = match_list
 
         return foi
@@ -471,7 +475,7 @@ class DataFile:
                 # dest.column_list.replace(' ', '').replace('\n',  # '').strip(',')))
             else:
                 copy_string = foi.schema_name + "." + foi.table_name
-            logging.info("Import FROM file into: {}".format(copy_string))
+            logging.info("Import FROM file into: {}, {}.{}".format(copy_string, foi.schema_name, foi.table_name))
 
             # not using this anymore because we don't know what order the file_id and crc columns are set in
             # that info will be returned from the process that has to append the file_id and crc
@@ -773,7 +777,7 @@ class DataFile:
                     UPDATE {0}.meta_source_files SET
                     current_worker_host='{1}', current_worker_host_pid={2}, process_start_dtm=now()
                     WHERE (file_path ||file_name) in (select file_path ||file_name
-                        FROM {0}.meta_source_files WHERE  current_worker_host is null order by
+                        FROM {0}.meta_source_files WHERE  file_process_state='RAW' and current_worker_host is null order by
                         file_type asc,id asc, file_size asc, file_name_data desc  limit 1)
                     """).format(db_table.db_table_def.MetaSourceFiles.DbSchema, self.host, self.curr_pid))
         t.session.commit()
@@ -805,35 +809,35 @@ class DataFile:
                 t.session.commit()
 
                 logging.debug("Inside Getwork: FileType:{} : RowCount: {}".format(self.work_file_type, self.row_count))
-                if self.work_file_type in ('CSV') and self.row_count == 0:
+                if self.work_file_type in ('CSV', 'TXT') and self.row_count == 0:
                     # logging.debug("Working DATAFILE:{0}:".format(self.curr_src_working_file))
                     row.total_files = 1
-                    """
-                    if foi.count_via==foi.COUNT_VIA_PANDAS:
+                    """ Foi don't exist yet so we can't use this logic here
+                    
+                    if foi.count_via == foi.COUNT_VIA_PANDAS:
                         logging.debug(
-                        "Counting File-Pandas : {}".format(os.path.join(self.source_file_path, self.curr_src_working_file)))
-                        self.row_count,dummy = migrate_utils.static_func.count_csv(
+                            "Counting File-Pandas : {}".format(os.path.join(self.source_file_path, self.curr_src_working_file)))
+                        self.row_count, dummy = migrate_utils.static_func.count_csv(
                             os.path.join(self.source_file_path, self.curr_src_working_file))
-                    elif foi.count_via==foi.COUNT_VIA_LINUX:
+                    elif foi.count_via == foi.COUNT_VIA_LINUX:
                         logging.debug(
-                        "Counting File-Linux WC : {}".format(os.path.join(self.source_file_path, self.curr_src_working_file)))
+                            "Counting File-Linux WC : {}".format(os.path.join(self.source_file_path, self.curr_src_working_file)))
                         self.row_count = migrate_utils.static_func.count_line_wc(
                             os.path.join(self.source_file_path, self.curr_src_working_file))
                     else:
-                        self.row_count=0
-                        logging.info("No Counting Method provided")
+                        self.row_count = 0
+                        logging.info("No Counting Method provided, Defaulting to WC")
                     """
-
-                    "Counting File-Linux WC : {}".format(os.path.join(self.source_file_path, self.curr_src_working_file))
                     self.row_count = migrate_utils.static_func.count_file_lines_wc(
                         os.path.join(self.source_file_path, self.curr_src_working_file))
+
                 if self.work_file_type in ('XLSX', 'XLS') and self.row_count == 0:
 
                     self.row_count, dummy_column_count = migrate_utils.static_func.count_excel(
                         os.path.join(self.source_file_path, self.curr_src_working_file))
 
-                    row.total_rows = self.row_count
-                    logging.debug("Counting File Result: {0}".format(self.row_count))
+                row.total_rows = self.row_count
+                logging.debug("Counting File Result: {0}".format(self.row_count))
 
             except Exception as e:
                 # print(type(e))
@@ -867,7 +871,7 @@ class DataFile:
             # logging.info("MD5 checksum: {}".format(md5))
             modified_write_path = os.path.join(abs_writable_path, md5)
 
-            self.files = zip_utils.unzipper.extract_file(full_file_path, modified_write_path, False, self.work_file_type)
+            self.files = zip_utils.unzipper.extract_file(full_file_path, modified_write_path, True, self.work_file_type)
             t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
             row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
             self.total_files = len(self.files)
@@ -908,18 +912,21 @@ class DataFile:
 
             logging.debug("Got New Working File:{0}:".format(self.curr_src_working_file))
 
-            if self.work_file_type in ('DATA', 'CSV', 'XLSX'):
+            if self.work_file_type in ('DATA', 'CSV', 'XLSX', 'TXT'):
                 # check the current file against our list of regex to see if it
                 # matches any table mapping
 
                 foi = get_mapped_table(os.path.join(self.source_file_path, self.curr_src_working_file), self.foi_list)
 
-                logging.debug("Getting Mapped table:{}\n{}".format(self.curr_src_working_file, foi))
+                #logging.debug("Getting Mapped table:{}\n{}".format(foi.self.curr_src_working_file, foi))
                 # print(foi,"--------got one")
+                # print(self.source_file_path)
                 if foi is not None:
+                    print(foi.table_name, "--------got one")
                     # we found a table that is mapped to file of interest so we
 
                     if foi.column_list is None:
+                        print(foi.table_name, foi.schema_name, "=-------------")
                         foi.column_list = db.get_columns(foi.table_name, foi.schema_name)
                     # if 2 column_names are reserved file_id and crc
 
@@ -945,6 +952,11 @@ class DataFile:
                             # full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
                             # print(self.working_path, "/appended/", self.curr_src_working_file)
                             ################################################################################################
+
+                            if foi.append_file_id:
+                                logging.debug("Appending File_id --{}-- to every row in file".format(self.meta_source_file_id))
+                            if foi.append_crc:
+                                logging.debug("Appending CRC to every row in file")
                             new_file_name, header_added, header_list_returned = self.insert_into_file(foi, self.meta_source_file_id, db=db)
                             if foi.new_delimiter is not None:
                                 migrate_utils.static_func.sed_file_delimiter(new_file_name, None, foi.file_delimiter, foi.new_delimiter)
