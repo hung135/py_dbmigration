@@ -43,15 +43,17 @@ def dump_params(f):
 
     return wrapper
 
-#invokes SED to replace every deliminter in a file to another
+# invokes SED to replace every deliminter in a file to another
+
+
 def sed_file_delimiter(orgfile, newfile=None, delimiter=',', new_delimiter=','):
     import subprocess
-    cmd_string_double_quote="sed -i -e 's/\"/\"\"/g' {}".format(orgfile)
-    cmd_string_begin="sed -i -e 's/^\"\"/\"/g' {}".format(orgfile)
-    cmd_string_end="sed -i -e 's/\"\"$/\"/g' {}".format(orgfile)
-    cmd_string="sed -i -e 's/\"\"{0}\"\"/\"{1}\"/g' {2}".format(delimiter,new_delimiter,orgfile)
+    cmd_string_double_quote = "sed -i -e 's/\"/\"\"/g' {}".format(orgfile)
+    cmd_string_begin = "sed -i -e 's/^\"\"/\"/g' {}".format(orgfile)
+    cmd_string_end = "sed -i -e 's/\"\"$/\"/g' {}".format(orgfile)
+    cmd_string = "sed -i -e 's/\"\"{0}\"\"/\"{1}\"/g' {2}".format(delimiter, new_delimiter, orgfile)
 
-    print("----SED---Delimiter",delimiter,new_delimiter,cmd_string)
+    print("----SED---Delimiter", delimiter, new_delimiter, cmd_string)
     subprocess.call([cmd_string_double_quote], shell=True)
     subprocess.call([cmd_string_begin], shell=True)
     subprocess.call([cmd_string_end], shell=True)
@@ -60,8 +62,9 @@ def sed_file_delimiter(orgfile, newfile=None, delimiter=',', new_delimiter=','):
 # function that will append data to a data file
 # @dump_params
 
+
 def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True, append_file_id=True,
-                     append_crc=False, db=None, table_name=None, limit_rows=None,
+                     append_crc=False, db=None, table_schema=None, table_name=None, limit_rows=None,
                      header_row_location=None):
     import os
     import errno
@@ -70,14 +73,13 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
     header_list_to_return = None
     return_char_unix = '\n'
     return_char_windows = '\r\n'
-    start_row=0
+    start_row = 0
     if use_header:
         if header_row_location is not None:
-            start_row=header_row_location+1
+            start_row = header_row_location + 1
         else:
-            start_row=1
+            start_row = 1
 
-    print("start row:",start_row)
     carriage_return = check_file_for_carriage_return(orgfile)
 
     if not os.path.exists(os.path.dirname(newfile)):
@@ -100,7 +102,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
     columns_to_add_count = len(column_list)
 
     file_column_count = 0
-    
+
     file_column_count = count_column_csv(orgfile, header_row_location=header_row_location,
                                          delimiter=delimiter) + columns_to_add_count
 
@@ -108,8 +110,9 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
     if use_header is False and db is not None:
         import db_utils
         assert isinstance(db, db_utils.dbconn.Connection)
-        columns_from_db = db.get_columns(table_name, db.dbschema)
-        print(columns_from_db, "-----------xxxxxx")
+
+        columns_from_db = db.get_columns(table_name, table_schema)
+        #print(columns_from_db, "-----------xxxxxx")
         file_column_count = len(columns_from_db)
 
         # if column count in db is more than columns in files
@@ -140,8 +143,8 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
         # this will assure file_id and crc will always be at the front of the file
         if use_header is False and db is not None:
             column_list = delimiter.join(column_list)
-            print("-------", "writing in header")
-            print("-------", column_list + str(carriage_return))
+            #print("-------", "writing in header")
+            #print("-------", column_list + str(carriage_return))
             outfile.write(column_list + str(carriage_return))
             header_list_to_return = column_list
 
@@ -157,18 +160,18 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
             # if the file doesn't have a header and we have a header added it
             file_id_to_add = ''
             if append_file_id:
-                file_id_to_add += '"'+pre_pend_data +'"'+ delimiter
+                file_id_to_add += '"' + pre_pend_data + '"' + delimiter
 
             for ii, line in enumerate(src_file):
                 # local variable to accrue data before we write file
-                if ii==header_row_location and use_header:
-                    outfile.write(header_to_add.replace('"','') + delimiter + line.replace('"',''))
+                if ii == header_row_location and use_header:
+                    outfile.write(header_to_add.replace('"', '') + delimiter + line.replace('"', ''))
                     header_list_to_return = str(header_to_add + delimiter + line)
 
                 data_to_prepend = file_id_to_add
                 if append_crc:
                     data_to_prepend += str(hashlib.md5(line).hexdigest()) + delimiter
- 
+
                 if ii < start_row:
                     pass
                 elif limit_rows is not None and ii > limit_rows:
@@ -178,7 +181,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
 
     count_column_csv(newfile, header_row_location=header_row_location, delimiter=delimiter)
     header_list_to_return = header_list_to_return.split(str(delimiter))
-    
+
     return header_added, header_list_to_return
 
 
@@ -859,7 +862,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
         stmt = sqlalchemy.schema.CreateTable(table).compile(dialect=postgresql.dialect())
         column_list = [c.name for c in table.columns]
         createsql = convert_sql_snake_case(str(stmt), column_list)
-        createsql=createsql.replace('"','')
+        createsql = createsql.replace('"', '')
 
         logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
 
@@ -882,7 +885,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
             print(folder_deploy + i["table"])
             with open(folder_deploy + i["filename"], "wb") as f:
                 f.write(bytes(i["sql"]))
-                f.write("ALTER TABLE {}.{}\n\tOWNER TO operational_dba;".format(dbschema,i["table"]))
+                f.write("ALTER TABLE {}.{}\n\tOWNER TO operational_dba;".format(dbschema, i["table"]))
 
             drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
             print(dbschema, "-----db---")
@@ -959,8 +962,8 @@ def make_html_meta_source_files(db, full_file_path, html_head):
     if not os.path.exists(os.path.dirname(full_file_path)):
         import commands
         try:
-            os.makedirs(os.path.dirname(full_file_path),0775)
- 
+            os.makedirs(os.path.dirname(full_file_path), 0775)
+
         except OSError as exc:  # Guard against race condition
             if exc.errno != exc.errno.EEXIST:
                 raise
@@ -991,9 +994,9 @@ def make_html_publish_error(db, full_file_path, html_head):
 
     if not os.path.exists(os.path.dirname(full_file_path)):
         try:
-             
-            os.makedirs(os.path.dirname(full_file_path),0775) 
- 
+
+            os.makedirs(os.path.dirname(full_file_path), 0775)
+
         except OSError as exc:  # Guard against race condition
             if exc.errno != exc.errno.EEXIST:
                 raise
@@ -1032,9 +1035,9 @@ def make_html_publish_log(db, full_file_path, html_head):
 
     if not os.path.exists(os.path.dirname(full_file_path)):
         try:
-             
-            os.makedirs(os.path.dirname(full_file_path),0775)
-       
+
+            os.makedirs(os.path.dirname(full_file_path), 0775)
+
         except OSError as exc:  # Guard against race condition
             if exc.errno != exc.errno.EEXIST:
                 raise
@@ -1099,7 +1102,7 @@ def get_func(col):
 
     import datetime
 
-    from random_words import  RandomWords
+    from random_words import RandomWords
     # assert isinstance(col, sqlalchemy.Column)
 
     if str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']:
@@ -1128,7 +1131,6 @@ def get_func(col):
 
         return gen_data
 
-
     elif ('TIMESTAMP' in str(col.type)):
         def gen_data():
             return str(datetime.datetime.now())
@@ -1153,6 +1155,7 @@ def get_func(col):
     elif ('CHAR' in str(col.type)):
         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
         import operator
+
         def gen_data():
             limit = min([3, operator.div(col.length, 5)])
             if col.length < 35:
@@ -1289,35 +1292,29 @@ def count_column_csv(full_file_path, header_row_location=0, sample_size=200, del
     import pandas
     import statistics
 
-
     column_count = 0
     if header_row_location is None:
         header_row_location = 0
     try:
         chunksize = 1
         chunk = None
-        #print("----header row location-----", header_row_location,delimiter,full_file_path)
+        # print("----header row location-----", header_row_location,delimiter,full_file_path)
         count_list = []
-        delim=delimiter 
+        delim = delimiter
         for i, chunk in enumerate(
                 pandas.read_table(full_file_path, chunksize=chunksize, sep=delim, header=header_row_location)):
 
             # just run through the file to get number of chucks
 
-            #print(full_file_path, chunksize, delimiter, header_row_location)
+            # print(full_file_path, chunksize, delimiter, header_row_location)
 
             count_list.append(len(chunk.columns))
             if i > sample_size:
                 break
-        print("------max------",max(count_list))
+        # print("------max------",max(count_list))
         column_count = statistics.median(count_list)
     except Exception as e:
         logging.error("Error Counting csv columns:{} \nReturning: 0".format(e))
-        
-
-    # import time
-    print("---column_count:", column_count)
-    # time.sleep(10)
 
     return int(column_count)
 
@@ -1451,7 +1448,24 @@ def profile_csv_testing(full_file_path, delimiter=',', header_row_location=0):
     return (column_profile)
 
 
+def count_excel(full_file_path, sheet_number=0):
+    import pandas
+
+    logging.debug("Counting File: {}".format(datetime.datetime.now()))
+    chunksize = 10 ** 5
+    chunk = None
+    column_count = 0
+    df = pandas.read_excel(full_file_path, sheet_name=sheet_number)
+    count_size = df.shape[0]
+    column_count = df.shape[1]
+
+    #print(df.columns, "^^^^ data frame columns")
+    #logging.debug("Excel File Row Count:{0}".format(count_size))
+    return count_size, column_count
+
 # @timer
+
+
 def count_csv(full_file_path):
     import pandas
 
@@ -1532,15 +1546,16 @@ def add_column(db, table_name, column_name, data_type, nullable=''):
 def reset_pii(db):
     pass
 
-def get_primary_key(db,schema,table_name):
-    sql="""SELECT a.attname 
+
+def get_primary_key(db, schema, table_name):
+    sql = """SELECT a.attname 
             FROM   pg_index i
             JOIN   pg_attribute a ON a.attrelid = i.indrelid
                                  AND a.attnum = ANY(i.indkey)
             WHERE   i.indisprimary and
-            i.indrelid='{}.{}'::regclass""".format(schema,table_name)
-    keys=db.query(sql)
-    cols=[]
+            i.indrelid='{}.{}'::regclass""".format(schema, table_name)
+    keys = db.query(sql)
+    cols = []
     for i in keys:
         for j in i:
             cols.append(j)
@@ -1564,42 +1579,42 @@ def check_pii(db):
     x = db.query(sql)
     # iterate through the rules table
     for id, table_name, field_name, acceptable_values in x:
-        print("Iterating through",table_name,field_name)
-        #try:
+        print("Iterating through", table_name, field_name)
+        # try:
         primay_key = get_primary_key(db, db.dbschema,
                                      table_name)
-        #print(primay_key,type(primay_key))
+        # print(primay_key,type(primay_key))
 
-        if len(primay_key)>1:
+        if len(primay_key) > 1:
             logging.error("More than 1 Primary Key not supported:{}".format(primay_key))
 
-        if len(primay_key)==0:
+        if len(primay_key) == 0:
             logging.error("Need Primary Key:{}".format(table_name))
 
         key_colums_to_sql = str(primay_key[0])
-        fqn_table_name=table_name
+        fqn_table_name = table_name
         if '.' not in table_name:
-            fqn_table_name=db.dbschema+"."+table_name
-        jj=acceptable_values.split(';')
+            fqn_table_name = db.dbschema + "." + table_name
+        jj = acceptable_values.split(';')
 
-        where_clause=None
-        where_null=None
-        in_clause=[]
+        where_clause = None
+        where_null = None
+        in_clause = []
         for i in jj:
-            if i=='NULL':
-                where_null=field_name + ' is NULL '
+            if i == 'NULL':
+                where_null = field_name + ' is NULL '
             else:
                 in_clause.append(i)
 
         z_list = ','.join(("'{}'".format(x)) for x in in_clause)
 
-        if z_list=='':
+        if z_list == '':
             if where_null is not None:
                 where_clause = where_null
         else:
-            where_clause="lower(cast({} as varchar)) not in ({})".format(field_name,z_list)
+            where_clause = "lower(cast({} as varchar)) not in ({})".format(field_name, z_list)
             if where_null is not None:
-                where_clause = where_clause + ' AND\n NOT ({}) '.format( where_null)
+                where_clause = where_clause + ' AND\n NOT ({}) '.format(where_null)
 
         #print(values, z_list)
         # health_checkrule_id, data_record_id, active, created_dt, created_by
@@ -1615,9 +1630,41 @@ def check_pii(db):
                     where
                     (h.id is null) AND\n (\n{5}\n) """
 
-
-        sql_to_exe=sql_insert + sql_none.format(str(id), key_colums_to_sql,db._userid, fqn_table_name, id,   where_clause)
+        sql_to_exe = sql_insert + sql_none.format(str(id), key_colums_to_sql, db._userid, fqn_table_name, id,   where_clause)
         print(sql_to_exe)
         db.execute(sql_to_exe)
-        #except Exception as e:
-            #logging.error("Error processing table:{} \n{}".format(table_name,e))
+        # except Exception as e:
+        #logging.error("Error processing table:{} \n{}".format(table_name,e))
+
+
+def convert_sqlite_sql_to_csv(full_file_path):
+    sql = """select type, name, tbl_name, sql
+				FROM sqlite_master
+					WHERE type='index'"""
+    import sqlite3
+
+    with open('sqlite_idx.csv', 'w+') as write_file:
+        # open a file to write to
+        conn = sqlite3.connect(full_file_path)
+        # connect to your database
+        cursor = conn.cursor()
+        # create a cursor object (which lets you address the table results individually)
+        for row in cursor.execute(sql):
+            # use the cursor as an iterable
+            # write_file.write(row)
+            print(row)
+
+
+# stole from stack overflow
+# https://stackoverflow.com/questions/305378/list-of-tables-db-schema-dump-etc-using-the-python-sqlite3-api
+def sqlite_to_csv(full_file_path):
+    import sqlite3
+    import pandas as pd
+    db = sqlite3.connect(full_file_path)
+    cursor = db.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = cursor.fetchall()
+    for table_name in tables:
+        table_name = table_name[0]
+        table = pd.read_sql_query("SELECT * from %s" % table_name, db)
+        table.to_csv(table_name + '.csv', index_label='index', header=True, index=False, encoding='utf-8')

@@ -86,7 +86,7 @@ class Connection:
                 self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
 
                 if self._sqlalchemy_con is None:
-                    self._sqlalchemy_con = sqlalchemy.create_engine(self.url,
+                    self._sqlalchemy_con = sqlalchemy.create_engine(self.url, client_encoding="utf-8",
                                                                     connect_args={"application_name": self.appname})
             if db.upper() == "MSSQL":
                 self.url = 'mssql+pymssql://{}:{}@{}:{}/{}'
@@ -94,7 +94,7 @@ class Connection:
                 self._sqlalchemy_con = sqlalchemy.create_engine(self.url)
             if db.upper() == "MYSQL":
                 # 'mysql+pymysql://root:test@192.168.99.100:3306/mysql'
-                self.url = "mysql+pymysql://{}:{}@{}:{}/{}"
+                self.url = "mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8"
                 self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
                 self._sqlalchemy_con = sqlalchemy.create_engine(self.url)
 
@@ -477,7 +477,7 @@ class Connection:
         return l
 
     # @migrate_utils.static_func.timer
-    def get_columns(self, table_name, dbschema):
+    def get_columns(self, table_name, table_schema):
         """
 
         :rtype: object
@@ -485,7 +485,8 @@ class Connection:
         # type: (str, str) -> list
         import sqlalchemy
         try:
-            con, meta = self.connect_sqlalchemy(dbschema, self._dbtype)
+            print("Getting Column List from DB: {}.{}".format(table_schema, table_name))
+            con, meta = self.connect_sqlalchemy(table_schema, self._dbtype)
             table = sqlalchemy.Table(table_name, meta, autoload=True, autoload_with=con)
             column_list = [c.name for c in table.columns]
             return list(column_list)
