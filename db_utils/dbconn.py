@@ -224,6 +224,12 @@ class Connection:
 
         return [c.name for c in table.columns]
 
+    def has_record(self, sqlstring):
+        rs = self.query(sqlstring)
+        if len(rs) > 0:
+            return True
+        return False
+
     def query(self, sqlstring):
         """ runs query or procedure that returns record set
         """

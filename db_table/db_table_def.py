@@ -38,7 +38,7 @@ class MetaSourceFiles(MetaBase):
     last_error_msg = Column(c.String(2000), nullable=True)
     database_table = Column(c.String(256), nullable=True)
     parent_file_id = Column(c.Integer, default=0)
-
+    crc = Column(c.String(32), nullable=True)
 
 # table to store regex for data files to be imported into a table
 class TableFilesRegex(MetaBase):

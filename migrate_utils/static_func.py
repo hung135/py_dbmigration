@@ -387,6 +387,20 @@ def print_sqitch_files(folder, file_type, trg_folder):
             print("sqitch add {}/{} -n \"Adding {}\" ".format(trg_folder, filename, ff))
 
 
+def convert_str_snake_case(str_text):
+    import inflection
+    # order of these tabs matter
+    tags = [" ", "(", ".", ")", "$", "-", "~", "?", "{", "}", "\\", "/", ":", "___", "__"]
+    string_txt = inflection.underscore(str_text)
+    for x in tags:
+
+        string_txt = string_txt.replace(x, "_")
+    string_txt = string_txt.strip()
+
+    #print(str_text, "--------->", string_txt, "----inflection----", inflection.underscore(str_text))
+
+    return string_txt
+
 # pass in the string and a dict of key to value mapping
 # we will replace all the keys will the mapped value found in the string
 # not a perfect implementation but good for autogenerating some scripts
@@ -419,6 +433,7 @@ def convert_list_to_snake_case(column_list):
         newfield = newfield.replace(" ", "_")
         newfield = newfield.replace("\\", "_")
         newfield = newfield.replace("/", "_")
+        newfield = newfield.replace(":", "_")
         newfield = newfield.replace("'", "_")
         newfield = newfield.replace("(", "_")
         newfield = newfield.replace(")", "_")
@@ -1668,3 +1683,30 @@ def sqlite_to_csv(full_file_path):
         table_name = table_name[0]
         table = pd.read_sql_query("SELECT * from %s" % table_name, db)
         table.to_csv(table_name + '.csv', index_label='index', header=True, index=False, encoding='utf-8')
+
+
+def sql_to_excel(db, sql_string, full_file_path, column_names):
+    import xlsxwriter
+    workbook = xlsxwriter.Workbook(full_file_path)
+    worksheet = workbook.add_worksheet()
+    row = 0
+    col = 0
+    rs = db.query(sql_string)
+    header = column_names.split(',')
+    # Write the header
+    print('Writing Excel File')
+    print('file name', full_file_path)
+    print('Columns', column_names)
+    for columna_name in header:
+        worksheet.write(row, col, columna_name)
+        col += 1
+    # for each row
+    for r in rs:
+        row += 1
+        col = 0
+        # for each column
+        for c in r:
+            worksheet.write(row, col, r[col])
+            col += 1
+
+    print('Records written', row)

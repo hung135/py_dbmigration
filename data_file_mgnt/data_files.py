@@ -1,6 +1,6 @@
 import re
 import os
-
+import time
 import zip_utils
 import socket
 
@@ -45,7 +45,7 @@ def diff_list(list1, list2):
 class RedactionRules:
 
     def make_null(self, data_frame, column_name):
-        print("Droping column", column_name)
+
         data_frame.drop(column_name, axis=1, inplace=True)
 
     def make_hash(self, data_frame, column_name):
@@ -61,13 +61,28 @@ class RedactionRules:
     def process_redaction(self, data_frame):
 
         df_rules = self.df_rules.loc[self.df_rules['data_set'] == self.dataset_name]
-        print(type(df_rules))
+
         redacted_data_frame = data_frame
         # print(redacted_data_frame.columns)
+        # drop all columns not in list:
+
+        # print(redacted_data_frame.index.tolist())
+        print("Redact Rules:", df_rules)
+
+        for col in redacted_data_frame.columns.tolist():
+
+            if col not in df_rules['column_name'].tolist():
+                print("\tDROPING COLUMN NOT IN Redact Rules: {}".format(col))
+
+                self.make_null(redacted_data_frame, col)
+
         for idx, series in df_rules.iterrows():
 
             # rule 1 drop the column
-            if series.rule != series.rule or series.rule == 'Drop':  # checking for Nan
+            if series.rule == 'drop':  # checking for Nan
+                print("Dropping Columns SPECIFIED by Rules", series.column_name)
+                # print(redacted_data_frame.columns.tolist())
+
                 self.make_null(redacted_data_frame, series.column_name)
             # rule 2 drop the column
             if series.rule == 'Hash':  # checking for Nan
@@ -81,9 +96,9 @@ class RedactionRules:
     def __init__(self, rules_file_path, dataset_name, data_frame=None):
         print(rules_file_path)
         self.rules_file_path = rules_file_path
-        self.df_rules = pd.read_csv(self.rules_file_path)
+        self.df_rules = pd.read_excel(self.rules_file_path)
         self.dataset_name = dataset_name
-        print(self.df_rules)
+
         if data_frame is not None:
             self.process_redaction(data_frame)
         # print(x)
@@ -144,15 +159,16 @@ class FilesOfInterest:
 
 
 def get_mapped_table(file_name, foi_list):
+    import copy
     for i in foi_list:
 
-        if i.table_name is not None:
-            assert isinstance(i, FilesOfInterest)
+        # if i.table_name is not None:
+        assert isinstance(i, FilesOfInterest)
 
-            if re.match(i.regex, file_name, re.IGNORECASE):
-                #print("***FOI.regex:", i.regex, i.table_name, file_name)
-                logging.info("\t\tFile->Table mapping found: {}.{}".format(i.schema_name, i.table_name))
-                return i
+        if re.match(i.regex, file_name, re.IGNORECASE):
+            # print("***FOI.regex:", i.regex, i.table_name, file_name)
+            logging.info("\t\tFile->Table mapping found: {}.{}".format(i.schema_name, i.table_name))
+            return copy.copy(i)
     return None
 
 
@@ -171,6 +187,7 @@ def convert_to_sql(instring):
 #           Client side CopyCommand All or Nothing
 
 class DataFile:
+    COMPRESSED_FILE_TYPES = ['ZIP', 'GZ', 'TAR']
     FILE_TYPE_ZIP = 'ZIP'
     FILE_TYPE_GZ = 'GZ'
     FILE_TYPE_TAR = 'TAR'
@@ -227,7 +244,7 @@ class DataFile:
             if files_of_interest.file_path is not None:
                 assert isinstance(files_of_interest, FilesOfInterest)
 
-                self.FilesOfInterest = self.walk_dir(files_of_interest, level=5, db=db)
+                self.FilesOfInterest = self.walk_dir(files_of_interest,  db=db)
 
                 self.FilesOfInterest.parent_file_id = self.meta_source_file_id
 
@@ -352,16 +369,17 @@ class DataFile:
 
     @staticmethod
     def reset_meta_table(db, option='FAILED', where_clause='1=1'):
-        if option == 'ALL':
+        if option.upper() == 'ALL':
             db.update("""UPDATE logging.meta_source_files
                 SET process_start_dtm=null
                 ,process_end_dtm=null
                 ,current_worker_host=null
                 ,current_worker_host_pid=null
+                ,file_process_state='RAW'
                 WHERE  1=1
                 AND {}
                 """.format(where_clause))
-        if option == 'FAILED':
+        if option.upper() == 'FAILED':
             logging.debug("RESET META DATA FAILED IMPORTS:")
             db.update("""UPDATE logging.meta_source_files
                 set process_start_dtm=null
@@ -369,11 +387,11 @@ class DataFile:
                 ,current_worker_host=null
                 ,current_worker_host_pid=null
                 ,last_error_msg=null
-                ,file_process_state='raw'
+                ,file_process_state='RAW'
                 WHERE  upper(file_process_state)='FAILED'
                 AND {}
                 """.format(where_clause))
-        if option == 'RAW':
+        if option.upper() == 'RAW':
             logging.debug("RESET META DATA RAW IMPORTS:")
             db.update("""UPDATE logging.meta_source_files
                 SET process_start_dtm=null
@@ -381,12 +399,12 @@ class DataFile:
                 ,current_worker_host=null
                 ,current_worker_host_pid=null
                 ,last_error_msg=null
-                ,file_process_state='raw'
+                ,file_process_state='RAW'
                 WHERE  upper(file_process_state)='RAW'
                 AND file_type in ('CSV','DATA')
                 AND {}
                 """.format(where_clause))
-        if option == 'DATA':
+        if option.upper() == 'DATA':
             logging.debug("RESET META DATA   IMPORTS:")
             db.update("""UPDATE logging.meta_source_files
                 SET process_start_dtm=null
@@ -394,19 +412,19 @@ class DataFile:
                 ,current_worker_host=null
                 ,current_worker_host_pid=null
                 ,last_error_msg=null
-                ,file_process_state='raw'
+                ,file_process_state='RAW'
                 WHERE   file_type in ('CSV','DATA')
                 AND {}
                 """.format(where_clause))
         db.commit()
 
     @staticmethod
-    def walk_dir(foi, level=4, db=None):
+    def walk_dir(foi,  db=None):
         """Walks a directory structure and returns all files that match the regex pattern
         :rtype: FilesOfInterest
         """
         assert isinstance(foi, FilesOfInterest)
-
+        print("-=---------", foi.file_path)
         file_path = foi.file_path
         logging.debug("Walking Directory: '{}' : Search Pattern: {}".format(file_path, foi.regex))
 
@@ -424,20 +442,22 @@ class DataFile:
         ii = 0
 
         for root, subdirs, files in os.walk(file_path, topdown=True):
-            if ii < level:
-                for x in files:
+            # print(root)
 
-                    rel_path = root.replace(file_path, "")
-                    # logging.debug("Walking Directory:{}:{}".format(subdirs, x))
-                    if rel_path == "":
-                        files_list.append(x)
-                    else:
-                        files_list.append(rel_path + "/" + x)
+            for x in files:
+                # print('\t\t{}'.format(x))
 
-            ii += 1
+                rel_path = root.replace(file_path, "")
+                # print(rel_path, foi.regex, x)
+                # logging.debug("Walking Directory:{}:{}".format(subdirs, x))
+                if rel_path == "":
+                    files_list.append(x)
+                else:
+                    files_list.append(rel_path + "/" + x)
+
         # logging.debug("Done Walking Directory:")
         match_list = list(filter(regex.match, files_list))
-        #logging.debug("Done Walking Directory---------------------------------:{}".format(list(match_list)))
+        # logging.debug("Done Walking Directory---------------------------------:{}".format(list(match_list)))
         foi.file_list = match_list
 
         return foi
@@ -515,7 +535,7 @@ class DataFile:
 
             if 'ERROR' in txt_out:
                 logging.error(sys._getframe().f_code.co_name + " : " + txt_out)
-                import_status = 'failed'
+                import_status = 'FAILED'
 
             logging.info("Command:{0}".format(command_text))
             logging.info("OUTPUT:{0} ".format(txt_out))
@@ -573,6 +593,8 @@ class DataFile:
             sqlalchemy_conn, meta = db.connect_sqlalchemy()
 
             table_name = foi.table_name
+            if foi.table_name is None:
+                table_name = migrate_utils.static_func.convert_str_snake_case(os.path.basename((foi.current_working_abs_file_name)))
             counter = 0
             if lowercase:
                 table_name = str.lower(str(table_name))
@@ -625,13 +647,14 @@ class DataFile:
                     dataframe_columns = dataframe.columns.tolist()
                 else:  # assume everything else is Excel for now
                     print("Reading Excel File")
-                    df = pd.read_excel(foi.current_working_abs_file_name, encoding='unicode',  header=0)
+
+                    df = pd.read_excel(foi.current_working_abs_file_name, encoding='unicode',  index_col=None, header=0)
                     # xl = pd.ExcelFile(foi.current_working_abs_file_name)
                     # df = xl.parse(1)
                     col_list = df.columns.tolist()
 
                     # cols_new = [i.split(' ', 1)[1].replace(" ", "_").lower() for i in col_list]
-                    cols_new = [i.replace(" ", "_").lower() for i in col_list]
+                    cols_new = [migrate_utils.static_func.convert_str_snake_case(i) for i in col_list]
                     # df.columns = df.columns.str.split(' ', 1)
                     df.columns = cols_new
                     dataframe_columns = cols_new
@@ -660,27 +683,31 @@ class DataFile:
                 import_status = 'success'
 
             except Exception as e:
-                print("----execption---", e)
-                cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
-                delta = diff_list(dataframe_columns, cols_tb)
-                cols = list(delta)
-                if len(cols) > 1:
-                    cols = str(list(delta))
-                logging.error("ERROR: {0}".format(e))
-                error_msg = str(e)[:256]
-                import_status = 'failed'
-                additional_info = (','.join(cols) + str(e))[:2000]
-                db.commit()
-                migrate_utils.static_func.profile_csv(foi.current_working_abs_file_name, ',', 0)
-                import time
-                print("sleeping so you can read:")
-                time.sleep(30)
+                import_status = 'FAILED'
+                try:
+                    print("----execption---", e)
+                    # cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
+                    # delta = diff_list(dataframe_columns, cols_tb)
+                    # cols = list(delta)
+                    # if len(cols) > 1:
+                    #    cols = str(list(delta))
+                    logging.error("ERROR: {0}".format(e))
+                    error_msg = str(e)[:256]
+
+                    # additional_info = (','.join(cols) + str(e))[:2000]
+                    db.commit()
+                except Exception as ee:
+
+                    # migrate_utils.static_func.profile_csv(foi.current_working_abs_file_name, ',', 0)
+                    import time
+                    print("sleeping so you can read:", ee)
+                    time.sleep(5)
 
         status_dict = {}
         status_dict['rows_inserted'] = self.rows_inserted
         status_dict['import_status'] = import_status
         status_dict['error_msg'] = error_msg
-        status_dict['additional_info'] = additional_info
+        status_dict['additional_info'] = ""
         return status_dict
 
     def import_files_copy_cmd(self, dest, db):
@@ -701,7 +728,7 @@ class DataFile:
                     sql_string = self.copy_command_sql.format(dest.table_name, relative_file_path)
                     logging.debug(sql_string)
                     db.execute(sql_string, False)
-                    logging.info("Copy Command Compleated: {0}->{1}".format(self.curr_src_working_file, file_name))
+                    logging.info("Copy Command Completed: {0}->{1}".format(self.curr_src_working_file, file_name))
                 self.processed_file_count += 1
 
     def cleanup_files(self):
@@ -752,7 +779,7 @@ class DataFile:
             self.curr_file_success = True
         else:
             row.last_error_msg = str(status_dict)[:2000]
-            row.file_process_state = 'Failed'
+            row.file_process_state = 'FAILED'
             row.rows_inserted = 0
             logging.error("Failed Importing: \n\t{}\n\t{}".format(self.curr_src_working_file, status_dict))
             self.curr_file_success = False
@@ -775,7 +802,7 @@ class DataFile:
         # to ensure we lock 1 row to avoid race conditions
         t.engine.execute(("""
                     UPDATE {0}.meta_source_files SET
-                    current_worker_host='{1}', current_worker_host_pid={2}, process_start_dtm=now()
+                    current_worker_host='{1}', current_worker_host_pid={2}, process_start_dtm=now(),last_error_msg=NULL
                     WHERE (file_path ||file_name) in (select file_path ||file_name
                         FROM {0}.meta_source_files WHERE  file_process_state='RAW' and current_worker_host is null order by
                         file_type asc,id asc, file_size asc, file_name_data desc  limit 1)
@@ -803,9 +830,10 @@ class DataFile:
 
             try:
 
-                self.file_size = os.path.getsize(self.source_file_path + '/' + self.curr_src_working_file)
-
+                self.file_size = os.path.getsize(os.path.join(self.source_file_path, self.curr_src_working_file))
+                self.crc = migrate_utils.static_func.md5_file(os.path.join(self.source_file_path, self.curr_src_working_file))
                 row.file_size = self.file_size
+                row.crc = self.crc
                 t.session.commit()
 
                 logging.debug("Inside Getwork: FileType:{} : RowCount: {}".format(self.work_file_type, self.row_count))
@@ -813,7 +841,7 @@ class DataFile:
                     # logging.debug("Working DATAFILE:{0}:".format(self.curr_src_working_file))
                     row.total_files = 1
                     """ Foi don't exist yet so we can't use this logic here
-                    
+
                     if foi.count_via == foi.COUNT_VIA_PANDAS:
                         logging.debug(
                             "Counting File-Pandas : {}".format(os.path.join(self.source_file_path, self.curr_src_working_file)))
@@ -846,11 +874,11 @@ class DataFile:
                 logging.debug("Flagging Bad File: {}".format(self.curr_src_working_file))
                 logging.error(e)
                 status_dict = {}
-                status_dict['import_status'] = 'failed'
+                status_dict['import_status'] = 'FAILED'
                 status_dict['error_msg'] = e
-                import time
-                print("sleeping so you can read")
-                time.sleep(30)
+                # import time
+                # print("sleeping so you can read")
+                # time.sleep(30)
                 self.finish_work(db, status_dict=status_dict, file_of_interest=None, vacuum=True)
 
             else:
@@ -865,15 +893,19 @@ class DataFile:
     def extract_file(self, db, full_file_path, abs_writable_path):
         status_dict = {}
         try:
-            logging.info("Creating MD5 checksum")
-            md5 = migrate_utils.static_func.md5_file(full_file_path)
-
-            # logging.info("MD5 checksum: {}".format(md5))
-            modified_write_path = os.path.join(abs_writable_path, md5)
-
-            self.files = zip_utils.unzipper.extract_file(full_file_path, modified_write_path, True, self.work_file_type)
             t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
             row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == self.meta_source_file_id)
+            md5 = None
+            path = os.path.dirname(full_file_path)
+            folder_name = os.path.basename(path)
+            try:
+                md5 = row.crc
+            except:
+                logging.warning("CRC column does not exist in meta_source_file table. Please make sure you create it")
+            modified_write_path = os.path.join(abs_writable_path, folder_name, str(md5))
+
+            self.files = zip_utils.unzipper.extract_file(full_file_path, modified_write_path, False, self.work_file_type)
+
             self.total_files = len(self.files)
 
             row.total_files = self.total_files
@@ -882,17 +914,18 @@ class DataFile:
         # We walk the tmp dir and add those data files to list of to do
             new_src_dir = modified_write_path
             logging.debug(
-                "WALKING EXTRACTED FILES:\src_dir:{0}\nworking_dir:{1}: --{2}".format(new_src_dir, self.working_path, modified_write_path))
+                "WALKING EXTRACTED FILES:\nsrc_dir:{0} \nworking_dir:{1}: --{2}".format(new_src_dir, self.working_path, modified_write_path))
 
-            file_table_map = [FilesOfInterest('DATA', '', file_path=modified_write_path, file_name_data_regex=None,
+            file_table_map = [FilesOfInterest('DATA', '.*', file_path=modified_write_path, file_name_data_regex=None,
                                               parent_file_id=self.meta_source_file_id)]
-
+            print("------ new src dir", new_src_dir)
             DataFile(new_src_dir, db, file_table_map, parent_file_id=self.meta_source_file_id)
         except Exception as e:
             # import time
             # print("---error occured--sleeping so you can read", e)
             # time.sleep(30)
-            status_dict['import_status'] = 'failed'
+            logging.error(e)
+            status_dict['import_status'] = 'FAILED'
             status_dict['error_msg'] = 'Error During Unziping File'
         else:
             status_dict['import_status'] = 'success'
@@ -912,21 +945,31 @@ class DataFile:
 
             logging.debug("Got New Working File:{0}:".format(self.curr_src_working_file))
 
-            if self.work_file_type in ('DATA', 'CSV', 'XLSX', 'TXT'):
+            already_processed = db.has_record(
+                "select 1 from logging.meta_source_files where crc='{}' and file_process_state='Processed'".format(self.crc))
+            if already_processed:
+                status_dict = {}
+                status_dict['import_status'] = 'FAILED'
+                status_dict['error_msg'] = 'Duplicate File Skipping - Check CRC'
+                df.finish_work(db, status_dict=status_dict, vacuum=vacuum)
+
+            elif self.work_file_type in ('DATA', 'CSV', 'XLSX', 'TXT', 'XLS'):
                 # check the current file against our list of regex to see if it
                 # matches any table mapping
 
                 foi = get_mapped_table(os.path.join(self.source_file_path, self.curr_src_working_file), self.foi_list)
 
-                #logging.debug("Getting Mapped table:{}\n{}".format(foi.self.curr_src_working_file, foi))
+                # logging.debug("Getting Mapped table:{}\n{}".format(foi.self.curr_src_working_file, foi))
                 # print(foi,"--------got one")
                 # print(self.source_file_path)
                 if foi is not None:
-                    print(foi.table_name, "--------got one")
+                    if foi.table_name is None:
+                        foi.table_name = migrate_utils.static_func.convert_str_snake_case(self.curr_src_working_file)
+                    # print(foi.table_name, "--------got one")
                     # we found a table that is mapped to file of interest so we
 
                     if foi.column_list is None:
-                        print(foi.table_name, foi.schema_name, "=-------------")
+                        #print(foi.table_name, foi.schema_name, "=-------------")
                         foi.column_list = db.get_columns(foi.table_name, foi.schema_name)
                     # if 2 column_names are reserved file_id and crc
 
@@ -971,7 +1014,7 @@ class DataFile:
 
                         # print(""df.row_count, min_row)
                         logging.debug("File Row Count:{}".format(df.row_count))
-                        #print(foi.regex, foi.folder_regex,"------match regex")
+                        # print(foi.regex, foi.folder_regex,"------match regex")
 
                         if import_type == self.IMPORT_VIA_PANDAS:
                             limit = None
@@ -1071,14 +1114,20 @@ class DataFile:
                 # no matching pattern for regext and db_tablename
                 else:
                     status_dict = {}
-                    status_dict['import_status'] = 'failed'
+                    status_dict['import_status'] = 'FAILED'
                     status_dict['error_msg'] = 'No Pattern Mapping Found'
                     df.finish_work(db, status_dict=status_dict, file_of_interest=foi, vacuum=vacuum)
             # Process Compressed files
-            else:
+            elif self.work_file_type in self.COMPRESSED_FILE_TYPES:
+
                 full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
 
                 status_dict = self.extract_file(db, full_file_name, os.path.join(self.working_path, self.curr_src_working_file))
                 self.finish_work(db, status_dict=status_dict, vacuum=vacuum)
+            else:
+                status_dict = {}
+                status_dict['import_status'] = 'FAILED'
+                status_dict['error_msg'] = 'UNSUPPORTED FILE'
+                df.finish_work(db, status_dict=status_dict, vacuum=vacuum)
             if cleanup:
                 self.cleanup_files()  # import_files(files,loan_acquisition)
