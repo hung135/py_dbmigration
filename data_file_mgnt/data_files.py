@@ -115,7 +115,8 @@ class FilesOfInterest:
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
                  use_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
                  file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF-8',
-                 append_crc=False, limit_rows=None, header_row=0, count_via=COUNT_VIA_PANDAS, new_delimiter=None, dataset_name=None, redaction_file=None):
+                 append_crc=False, limit_rows=None, header_row=0, count_via=COUNT_VIA_PANDAS, new_delimiter=None, dataset_name=None, redaction_file=None,
+                 upsert_function_name=None):
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -154,6 +155,7 @@ class FilesOfInterest:
         self.new_delimiter = new_delimiter
         self.dataset_name = dataset_name
         self.redaction_file = redaction_file
+        self.upsert_function_name = upsert_function_name
 
     # def __str__(self):
 
@@ -360,7 +362,8 @@ class DataFile:
                                                             file_name=file_name,
                                                             file_name_data=file_id,
                                                             file_type=v_file_type,
-                                                            parent_file_id=parent_file_id)
+                                                            parent_file_id=parent_file_id,
+                                                            upsert_function_name=file_of_interest_obj.upsert_function_name)
                 t.add_record(row, commit=True)
 
     def dump_delimited_file(self, db, file_name, delimiter):
@@ -774,6 +777,7 @@ class DataFile:
             row.file_process_state = 'Processed'
             if file_of_interest is not None:
                 row.database_table = ".".join([str(file_of_interest.schema_name), str(file_of_interest.table_name)])
+                row.upsert_function_name = file_of_interest.upsert_function_name
             row.rows_inserted = self.rows_inserted
             row.last_error_msg = ''
             self.curr_file_success = True
@@ -890,7 +894,7 @@ class DataFile:
 
         return self.curr_src_working_file
 
-    def extract_file(self, db, full_file_path, abs_writable_path):
+    def extract_file(self, db, full_file_path, abs_writable_path, skip_ifexists=False):
         status_dict = {}
         try:
             t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
@@ -904,7 +908,7 @@ class DataFile:
                 logging.warning("CRC column does not exist in meta_source_file table. Please make sure you create it")
             modified_write_path = os.path.join(abs_writable_path, folder_name, str(md5))
 
-            self.files = zip_utils.unzipper.extract_file(full_file_path, modified_write_path, False, self.work_file_type)
+            self.files = zip_utils.unzipper.extract_file(full_file_path, modified_write_path, False, self.work_file_type, skip_ifexists=skip_ifexists)
 
             self.total_files = len(self.files)
 
@@ -937,7 +941,7 @@ class DataFile:
     # When it is done with the processing of the record it we stamp the process_end_dtm
     # signifying the file has been processed
 
-    def do_work(self, db, cleanup=True, limit_rows=None, import_type=None, vacuum=True, chunksize=10000):
+    def do_work(self, db, cleanup=True, limit_rows=None, import_type=None, vacuum=True, chunksize=10000, skip_ifexists=False):
         df = self
         status_dict = {}
 
@@ -1122,7 +1126,8 @@ class DataFile:
 
                 full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
 
-                status_dict = self.extract_file(db, full_file_name, os.path.join(self.working_path, self.curr_src_working_file))
+                status_dict = self.extract_file(db, full_file_name, os.path.join(
+                    self.working_path, self.curr_src_working_file), skip_ifexists=skip_ifexists)
                 self.finish_work(db, status_dict=status_dict, vacuum=vacuum)
             else:
                 status_dict = {}

@@ -12,7 +12,7 @@ from .db_table_def import *
 
 
 class RecordKeeper():
-    engine_dict = {} # using dict because class level variable not getting set
+    engine_dict = {}  # using dict because class level variable not getting set
     table_dict = {}
 
     def __init__(self, db, table_def):
@@ -21,26 +21,28 @@ class RecordKeeper():
 
         :rtype: 
         """
+        self.host = db._host
+        self.dbschema = db.dbschema
+        self.database = db._database_name
         db_url = None
-        self.engine = None # instance
+        self.engine = None  # instance
         #assert isinstance(db, db_utils.dbconn.Connection)
 
-        key=str(table_def.DbSchema+table_def.__tablename__)
+        key = str(table_def.DbSchema + table_def.__tablename__)
 
-        self.table=self.table_dict.get(key,None)
+        self.table = self.table_dict.get(key, None)
         if self.table is None:
             self.table_dict[key] = table_def
-            self.table=self.table_dict[key]
+            self.table = self.table_dict[key]
 
-        schema=self.table.DbSchema
+        schema = self.table.DbSchema
 
         # call class method to make sure url attribute is set
         if self.engine_dict.get('only1', None) is None:
 
             db.connect_sqlalchemy(schema, db._dbtype)
             self.engine_dict['only1'] = sqlalchemy.create_engine(db.url)
-            self.engine=self.engine_dict['only1']
-
+            self.engine = self.engine_dict['only1']
 
             try:
                 self.engine.execute(CreateSchema(self.table.DbSchema))
@@ -51,7 +53,7 @@ class RecordKeeper():
 
             # create tables
             ""
-            MetaBase.metadata.create_all(bind=self.engine )
+            MetaBase.metadata.create_all(bind=self.engine)
         else:
 
             self.engine = self.engine_dict['only1']
@@ -85,11 +87,12 @@ class RecordKeeper():
         for i in row.keys:
             print(i)
 
-    def get_all_records(self ):
-        #print(self.table.__tablename__,"zzzzzzzzz")
+    def get_all_records(self):
+        # print(self.table.__tablename__,"zzzzzzzzz")
         row = self.session.query(self.table).all()
 
         return row
+
     def get_record(self, *row):
         # update row to database
         row = self.session.query(MetaSourceFiles).filter(*row).order_by(MetaSourceFiles.id.desc()).first()
@@ -108,7 +111,7 @@ class RecordKeeper():
     def __del__(self):
         try:
             self.session.close()
-            logging.debug("Closing db_table Session")
+            logging.debug("Closing db_table Session: {} {} {}".format(self.host, self.database, self.dbschema))
         except Exception as e:
             logging.error("Error Occured Closing db_table Session: {}", e)
             # print(e)

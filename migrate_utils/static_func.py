@@ -112,7 +112,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
         assert isinstance(db, db_utils.dbconn.Connection)
 
         columns_from_db = db.get_columns(table_name, table_schema)
-        #print(columns_from_db, "-----------xxxxxx")
+        # print(columns_from_db, "-----------xxxxxx")
         file_column_count = len(columns_from_db)
 
         # if column count in db is more than columns in files
@@ -143,8 +143,8 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
         # this will assure file_id and crc will always be at the front of the file
         if use_header is False and db is not None:
             column_list = delimiter.join(column_list)
-            #print("-------", "writing in header")
-            #print("-------", column_list + str(carriage_return))
+            # print("-------", "writing in header")
+            # print("-------", column_list + str(carriage_return))
             outfile.write(column_list + str(carriage_return))
             header_list_to_return = column_list
 
@@ -192,13 +192,13 @@ def dd_lookup_uuid(db, schema, table_name_regex, col_regex, cols_to_retain=None,
     t_compiled = re.compile(table_name_regex)
     sql = """
     insert into census.dd_lookup_uuid( year,table_name,lookup_code,lookup_type)
-     select distinct '{}','{}' , unnest(array[{}]) as col_name, unnest(array[{}])   from {} 
+     select distinct '{}','{}' , unnest(array[{}]) as col_name, unnest(array[{}])   from {}
      on conflict do nothing
     """
     sql2 = """
     insert into census.dd_lookup_uuid(year,table_name,lookup_code,lookup_type)
-     select distinct '{}','{}' , unnest(array[{}]) as col_name,  {} 
-     -- from {} 
+     select distinct '{}','{}' , unnest(array[{}]) as col_name,  {}
+     -- from {}
      on conflict do nothing
     """
     p = re.compile(col_regex)
@@ -235,13 +235,13 @@ def dd_lookup(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep
     t_compiled = re.compile(table_name_regex)
     sql = """
     insert into census.dd_lookup(year,table_name,lookup_code,lookup_type)
-     select distinct '{}','{}' , unnest(array[{}]) as col_name, unnest(array[{}])   from {} 
+     select distinct '{}','{}' , unnest(array[{}]) as col_name, unnest(array[{}])   from {}
      on conflict do nothing
     """
     sql2 = """
     insert into census.dd_lookup(year,table_name,lookup_code,lookup_type)
-     select distinct '{}','{}' , unnest(array[{}]) as col_name,  {} 
-     -- from {} 
+     select distinct '{}','{}' , unnest(array[{}]) as col_name,  {}
+     -- from {}
      on conflict do nothing
     """
     p = re.compile(col_regex)
@@ -304,20 +304,20 @@ def pivot_table(db, schema, table_name_regex, col_regex, cols_to_retain=None, ke
     create_string = """create table if not exists _tmp_test_{} as select * from {} limit 1"""
     t_compiled = re.compile(table_name_regex)
     sql = """
-    
+
      SELECT cast('{}' as varchar) as year,
-     cast('{}' as varchar) as table_name,{} , unnest(array[{}]) as col_name, unnest(array[{}]) as col_val from {} 
+     cast('{}' as varchar) as table_name,{} , unnest(array[{}]) as col_name, unnest(array[{}]) as col_val from {}
     """
     sql3 = """ INSERT into census.seq_data2(dd_chariter,dd_filetype,dd_stusab,dd_seq,dd_stat,stat_val,geoid,logrecno,dd_fileid)
     SELECT aa.id,bb.id,cc.id,dd.id,ee.id,col_val,geoid,logrecno,ff.id FROM ({}
     ) AS x
-    join census.dd_lookup aa on aa.table_name=x.table_name and aa.year=x.year  and aa.lookup_code=x.chariter and aa.lookup_type='chariter' 
-    join census.dd_lookup bb on bb.table_name=x.table_name and bb.year=x.year  and bb.lookup_code=x.filetype and bb.lookup_type='filetype' 
-    join census.dd_lookup cc on cc.table_name=x.table_name and cc.year=x.year  and cc.lookup_code=x.stusab and cc.lookup_type='stusab' 
+    join census.dd_lookup aa on aa.table_name=x.table_name and aa.year=x.year  and aa.lookup_code=x.chariter and aa.lookup_type='chariter'
+    join census.dd_lookup bb on bb.table_name=x.table_name and bb.year=x.year  and bb.lookup_code=x.filetype and bb.lookup_type='filetype'
+    join census.dd_lookup cc on cc.table_name=x.table_name and cc.year=x.year  and cc.lookup_code=x.stusab and cc.lookup_type='stusab'
     join census.dd_lookup dd on dd.table_name=x.table_name and dd.year=x.year  and dd.lookup_code=x.seq and dd.lookup_type='seq'
     join census.dd_lookup ee on ee.table_name=x.table_name and ee.year=x.year  and ee.lookup_code=x.col_name and ee.lookup_type='stats'
     join census.dd_lookup ff on ff.table_name=x.table_name and ff.year=x.year  and ff.lookup_code=x.fileid and ff.lookup_type='fileid'
-    where x.col_val is not null 
+    where x.col_val is not null
     on conflict do nothing ;
     """
     p = re.compile(col_regex)
@@ -397,7 +397,7 @@ def convert_str_snake_case(str_text):
         string_txt = string_txt.replace(x, "_")
     string_txt = string_txt.strip()
 
-    #print(str_text, "--------->", string_txt, "----inflection----", inflection.underscore(str_text))
+    # print(str_text, "--------->", string_txt, "----inflection----", inflection.underscore(str_text))
 
     return string_txt
 
@@ -444,17 +444,17 @@ def convert_list_to_snake_case(column_list):
 
 
 def make_markdown_table(array):
-    """ 
+    """
     Stolen from here:
     https://gist.github.com/m0neysha/219bad4b02d2008e0154#file-pylist-to-markdown-py
     Input: Python list with rows of table as lists
-               First element as header. 
-        Output: String to put into a .md file 
+               First element as header.
+        Output: String to put into a .md file
 
-    Ex Input: 
+    Ex Input:
         [["Name", "Age", "Height"],
          ["Jake", 20, 5'10],
-         ["Mary", 21, 5'7]] 
+         ["Mary", 21, 5'7]]
     """
 
     markdown = "\n" + str("| ")
@@ -481,7 +481,7 @@ def make_markdown_table(array):
 
 def show_users(db):
     sql = """select usename
-        -- ,rolname 
+        -- ,rolname
         from pg_user
         join pg_auth_members on (pg_user.usesysid=pg_auth_members.member)
         join pg_roles on (pg_roles.oid=pg_auth_members.roleid)
@@ -505,7 +505,7 @@ def appdend_to_readme(db, folder=None, targetschema=None):
         content = f.readlines()
     dictionary = "<a name=\"data_dictionary\"></a>"[:25]
     dict_query = """select table_schema,table_name,column_name,data_type,character_maximum_length
-                from information_schema.columns a 
+                from information_schema.columns a
                 where table_schema='enforce' order by table_name,ordinal_position"""
     header = ["table_schema" + "|" + "table_name" + "|" + "column_name" + "|" + "data_type" + "|", "length"]
     header = ["table_schema", "table_name", "old_column_name", "column_name", "data_type", "length"]
@@ -606,7 +606,7 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
         rows = db.query(
             "call {}.generateUpsert_style_functions('{}','{}')".format(db._database_name, db.dbschema, t.name))
         logging.debug("Generating Upsert for Table: {}".format(t.name.lower()))
-        line = ("\nsqitch add functions/{} -n \"Adding {}\" ".format(basefilename + "_upsert", filename))
+        line = ("\nsqitch --plan-file functions.plan add functions/{} -n \"Adding {}\" ".format(basefilename + "_upsert", filename))
 
         sqitch.append(line)
         with open(folder_deploy + filename, "wb") as f:
@@ -713,7 +713,7 @@ def print_table_dict(db, folder='.', targetschema=None):
         end  as x,a.table_name,a.column_name,a.data_type,character_maximum_length as length ,is_nullable,a.ordinal_position
     from information_schema.columns a
     left outer join  information_schema.views v on a.table_schema=v.table_schema and a.table_name=v.table_name
-    where a.table_schema='{}'   
+    where a.table_schema='{}'
     order by 1,2, a.ordinal_position """.format(dbschema)
 
     rs = db.query(postgres_sql)
@@ -807,7 +807,7 @@ def print_table_dict(db, folder='.', targetschema=None):
                 f.write(bytes(i["sql"]))
 
             drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
-            print(dbschema, "-----db---")
+             
             v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
                 dbschema, i["table"])
             verify = "BEGIN;\n" + v_str
@@ -881,7 +881,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
 
         logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
 
-        line = ("\nsqitch add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
+        line = ("\nsqitch --plan-file tables.plan add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
 
         sqitch.append(line)
         if targetschema is not None:
@@ -903,7 +903,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
                 f.write("ALTER TABLE {}.{}\n\tOWNER TO operational_dba;".format(dbschema, i["table"]))
 
             drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
-            print(dbschema, "-----db---")
+
             v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
                 dbschema, i["table"])
             verify = "BEGIN;\n" + v_str
@@ -924,6 +924,106 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     print("Total Tables:{}".format(table_count))
 
 
+def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
+    import sqlalchemy
+    import os
+    if db._dbtype != 'POSTGRES':
+        raise "Create view currnly only supports POSTGRES"
+    sql_view_list = """select table_name from information_schema.tables 
+                        where table_schema='{}' and table_type='VIEW'
+                """
+    sql_view_def = """select pg_get_viewdef('{schema_name}.{view_name}',true);"""
+    rs_views = db.query(sql_view_list.format(db.dbschema))
+    view_list = []
+    for row in rs_views:
+        view_list.append(row[0])
+    # print dir(meta.tables)
+    folder_deploy = folder + "/deploy/views/"
+    folder_revert = folder + "/revert/views/"
+    folder_verify = folder + "/verify/views/"
+    try:
+        os.makedirs(folder_deploy)
+    except:
+        pass
+    try:
+        os.makedirs(folder_revert)
+    except:
+        pass
+    try:
+        os.makedirs(folder_verify)
+    except:
+        pass
+    table_count = 0
+    sqitch = []
+    tables = []
+
+    dbschema = targetschema or db.dbschema
+
+    # for n, t in meta.tables.iteritems():
+    for t in view_list:
+
+        table_count += 1
+
+        if file_prefix is not None:
+            filename = file_prefix + t.lower() + ".sql"
+            fqn = file_prefix
+        else:
+            filename = t.lower() + ".sql"
+            fqn = ""
+        basefilename = t.lower()
+        rs_view_def = db.query(sql_view_def.format(schema_name=dbschema, view_name=t))
+
+        createsql = ''
+        for row in rs_view_def:
+
+            createsql += row[0]
+
+        logging.debug("Generating Create Statement for VIEW: {}".format(t.lower()))
+
+        line = ("\nsqitch --plan-file views.plan add views/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
+
+        sqitch.append(line)
+        sql_view = "CREATE VIEW {schema_name}.{view_name} as {sql}"
+        createsql = sql_view.format(schema_name=dbschema, view_name=t, sql=createsql)
+        m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
+        tables.append(m)
+
+    if folder is None:
+        for i in tables:
+            print(i)
+        for s in sqitch:
+            print(s)
+    else:
+        for i in tables:
+            print("Writing:")
+            print(folder_deploy + i["table"])
+            sql_grant = """GRANT ALL ON TABLE {schema_name}.{table_name} TO operational_dba;"""
+            with open(folder_deploy + i["filename"], "wb") as f:
+                f.write(bytes(i["sql"]))
+                f.write(sql_grant.format(schema_name=dbschema, table_name=i["table"]))
+
+            drop = "BEGIN;\nDROP VIEW IF EXISTS {schema_name}.{table_name};\n".format(schema_name=dbschema, table_name=i["table"])
+
+            v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
+                dbschema, i["table"])
+            verify = "BEGIN;\n" + v_str
+
+            with open(folder_revert + i["filename"], "wb") as f:
+                f.write(bytes(drop))
+                f.write(bytes("COMMIT;\n"))
+            with open(folder_verify + i["filename"], "wb") as f:
+                f.write(bytes(verify))
+                f.write(bytes("ROLLBACK;\n"))
+
+        with open(folder + "sqitchplanadd_view.bash", "wb") as f:
+            f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_view()"))
+        for s in sqitch:
+            with open(folder + "sqitchplanadd_view.bash", "a") as f:
+                f.write(s)
+
+    print("Total views:{}".format(table_count))
+
+
 def reset_migration(db):
     db._cur.execute("""
     Drop schema if exists enforce cascade;
@@ -938,30 +1038,30 @@ def reset_migration(db):
 def make_html_meta_source_files(db, full_file_path, html_head):
     col_header = """file_id,
       file_name,
-      file_path,  
+      file_path,
       file_type,
       file_process_state,
       database_table,
       process_start_dtm,
       process_end_dtm,
-      current_worker_host, 
+      current_worker_host,
       rows_inserted,
       file_size,
-      total_rows, 
+      total_rows,
       total_files_processed,
       last_error_msg """
 
     sql = """SELECT id,file_name,
-      replace(file_path,'/home/dtwork/dw/file_transfers',''), 
+      replace(file_path,'/home/dtwork/dw/file_transfers',''),
       file_type,
       file_process_state,
       database_table,
       process_start_dtm,
       process_end_dtm,
-      current_worker_host, 
-      rows_inserted, 
+      current_worker_host,
+      rows_inserted,
       file_size,
-      total_rows, 
+      total_rows,
       total_files_processed,
       last_error_msg  from logging.meta_source_files"""
 
@@ -1026,7 +1126,7 @@ def make_html_publish_log(db, full_file_path, html_head):
         data_id  ,
       publish_start_time  ,
       publish_end_time  ,
-      table_name   , 
+      table_name   ,
       row_counts  ,
       file_name  ,
       file_path,
@@ -1035,7 +1135,7 @@ def make_html_publish_log(db, full_file_path, html_head):
     sql = """SELECT data_id  ,
       publish_start_time  ,
       publish_end_time  ,
-      table_name   , 
+      table_name   ,
       row_counts  ,
       file_name  ,
       file_path,
@@ -1210,7 +1310,7 @@ def generate_data_sample(db, table_name, source_schema, file_name, line_count=10
             column_names.append(c.column_name)
 
     if not os.path.exists(os.path.dirname(file_name)):
-        os.makedirs(os.path.dirname(file_name), mode=777)
+        os.makedirs(os.path.dirname(file_name), mode=0777)
 
     with open(os.path.abspath(file_name), 'w') as f:
         for x in range(line_count):
@@ -1257,7 +1357,7 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
     tbs = db.get_table_list_via_query(source_schema)
 
     if not os.path.exists(os.path.dirname(data_directory)):
-        os.makedirs(os.path.dirname(data_directory), mode=777)
+        os.makedirs(os.path.dirname(data_directory), mode=0777)
     print("Dumping data for scheam: {}".format(source_schema))
 
     for i, table_name in enumerate(tbs):
@@ -1285,16 +1385,32 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
 
     columns = db.get_table_columns(table_name, schema)
     z = ""
+    md5_src = ""
+    md5_trg = ""
+    first_col = -1
     for i, col in enumerate(columns):
         if i == 0:
             z += col + ' = excluded.' + col + '\n\t\t'
+
         else:
             z += ',' + col + ' = excluded.' + col + '\n\t\t'
+
+        if col not in ('file_id', 'cdo_last_update'):
+            first_col += 1
+            if first_col == 0:
+                md5_trg += 'trg.' + col + '\n\t\t'
+                md5_src += 'excluded.' + col + '\n\t\t'
+            else:
+
+                md5_trg += ',trg.' + col + '\n\t\t'
+                md5_src += ',excluded.' + col + '\n\t\t'
+
     primary_keys = db.get_primary_keys(schema + '.' + table_name)
 
-    sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {} \nON CONFLICT ({}) \nDO UPDATE SET \n{};""".format(
+    sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {} \nWHERE file_id=p_file_id\nON CONFLICT ({}) 
+    DO UPDATE SET \n\t{}\n WHERE \n\tmd5(ROW({})::Text)\n!= md5(ROW({})::Text);""".format(
         schema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
-        source_schema + '.' + table_name, ','.join(primary_keys), z)
+        source_schema + '.' + table_name, ','.join(primary_keys), z, md5_src, md5_trg)
 
     return sql_template
 
@@ -1474,8 +1590,8 @@ def count_excel(full_file_path, sheet_number=0):
     count_size = df.shape[0]
     column_count = df.shape[1]
 
-    #print(df.columns, "^^^^ data frame columns")
-    #logging.debug("Excel File Row Count:{0}".format(count_size))
+    # print(df.columns, "^^^^ data frame columns")
+    # logging.debug("Excel File Row Count:{0}".format(count_size))
     return count_size, column_count
 
 # @timer
@@ -1631,7 +1747,7 @@ def check_pii(db):
             if where_null is not None:
                 where_clause = where_clause + ' AND\n NOT ({}) '.format(where_null)
 
-        #print(values, z_list)
+        # print(values, z_list)
         # health_checkrule_id, data_record_id, active, created_dt, created_by
         sql_none = """select 
                     '{0}' as health_checkrule_id,
@@ -1649,7 +1765,7 @@ def check_pii(db):
         print(sql_to_exe)
         db.execute(sql_to_exe)
         # except Exception as e:
-        #logging.error("Error processing table:{} \n{}".format(table_name,e))
+        # logging.error("Error processing table:{} \n{}".format(table_name,e))
 
 
 def convert_sqlite_sql_to_csv(full_file_path):

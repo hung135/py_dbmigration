@@ -39,8 +39,13 @@ class MetaSourceFiles(MetaBase):
     database_table = Column(c.String(256), nullable=True)
     parent_file_id = Column(c.Integer, default=0)
     crc = Column(c.String(32), nullable=True)
+    upsert_time = Column(c.DateTime)
+    publish_time = Column(c.DateTime)
+    upsert_function_name = Column(c.String(256), nullable=True)
 
 # table to store regex for data files to be imported into a table
+
+
 class TableFilesRegex(MetaBase):
     DbSchema = 'logging'
     __tablename__ = 'table_file_regex'
