@@ -53,17 +53,23 @@ def sed_file_delimiter(orgfile, newfile=None, delimiter=',', new_delimiter=','):
     cmd_string_end = "sed -i -e 's/\"\"$/\"/g' {}".format(orgfile)
     cmd_string = "sed -i -e 's/\"\"{0}\"\"/\"{1}\"/g' {2}".format(delimiter, new_delimiter, orgfile)
 
-    print("----SED---Delimiter", delimiter, new_delimiter, cmd_string)
+    print("----SED---Delimiter", delimiter, new_delimiter, cmd_string_double_quote)
     subprocess.call([cmd_string_double_quote], shell=True)
-    subprocess.call([cmd_string_begin], shell=True)
-    subprocess.call([cmd_string_end], shell=True)
-    subprocess.call([cmd_string], shell=True)
 
+    print("----SED---Delimiter", delimiter, new_delimiter, cmd_string_begin)
+    subprocess.call([cmd_string_begin], shell=True)
+
+    print("----SED---Delimiter", delimiter, new_delimiter, cmd_string_end)
+    subprocess.call([cmd_string_end], shell=True)
+
+    print("----SED---Delimiter", delimiter, new_delimiter, cmd_string)
+    subprocess.call([cmd_string], shell=True)
+    print("----Done SED---Delimiter")
 # function that will append data to a data file
 # @dump_params
 
 
-def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True, append_file_id=True,
+def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True, has_header=True, quoted_header=False, append_file_id=True,
                      append_crc=False, db=None, table_schema=None, table_name=None, limit_rows=None,
                      header_row_location=None):
     import os
@@ -74,7 +80,8 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
     return_char_unix = '\n'
     return_char_windows = '\r\n'
     start_row = 0
-    if use_header:
+
+    if use_header and has_header:
         if header_row_location is not None:
             start_row = header_row_location + 1
         else:
@@ -93,10 +100,16 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
     column_list = []
 
     if append_file_id:
-        column_list.append('"file_id"')
-
+        if quoted_header:
+            column_list.append('"file_id"')
+        else:
+            column_list.append('file_id')
     if append_crc:
-        column_list.append('"crc"')
+        if quoted_header:
+            column_list.append('"crc"')
+        else:
+            column_list.append('crc')
+
     header_to_add = delimiter.join(column_list)
 
     columns_to_add_count = len(column_list)
@@ -138,6 +151,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
         if len(shrunk_list) > 0:
             column_list = shrunk_list
     # print("--------",header_to_add,column_list)
+
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and use_header is set to false
         # this will assure file_id and crc will always be at the front of the file
@@ -150,7 +164,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
 
             header_added = True
             logging.info("\t\tFile Header:\n\t\t\t{}".format(column_list))
-            if limit_rows is not None:
+            if limit_rows is not None and not limit_rows.isdigit():
                 logging.info("Limiting Rows was set: {}".format(limit_rows))
 
         with open(orgfile, 'r') as src_file:
@@ -163,21 +177,24 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
                 file_id_to_add += '"' + pre_pend_data + '"' + delimiter
 
             for ii, line in enumerate(src_file):
+                #print(ii, header_row_location, use_header)
                 # local variable to accrue data before we write file
-                if ii == header_row_location and use_header:
-                    outfile.write(header_to_add.replace('"', '') + delimiter + line.replace('"', ''))
-                    header_list_to_return = str(header_to_add + delimiter + line)
-
-                data_to_prepend = file_id_to_add
-                if append_crc:
-                    data_to_prepend += str(hashlib.md5(line).hexdigest()) + delimiter
-
-                if ii < start_row:
-                    pass
-                elif limit_rows is not None and ii > limit_rows:
-                    break
+                if header_row_location is not None and ii == header_row_location and has_header:
+                    if use_header:
+                        outfile.write(header_to_add.replace('"', '') + delimiter + line.replace('"', ''))
+                        header_list_to_return = str(header_to_add + delimiter + line)
+                        print("usingheader", header_list_to_return)
                 else:
-                    outfile.write(data_to_prepend + line)
+                    data_to_prepend = file_id_to_add
+                    if append_crc:
+                        data_to_prepend += str(hashlib.md5(line).hexdigest()) + delimiter
+
+                    if ii < start_row:
+                        pass
+                    elif limit_rows is not None and ii > limit_rows:
+                        break
+                    else:
+                        outfile.write(data_to_prepend + line)
 
     count_column_csv(newfile, header_row_location=header_row_location, delimiter=delimiter)
     header_list_to_return = header_list_to_return.split(str(delimiter))
@@ -1450,7 +1467,19 @@ def count_column_csv(full_file_path, header_row_location=0, sample_size=200, del
     return int(column_count)
 
 
+def check_quoted_header(full_file_path, delimiter, header_row_location=0):
+    infile = open(full_file_path, 'rb')
+    print("---finding quoted header", str('"' + delimiter + '"'))
+    for index, line in enumerate(infile.readlines()):
+        if index == header_row_location:
+            if str('"' + delimiter + '"') in line:
+                print("-----found quoted header-----",)
+                return True
+    return False
+
 # this will read the first line of a file and determin if the file has a windows carriage return or unix
+
+
 def check_file_for_carriage_return(full_file_path):
     """with open(full_file_path, 'rb') as f:
         Line_Read = f.readlines()

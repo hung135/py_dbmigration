@@ -113,10 +113,11 @@ class FilesOfInterest:
     # gven table_name and a file regex we use it to map files from the meta source to a table
 
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
-                 use_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
-                 file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF-8',
-                 append_crc=False, limit_rows=None, header_row=0, count_via=COUNT_VIA_PANDAS, new_delimiter=None, dataset_name=None, redaction_file=None,
-                 upsert_function_name=None):
+                 use_header=False, has_header=True, quoted_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
+                 file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF8',
+                 append_crc=False, limit_rows=None, header_row_location=0, count_via=COUNT_VIA_PANDAS,
+                 new_delimiter=None, dataset_name=None, redaction_file=None,
+                 upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None):
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -129,6 +130,9 @@ class FilesOfInterest:
 
         self.file_delimiter = file_delimiter
         self.use_header = use_header
+        self.has_header = has_header
+        self.quoted_header = quoted_header
+        self.import_method = import_method
         self.append_file_id = append_file_id
         self.append_column_name = append_column_name
         self.file_type = file_type
@@ -150,20 +154,23 @@ class FilesOfInterest:
         self.header_list_returned = None
         self.header_added = None
         # self.start_row = start_row
-        self.header_row = header_row
+        self.header_row = header_row_location
         self.count_via = count_via
         self.new_delimiter = new_delimiter
         self.dataset_name = dataset_name
         self.redaction_file = redaction_file
         self.upsert_function_name = upsert_function_name
+        self.unzip_again = unzip_again
+        self.pre_action_sql = pre_action_sql
 
     # def __str__(self):
 
 
 def get_mapped_table(file_name, foi_list):
     import copy
+    print("-----foi file_name", file_name)
     for i in foi_list:
-
+        print(i.regex)
         # if i.table_name is not None:
         assert isinstance(i, FilesOfInterest)
 
@@ -190,6 +197,7 @@ def convert_to_sql(instring):
 
 class DataFile:
     COMPRESSED_FILE_TYPES = ['ZIP', 'GZ', 'TAR']
+    SUPPORTED_DATAFILE_TYPES = ['DATA', 'CSV', 'DAT', 'XLSX', 'TXT', 'XLS']
     FILE_TYPE_ZIP = 'ZIP'
     FILE_TYPE_GZ = 'GZ'
     FILE_TYPE_TAR = 'TAR'
@@ -277,7 +285,8 @@ class DataFile:
             foi.current_working_abs_file_name,
             newfile,
             str(file_id),
-            foi.file_delimiter, foi.use_header, foi.append_file_id,
+            foi.file_delimiter, foi.use_header, foi.has_header,
+            foi.quoted_header, foi.append_file_id,
             foi.append_crc, db, foi.schema_name, foi.table_name,
             foi.limit_rows, foi.header_row
         )
@@ -379,6 +388,7 @@ class DataFile:
                 ,current_worker_host=null
                 ,current_worker_host_pid=null
                 ,file_process_state='RAW'
+                ,total_rows=0
                 WHERE  1=1
                 AND {}
                 """.format(where_clause))
@@ -427,7 +437,7 @@ class DataFile:
         :rtype: FilesOfInterest
         """
         assert isinstance(foi, FilesOfInterest)
-        print("-=---------", foi.file_path)
+
         file_path = foi.file_path
         logging.debug("Walking Directory: '{}' : Search Pattern: {}".format(file_path, foi.regex))
 
@@ -449,14 +459,7 @@ class DataFile:
 
             for x in files:
                 # print('\t\t{}'.format(x))
-
-                rel_path = root.replace(file_path, "")
-                # print(rel_path, foi.regex, x)
-                # logging.debug("Walking Directory:{}:{}".format(subdirs, x))
-                if rel_path == "":
-                    files_list.append(x)
-                else:
-                    files_list.append(rel_path + "/" + x)
+                files_list.append(os.path.join(root, x))
 
         # logging.debug("Done Walking Directory:")
         match_list = list(filter(regex.match, files_list))
@@ -622,7 +625,7 @@ class DataFile:
                 if foi.file_type == 'CSV':
                     for counter, dataframe in enumerate(
                             pd.read_csv(foi.current_working_abs_file_name, sep=delim, nrows=limit_rows,
-                                        quotechar='"', chunksize=chunk_size, header=header, index_col=False,
+                                        quotechar='"', encoding=foi.encoding, chunksize=chunk_size, header=header, index_col=False,
                                         dtype=object)):
 
                         if not foi.use_header and len(foi.column_list) > 0:
@@ -688,13 +691,13 @@ class DataFile:
             except Exception as e:
                 import_status = 'FAILED'
                 try:
-                    print("----execption---", e)
+
                     # cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
                     # delta = diff_list(dataframe_columns, cols_tb)
                     # cols = list(delta)
                     # if len(cols) > 1:
                     #    cols = str(list(delta))
-                    logging.error("ERROR: {0}".format(e))
+                    logging.error("ERROR: \n---->{0}".format(e))
                     error_msg = str(e)[:256]
 
                     # additional_info = (','.join(cols) + str(e))[:2000]
@@ -794,13 +797,21 @@ class DataFile:
         status_dict = None
         return t.session.close()
 
+    # reset instance variables
+    def reset_stat(self):
+        self.rows_inserted = 0
+        self.processed_file_count = 0
+        self.total_data_file_count = 0
+        self.curr_file_success = False  # reset status of file
+        self.rows_inserted = 0
+        self.crc = None
+
     # @migrate_utils.static_func.timer
     def get_work(self, db):
         assert isinstance(db, db_utils.dbconn.Connection)
         assert isinstance(self.foi_list, list)
-        self.processed_file_count = 0
-        self.total_data_file_count = 0
-        self.curr_file_success = False  # reset status of file
+        self.reset_stat()
+
         t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
 
         # to ensure we lock 1 row to avoid race conditions
@@ -831,6 +842,7 @@ class DataFile:
             self.meta_source_file_id = row.id
 
             self.row_count = row.total_rows
+            # bogus uuid to default
 
             try:
 
@@ -841,7 +853,7 @@ class DataFile:
                 t.session.commit()
 
                 logging.debug("Inside Getwork: FileType:{} : RowCount: {}".format(self.work_file_type, self.row_count))
-                if self.work_file_type in ('CSV', 'TXT') and self.row_count == 0:
+                if self.work_file_type in ('CSV', 'TXT', 'DAT') and self.row_count == 0:
                     # logging.debug("Working DATAFILE:{0}:".format(self.curr_src_working_file))
                     row.total_files = 1
                     """ Foi don't exist yet so we can't use this logic here
@@ -884,6 +896,7 @@ class DataFile:
                 # print("sleeping so you can read")
                 # time.sleep(30)
                 self.finish_work(db, status_dict=status_dict, file_of_interest=None, vacuum=True)
+                # error occured won't be returning the file name
 
             else:
                 pass
@@ -922,7 +935,7 @@ class DataFile:
 
             file_table_map = [FilesOfInterest('DATA', '.*', file_path=modified_write_path, file_name_data_regex=None,
                                               parent_file_id=self.meta_source_file_id)]
-            print("------ new src dir", new_src_dir)
+
             DataFile(new_src_dir, db, file_table_map, parent_file_id=self.meta_source_file_id)
         except Exception as e:
             # import time
@@ -941,23 +954,26 @@ class DataFile:
     # When it is done with the processing of the record it we stamp the process_end_dtm
     # signifying the file has been processed
 
-    def do_work(self, db, cleanup=True, limit_rows=None, import_type=None, vacuum=True, chunksize=10000, skip_ifexists=False):
+    def do_work(self, db, cleanup=True, limit_rows=None, import_type='IMPORT_VIA_CLIENT_CLI', vacuum=True, chunksize=10000, skip_ifexists=False):
         df = self
         status_dict = {}
 
         while self.get_work(db) is not None:
+            already_processed = False
 
-            logging.debug("Got New Working File:{0}:".format(self.curr_src_working_file))
+            if self.crc is not None:
+                already_processed = db.has_record(
+                    "select 1 from logging.meta_source_files where crc='{}' and file_process_state='Processed'".format(self.crc))
+            if self.crc is None:
+                logging.error("File Missinging - Skipping: \n\t{}".format(self.curr_src_working_file))
 
-            already_processed = db.has_record(
-                "select 1 from logging.meta_source_files where crc='{}' and file_process_state='Processed'".format(self.crc))
-            if already_processed:
+            elif already_processed:
                 status_dict = {}
                 status_dict['import_status'] = 'FAILED'
                 status_dict['error_msg'] = 'Duplicate File Skipping - Check CRC'
                 df.finish_work(db, status_dict=status_dict, vacuum=vacuum)
 
-            elif self.work_file_type in ('DATA', 'CSV', 'XLSX', 'TXT', 'XLS'):
+            elif self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
                 # check the current file against our list of regex to see if it
                 # matches any table mapping
 
@@ -967,6 +983,8 @@ class DataFile:
                 # print(foi,"--------got one")
                 # print(self.source_file_path)
                 if foi is not None:
+                    if foi.pre_action_sql is not None and len(foi.pre_action_sql) > 1:
+                        db.execute(foi.pre_action_sql)
                     if foi.table_name is None:
                         foi.table_name = migrate_utils.static_func.convert_str_snake_case(self.curr_src_working_file)
                     # print(foi.table_name, "--------got one")
@@ -1018,36 +1036,40 @@ class DataFile:
 
                         # print(""df.row_count, min_row)
                         logging.debug("File Row Count:{}".format(df.row_count))
-                        # print(foi.regex, foi.folder_regex,"------match regex")
 
-                        if import_type == self.IMPORT_VIA_PANDAS:
-                            limit = None
-                            if limit_rows is not None:
+                        def import_daa_file(foi, db):
 
-                                limit = limit_rows
-                            elif foi.limit_rows is not None:
-                                limit = foi.limit_rows
-                            else:
+                            import_type = foi.import_method or import_type
+
+                            if import_type == self.IMPORT_VIA_PANDAS:
                                 limit = None
+                                if limit_rows is not None:
 
-                            ####################################################################################
-                            status_dict = self.import_file_pandas(foi, db, limit_rows=limit,
-                                                                  chunk_size=chunksize)
-                            ####################################################################################
-                        # only postgres support for now
-                        elif import_type == self.IMPORT_VIA_CLIENT_CLI:
-                            ####################################################################################
-                            status_dict = self.import_1file_client_side(foi, db)
-                            ####################################################################################
-                        elif import_type == self.IMPORT_VIA_CUSTOM_FUNC:
-                            status_dict == self.CUSTOM_FUNC()
-                        else:
-                            raise Exception(
-                                "No Import Method Provided: \n{}\n{}".format(
-                                    self.IMPORT_VIA_CLIENT_CLI,
-                                    self.IMPORT_VIA_PANDAS))
+                                    limit = limit_rows
+                                elif foi.limit_rows is not None:
+                                    limit = foi.limit_rows
+                                else:
+                                    limit = None
 
-                    except Exception as e:
+                                ####################################################################################
+                                status_dict = self.import_file_pandas(foi, db, limit_rows=limit,
+                                                                      chunk_size=chunksize)
+                                ####################################################################################
+                            # only postgres support for now
+                            elif import_type == self.IMPORT_VIA_CLIENT_CLI:
+                                ####################################################################################
+                                status_dict = self.import_1file_client_side(foi, db)
+                                ####################################################################################
+                            elif import_type == self.IMPORT_VIA_CUSTOM_FUNC:
+                                status_dict == self.CUSTOM_FUNC()
+                            else:
+                                raise Exception(
+                                    "No Import Method Provided: \n{}\n{}".format(
+                                        self.IMPORT_VIA_CLIENT_CLI,
+                                        self.IMPORT_VIA_PANDAS))
+                        import_data_file(foi, db)
+
+                    except ValueError as e:
 
                         logging_handler = db_logging.logger.ImportLogger(db)
                         error_log_entry = logging_handler.ErrorLog(
@@ -1125,9 +1147,10 @@ class DataFile:
             elif self.work_file_type in self.COMPRESSED_FILE_TYPES:
 
                 full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
-
+                foi = get_mapped_table(full_file_name, self.foi_list)
+                print("---zip foi", foi)
                 status_dict = self.extract_file(db, full_file_name, os.path.join(
-                    self.working_path, self.curr_src_working_file), skip_ifexists=skip_ifexists)
+                    self.working_path, self.curr_src_working_file), skip_ifexists=(not foi.unzip_again))
                 self.finish_work(db, status_dict=status_dict, vacuum=vacuum)
             else:
                 status_dict = {}

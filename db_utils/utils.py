@@ -27,9 +27,16 @@ def purge_schema_except(db, schema_list):
             schema_name = row[0]
             if schema_name not in schema_list:
                 drop_schema_list.append(schema_name)
-        for schema_name in drop_schema_list:
-            try:
-                db.execute(sql_drop_schema.format(schema_name))
-                logging.info("Dropped Schema: {}".format(schema_name))
-            except Exception as e:
-                logging.error("Error Dropping Schema: {}\n\t{}".format(schema_name, e))
+        print("These schemas will be dropped, if you answer 'yess!!!'")
+        print(drop_schema_list)
+
+        reply = raw_input("Are you Sure? Type: yes!!! >")
+        if reply == 'yes!!!':
+            for schema_name in drop_schema_list:
+                try:
+                    db.execute(sql_drop_schema.format(schema_name))
+                    logging.info("Dropped Schema: {}".format(schema_name))
+                except Exception as e:
+                    logging.error("Error Dropping Schema: {}\n\t{}".format(schema_name, e))
+        else:
+            logging.info('Nothing was Done!')
