@@ -12,6 +12,7 @@ import db_logging
 import db_table.db_table_def
 import db_table.db_table_func
 import db_utils
+import utils
 import sys
 
 import migrate_utils.static_func
@@ -117,7 +118,8 @@ class FilesOfInterest:
                  file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF8',
                  append_crc=False, limit_rows=None, header_row_location=0, count_via=COUNT_VIA_PANDAS,
                  new_delimiter=None, dataset_name=None, redaction_file=None,
-                 upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None):
+                 upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
+                 post_action=None, pre_action=None):
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -162,13 +164,15 @@ class FilesOfInterest:
         self.upsert_function_name = upsert_function_name
         self.unzip_again = unzip_again
         self.pre_action_sql = pre_action_sql
-
+        # list of sql to execute prior or post import of the file
+        self.post_action = post_action
+        self.pre_action = pre_action
     # def __str__(self):
 
 
 def get_mapped_table(file_name, foi_list):
     import copy
-    print("-----foi file_name", file_name)
+
     for i in foi_list:
         print(i.regex)
         # if i.table_name is not None:
@@ -960,12 +964,20 @@ class DataFile:
 
         while self.get_work(db) is not None:
             already_processed = False
+            full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
+            foi = get_mapped_table(full_file_name, self.foi_list)
+             
 
             if self.crc is not None:
                 already_processed = db.has_record(
                     "select 1 from logging.meta_source_files where crc='{}' and file_process_state='Processed'".format(self.crc))
             if self.crc is None:
-                logging.error("File Missinging - Skipping: \n\t{}".format(self.curr_src_working_file))
+                logging.error("File Missiging - Skipping: \n\t{}".format(self.curr_src_working_file))
+            elif foi is None:
+                status_dict = {}
+                status_dict['import_status'] = 'FAILED'
+                status_dict['error_msg'] = 'No Matching Configuration Found'
+                df.finish_work(db, status_dict=status_dict, vacuum=vacuum)
 
             elif already_processed:
                 status_dict = {}
@@ -977,10 +989,8 @@ class DataFile:
                 # check the current file against our list of regex to see if it
                 # matches any table mapping
 
-                foi = get_mapped_table(os.path.join(self.source_file_path, self.curr_src_working_file), self.foi_list)
-
                 # logging.debug("Getting Mapped table:{}\n{}".format(foi.self.curr_src_working_file, foi))
-                # print(foi,"--------got one")
+                 
                 # print(self.source_file_path)
                 if foi is not None:
                     if foi.pre_action_sql is not None and len(foi.pre_action_sql) > 1:
@@ -1037,38 +1047,9 @@ class DataFile:
                         # print(""df.row_count, min_row)
                         logging.debug("File Row Count:{}".format(df.row_count))
 
-                        def import_daa_file(foi, db):
-
-                            import_type = foi.import_method or import_type
-
-                            if import_type == self.IMPORT_VIA_PANDAS:
-                                limit = None
-                                if limit_rows is not None:
-
-                                    limit = limit_rows
-                                elif foi.limit_rows is not None:
-                                    limit = foi.limit_rows
-                                else:
-                                    limit = None
-
-                                ####################################################################################
-                                status_dict = self.import_file_pandas(foi, db, limit_rows=limit,
-                                                                      chunk_size=chunksize)
-                                ####################################################################################
-                            # only postgres support for now
-                            elif import_type == self.IMPORT_VIA_CLIENT_CLI:
-                                ####################################################################################
-                                status_dict = self.import_1file_client_side(foi, db)
-                                ####################################################################################
-                            elif import_type == self.IMPORT_VIA_CUSTOM_FUNC:
-                                status_dict == self.CUSTOM_FUNC()
-                            else:
-                                raise Exception(
-                                    "No Import Method Provided: \n{}\n{}".format(
-                                        self.IMPORT_VIA_CLIENT_CLI,
-                                        self.IMPORT_VIA_PANDAS))
-                        import_data_file(foi, db)
-
+                        status_dict = utils.import_data_file(foi, db, self)
+                        print("ouuuuut")
+                    # except ValueError as e: uncomment to check the stack trace
                     except ValueError as e:
 
                         logging_handler = db_logging.logger.ImportLogger(db)
@@ -1146,9 +1127,6 @@ class DataFile:
             # Process Compressed files
             elif self.work_file_type in self.COMPRESSED_FILE_TYPES:
 
-                full_file_name = os.path.join(self.source_file_path, self.curr_src_working_file)
-                foi = get_mapped_table(full_file_name, self.foi_list)
-                print("---zip foi", foi)
                 status_dict = self.extract_file(db, full_file_name, os.path.join(
                     self.working_path, self.curr_src_working_file), skip_ifexists=(not foi.unzip_again))
                 self.finish_work(db, status_dict=status_dict, vacuum=vacuum)
