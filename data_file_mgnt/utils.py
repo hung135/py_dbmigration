@@ -36,7 +36,7 @@ def import_data_file(foi, db, df=None):
 
 
     #dynmaically import the modeul specified in the yaml file
-    module = __import__('custom_logic.{}'.format(import_type.lower()))
+    module = __import__(import_type.lower())
     print(dir(module))
    
     imp = getattr(module,import_type.lower())
