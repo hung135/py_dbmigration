@@ -40,3 +40,19 @@ def purge_schema_except(db, schema_list):
                     logging.error("Error Dropping Schema: {}\n\t{}".format(schema_name, e))
         else:
             logging.info('Nothing was Done!')
+
+# adds a column to a table in datbase
+def add_column(db, table_name, column_name, data_type, nullable=''):
+    data_type_formatted = ''
+    if data_type == "Integer":
+        data_type_formatted = "INTEGER"
+    elif data_type == "String":
+        data_type_formatted = "VARCHAR(100)"
+    elif data_type == "uuid":
+        data_type_formatted = "UUID"
+
+    base_command = ("ALTER TABLE {table_name} ADD column {column_name} {data_type} {nullable}")
+    sql_command = base_command.format(table_name=table_name, column_name=column_name, data_type=data_type_formatted,
+                                      nullable=nullable)
+     
+    db.execute(sql_command)

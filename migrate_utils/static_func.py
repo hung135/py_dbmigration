@@ -1797,37 +1797,28 @@ def check_pii(db):
         # logging.error("Error processing table:{} \n{}".format(table_name,e))
 
 
-def convert_sqlite_sql_to_csv(full_file_path):
-    sql = """select type, name, tbl_name, sql
-				FROM sqlite_master
-					WHERE type='index'"""
-    import sqlite3
 
-    with open('sqlite_idx.csv', 'w+') as write_file:
-        # open a file to write to
-        conn = sqlite3.connect(full_file_path)
-        # connect to your database
-        cursor = conn.cursor()
-        # create a cursor object (which lets you address the table results individually)
-        for row in cursor.execute(sql):
-            # use the cursor as an iterable
-            # write_file.write(row)
-            print(row)
 
 
 # stole from stack overflow
 # https://stackoverflow.com/questions/305378/list-of-tables-db-schema-dump-etc-using-the-python-sqlite3-api
-def sqlite_to_csv(full_file_path):
+def sqlite_to_csv(full_file_path,out_file_path=None):
     import sqlite3
     import pandas as pd
     db = sqlite3.connect(full_file_path)
+    abs_file_path = os.path.dirname(".")
+    if out_file_path is not None:
+        abs_file_path=os.path.dirname(out_file_path)
+ 
+
     cursor = db.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = cursor.fetchall()
     for table_name in tables:
         table_name = table_name[0]
         table = pd.read_sql_query("SELECT * from %s" % table_name, db)
-        table.to_csv(table_name + '.csv', index_label='index', header=True, index=False, encoding='utf-8')
+        print("Extracting table: {}".format(table_name))
+        table.to_csv(os.path.join(abs_file_path,(table_name + '.csv')), index_label='index', header=True, index=False, encoding='utf-8')
 
 
 def sql_to_excel(db, sql_string, full_file_path, column_names):

@@ -5,6 +5,7 @@ import sys
 import pandas as pd
 import numpy as np
 import db_utils
+import db_table
 from openpyxl import load_workbook
 
 import pprint
@@ -78,7 +79,7 @@ def derive_start_end_rows(t):
 
 
 def process_worksheet(sheet, start_row, end_row, has_units=True):
-    #logging.debug('Processing Sheet: {} - Start Row: {} End Row: {}'.format(sheet, start_row, end_row))
+    # logging.debug('Processing Sheet: {} - Start Row: {} End Row: {}'.format(sheet, start_row, end_row))
     i = 0
     # for sheet in wb.sheetnames:
     # Table of Content must be the first SHEEET!!!!!
@@ -149,8 +150,14 @@ def process_worksheet(sheet, start_row, end_row, has_units=True):
     return data_dict
 
 
-def import_file(db, file, file_id, dbschema):
+# def process(db, file, file_id, dbschema):
+def process(db, foi, df):
+    continue_processing = True
     total_rows = 0
+    target_dbschema = foi.schema_name
+    table_name = foi.table_name
+    file_id = df.meta_source_file_id
+    file = os.path.join(df.source_file_path, df.curr_src_working_file)
     # file = '/home/dtdata/source_data/mkts_derived_data_warehouse/experian_mir/text/Experian-Oliver Wyman MIR - Student Loan DataPack.xlsx'
     with open(file, 'rb') as f:
 
@@ -186,10 +193,17 @@ def import_file(db, file, file_id, dbschema):
             ee = pd.melt(df, id_vars=['file_id', 'sheetname', 'figure', 'units', 'dimension'], var_name='measure', value_name='stat_value')
 
             ee = ee[ee.stat_value != 'NULL']
-            #ee = ee.replace(to_replace=r'^-$', value=np.nan, regex=True)
-            ee.to_sql('wyman', sqlalchemy_conn, schema=dbschema, if_exists='append', index=False)
+            # ee = ee.replace(to_replace=r'^-$', value=np.nan, regex=True)
+            ee.to_sql(table_name, sqlalchemy_conn, schema=target_dbschema, if_exists='append', index=False)
             # print("---- length", len(ee))
             total_rows += len(ee)
 
+        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+        row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
+        row.total_rows = total_rows
+        row.database_table = target_dbschema + '.' + table_name
+        t.session.commit()
+        t.session.close()
+
         logging.info("Total Rows For this Excel File: {}".format(total_rows))
-        return total_rows
+        return continue_processing

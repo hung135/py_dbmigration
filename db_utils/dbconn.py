@@ -284,7 +284,7 @@ class Connection:
         except Exception as e:
             print("Error Execute SQL:{}".format(e))
         logging.debug("DB Execute Completed: {}:{}:{}".format(self._userid, self._host, self._database_name))
-
+        
         return rowcount
 
     def drop_schema(self, schema):

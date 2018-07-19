@@ -5,8 +5,9 @@ import sys
 import db_utils
 import data_file_mgnt
 import db_logging
+import db_table
 import commands
- 
+
 
 import pprint
 
@@ -18,29 +19,29 @@ logging.basicConfig(level='DEBUG')
 #@migrate_utils.static_func.dump_params
 
 
-
-
 # import one file at a time using client side copy command postgres
 # standard return will be sucesscode, rows_inserted,description
-def import_file(db, foi):
+
+# def process(db, file, file_id, dbschema):
+def process(db, foi, df):
+    continue_processing = False
     error_msg = None
     additional_msg = None
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.dbconn.Connection)
 
-
-
     rows_inserted = 0
     import_status = None
     additional_info = None
     dataframe_columns = ''
-    data_file = foi.current_working_abs_file_name
+    data_file = file = os.path.join(df.source_file_path, df.curr_src_working_file)
     limit_rows = foi.limit_rows
     table_name = foi.table_name
     target_schema = foi.schema_name
+    file_id = df.meta_source_file_id
     header = foi.header_row
     names = foi.header_list_returned or foi.column_list
-    cols = foi.column_list
+    cols = foi.column_list or db.get_columns(table_name, target_schema)
     encoding = foi.encoding
     if foi.header_list_returned is not None:
 
@@ -48,6 +49,7 @@ def import_file(db, foi):
     else:
         # remove file_id in the case we got headers from db
         cols = ','.join(cols)
+    print("---->", cols, type(cols), table_name, target_schema)
     ImporLogger = db_logging.logger.ImportLogger(db)
     header = ''
     if foi.use_header or foi.header_added:
@@ -56,15 +58,11 @@ def import_file(db, foi):
     if foi.new_delimiter is not None:
         delim = foi.new_delimiter
 
-  
     # logging.debug("Into Import CopyCommand: {0}".format(dest.schema_name + "." + dest.table_name))
     if db is not None:
 
         # logging.debug("Into Import:{0}".format(dest.table_name))
         # if re.match(dest.regex, dest.full_file_name):
-
-
-
 
         copy_string = None
         if cols is not None:
@@ -79,7 +77,6 @@ def import_file(db, foi):
         # that info will be returned from the process that has to append the file_id and crc
         # the header will be in the correct delimiter format
         # cols = db.get_columns(foi.table_name, foi.schema_name)
-
 
         ###############THERE EXEC COMMAND LOGIC HERE########################################################
         envpwd = os.environ.get('PGPASSWORD', None)
@@ -105,34 +102,33 @@ def import_file(db, foi):
         # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
         bash_error_code, txt_out = commands.getstatusoutput(command_text)
+
         ###############THERE EXEC COMMAND LOGIC HERE########################################################
 
         if 'ERROR' in txt_out:
             logging.error(sys._getframe().f_code.co_name + " : " + txt_out)
-            import_status = 'FAILED'
-
+        else:
+            continue_processing = True
         logging.info("Command:{0}".format(command_text))
         logging.info("OUTPUT:{0} ".format(txt_out))
 
         # if txt_out[0] > 0 and not ('ERROR' in txt_out[1]):
         if int(bash_error_code) > 0:
-            
             error_msg = str(txt_out)[:2000]
             error_code = bash_error_code
             additional_msg = str(command_text)[:2000]
 
         else:
-            
             i = txt_out.split()
             rows_inserted = i[1]
-            import_status = 'success'
 
-    else:
-        logging.debug("Regex Not Match Skipping:{0}".format(table_name))
-    status_dict = {}
-    status_dict['rows_inserted'] = rows_inserted
-    status_dict['import_status'] = import_status
-    status_dict['error_msg'] = error_msg
-    status_dict['additional_info'] = additional_msg
+    # set values into meta_source_files table
+    t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+    row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
+    row.total_rows = rows_inserted
+    row.database_table = target_schema + '.' + table_name
+    row.last_error_msg = error_msg
+    t.session.commit()
+    t.session.close()
 
-    return status_dict
+    return continue_processing
