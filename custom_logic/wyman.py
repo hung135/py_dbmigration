@@ -172,7 +172,7 @@ def process(db, foi, df):
 
             sheetname = sheet['sheetname']
             if prev_sheet != sheetname:
-                logging.info("Processing Sheet: {}".format(sheetname))
+                logging.info("\t\tProcessing Sheet: {}".format(sheetname))
                 prev_sheet = sheetname
             has_units = True
             if sheetname == 'Snapshots':
@@ -190,7 +190,8 @@ def process(db, foi, df):
             df = df.applymap(rm_quote)
 
             # dd = df.set_index(['sheetname', 'figure', 'units', '"Dimension"'])
-            ee = pd.melt(df, id_vars=['file_id', 'sheetname', 'figure', 'units', 'dimension'], var_name='measure', value_name='stat_value')
+            ee = pd.melt(df, id_vars=['file_id', 'sheetname', 'figure', 'units',
+                                      'dimension'], var_name='measure', value_name='stat_value')
 
             ee = ee[ee.stat_value != 'NULL']
             # ee = ee.replace(to_replace=r'^-$', value=np.nan, regex=True)
@@ -205,5 +206,5 @@ def process(db, foi, df):
         t.session.commit()
         t.session.close()
 
-        logging.info("Total Rows For this Excel File: {}".format(total_rows))
+        logging.info("\t\tTotal Rows For this Excel File: {}".format(total_rows))
         return continue_processing

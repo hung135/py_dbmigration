@@ -27,6 +27,7 @@ def custom_logic(db, foi, df):
                     where a.file_process_state='Processed'
                     and b.crc=a.crc and a.id!=b.id
                     and b.id={}
+                    and a.project_name=b.project_name
                     """.format(df.meta_source_file_id))
 
     if already_processed:

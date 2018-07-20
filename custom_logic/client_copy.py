@@ -49,7 +49,7 @@ def process(db, foi, df):
     else:
         # remove file_id in the case we got headers from db
         cols = ','.join(cols)
-    print("---->", cols, type(cols), table_name, target_schema)
+    #print("---->", cols, type(cols), table_name, target_schema)
     ImporLogger = db_logging.logger.ImportLogger(db)
     header = ''
     if foi.use_header or foi.header_added:
@@ -71,7 +71,7 @@ def process(db, foi, df):
             # dest.column_list.replace(' ', '').replace('\n',  # '').strip(',')))
         else:
             copy_string = target_schema + "." + table_name
-        logging.info("Import FROM file into: {}, {}.{}".format(copy_string, target_schema, table_name))
+        logging.debug("\t\tImport FROM file into: {}, {}.{}".format(copy_string, target_schema, table_name))
 
         # not using this anymore because we don't know what order the file_id and crc columns are set in
         # that info will be returned from the process that has to append the file_id and crc
@@ -97,10 +97,7 @@ def process(db, foi, df):
             header,
             encoding,
             copy_command_connection_flags)
-        logging.info("Copy Command STARTED:{0}".format(table_name))
-
-        # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-
+        logging.info("\t\tCopy Command STARTED: {0}".format(table_name))
         bash_error_code, txt_out = commands.getstatusoutput(command_text)
 
         ###############THERE EXEC COMMAND LOGIC HERE########################################################
@@ -109,9 +106,9 @@ def process(db, foi, df):
             logging.error(sys._getframe().f_code.co_name + " : " + txt_out)
         else:
             continue_processing = True
-        logging.info("Command:{0}".format(command_text))
-        logging.info("OUTPUT:{0} ".format(txt_out))
-
+        logging.debug("\t\tCommand: {0}".format(command_text))
+        logging.info("\t\tOUTPUT: {0} ".format(txt_out))
+        logging.info("\t\tCopy Command Completed: {0}".format(table_name))
         # if txt_out[0] > 0 and not ('ERROR' in txt_out[1]):
         if int(bash_error_code) > 0:
             error_msg = str(txt_out)[:2000]

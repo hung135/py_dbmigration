@@ -32,7 +32,7 @@ def custom_logic(db, foi, df):
     file_size = os.path.getsize(abs_file_path)
 
     file_size_mb = round(file_size * 1.0 / 1024 / 1024, 2)
-    logging.info("File Size: {} MB ".format(file_size_mb))
+    logging.info("\t\tFile Size: {} MB ".format(file_size_mb))
     rows_updated = db.execute(update_sql.format(file_size, file_id))
 
     if rows_updated == 0:

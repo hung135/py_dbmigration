@@ -16,13 +16,14 @@ def inject_frame_work_data(sql, foi, df):
     x = sql.replace("{file_id}", str(df.meta_source_file_id))
     x = x.replace("{schema_name}", foi.schema_name)
     x = x.replace("{table_name}", foi.table_name)
-    print(x)
+
     return x
 
 
 def execute_sql(db, sql_list, foi, df):
-    for sql in sql_list:
+    for id, sql in enumerate(sql_list):
         # print(sql['sql'], "executing sike", type(sql))
+        logging.info("\tSQL Step #: {}".format(id))
         x = inject_frame_work_data(sql['sql'], foi, df)
         db.execute(x)
 
@@ -35,7 +36,7 @@ def process_logic(foi, db, df):
     process_logic = foi.process_logic
     if foi.pre_action is not None:
         logging.info("Executing Pre Load SQL")
-        execute_sql(db, foi.pre_action)
+        execute_sql(db, foi.pre_action, foi, df)
     continue_next_process = False
     for logic in process_logic:
 
@@ -48,13 +49,13 @@ def process_logic(foi, db, df):
         # print(dir(module))
 
         imp = getattr(module, logic_name)
-        logging.debug('\t->Started Processing Module: {}'.format(custom_logic))
+        logging.info('\t->Dynamic Module Start: {}'.format(custom_logic))
         df.set_work_file_status(db, df.meta_source_file_id, custom_logic)
         try:
             continue_next_process = imp.process(db, foi, df)
         except ValueError as e:
             df.set_work_file_status(db, df.meta_source_file_id, custom_logic, '{}: {}'.format(custom_logic, e))
-        logging.debug('\t->Completed Processing Module: {}'.format(custom_logic))
+        logging.debug('\t->Dynamic Module Ended: {}'.format(custom_logic))
 
         if not continue_next_process:
             logging.error('\t->Abort Processing for this file Because of Error: {}'.format(df.curr_src_working_file))

@@ -46,7 +46,8 @@ def custom_logic(db, foi, df):
             logging.warning("CRC column does not exist in meta_source_file table. Please make sure you create it")
         modified_write_path = os.path.join(abs_writable_path, folder_name, str(md5))
 
-        files = zip_utils.unzipper.extract_file(abs_file_path, modified_write_path, False, df.work_file_type, skip_ifexists=skip_ifexists)
+        files = zip_utils.unzipper.extract_file(abs_file_path, modified_write_path,
+                                                False, df.work_file_type, skip_ifexists=skip_ifexists)
 
         total_files = len(files)
 
@@ -59,7 +60,7 @@ def custom_logic(db, foi, df):
             "WALKING EXTRACTED FILES:\nsrc_dir:{0} \nworking_dir:{1}: --{2}".format(new_src_dir, df.working_path, modified_write_path))
 
         file_table_map = [data_file_mgnt.data_files.FilesOfInterest('DATA', '.*', file_path=modified_write_path, file_name_data_regex=None,
-                                                                    parent_file_id=file_id)]
+                                                                    parent_file_id=file_id, project_name=foi.project_name)]
 
         # instantiate a new Datafile object that craw this new directory of extracted files
         data_file_mgnt.data_files.DataFile(new_src_dir, db, file_table_map, parent_file_id=file_id)

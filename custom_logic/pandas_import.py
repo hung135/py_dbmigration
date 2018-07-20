@@ -17,19 +17,22 @@ logging.basicConfig(level='DEBUG')
 #@migrate_utils.static_func.dump_params
 
 
-def import_file(db, foi, lowercase=True,  chunk_size=10000):
-
+# def import_file(db, foi, lowercase=True,  chunk_size=10000):
+def process(db, foi, df):
+    continue_processing = False
+    chunk_size = 50000
+    lowercase = True
     rows_inserted = 0
     import_status = None
     additional_info = None
     dataframe_columns = ''
-    file = foi.current_working_abs_file_name
+    file = os.path.join(df.source_file_path, df.curr_src_working_file)
     limit_rows = foi.limit_rows
     table_name = foi.table_name
     target_schema = foi.schema_name
     header = foi.header_row
     names = foi.header_list_returned or foi.column_list
-
+    file_type = foi.file_type
 
     delim = foi.new_delimiter or foi.file_delimiter
     append_file_id = foi.append_file_id
@@ -53,22 +56,22 @@ def import_file(db, foi, lowercase=True,  chunk_size=10000):
             # names = ','.join(foi.header_list_returned)
 
             logging.debug(sys._getframe().f_code.co_name + " : " + file)
- 
-            if foi.file_type == 'CSV':
+
+            if file_type == 'CSV':
                 for counter, dataframe in enumerate(
                         pd.read_csv(file, sep=delim, nrows=limit_rows,
                                     quotechar='"', encoding=foi.encoding, chunksize=chunk_size, header=header, index_col=False,
                                     dtype=object)):
- 
+
                     if not foi.use_header and len(foi.column_list) > 0:
- 
+
                         dataframe.columns = map(str,
                                                 # foi.column_list
                                                 names
                                                 )  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
-                    logging.debug(
-                        "Pandas Insert Into DB: {0}->{1}-->Records:{2}".format(foi.schema_name, table_name,
-                                                                               counter * chunk_size))
+                    logging.info(
+                        "\t\tInsert Into DB: {0}->{1}-->Records:{2}".format(foi.schema_name, table_name,
+                                                                            counter * chunk_size))
                     ####################################################################################################
                     dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
                                      index=False, index_label=names)
@@ -100,10 +103,11 @@ def import_file(db, foi, lowercase=True,  chunk_size=10000):
                           index=False, index_label=names)
                 dataframe_columns = df.columns.tolist()
 
-            import_status = 'success'
+            continue_processing = True
 
         except Exception as e:
             import_status = 'FAILED'
+
             try:
 
                 # cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
@@ -123,9 +127,4 @@ def import_file(db, foi, lowercase=True,  chunk_size=10000):
                 print("sleeping so you can read:", ee)
                 time.sleep(5)
 
-    status_dict = {}
-    status_dict['rows_inserted'] = rows_inserted
-    status_dict['import_status'] = import_status
-    status_dict['error_msg'] = error_msg
-    status_dict['additional_info'] = ""
-    return status_dict
+    return continue_processing

@@ -1019,7 +1019,8 @@ def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
                 f.write(bytes(i["sql"]))
                 f.write(sql_grant.format(schema_name=dbschema, table_name=i["table"]))
 
-            drop = "BEGIN;\nDROP VIEW IF EXISTS {schema_name}.{table_name};\n".format(schema_name=dbschema, table_name=i["table"])
+            drop = "BEGIN;\nDROP VIEW IF EXISTS {schema_name}.{table_name};\n".format(
+                schema_name=dbschema, table_name=i["table"])
 
             v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
                 dbschema, i["table"])
@@ -1663,7 +1664,7 @@ def md5_file(full_file_path):
         status_code, msg = commands.getstatusoutput("{} '{}'".format(os_specific_cmd, full_file_path))
         x = msg.split(' = ')
         md5_string = x[1]
-    logging.info("File CheckSum: {}".format(md5_string))
+    logging.debug("File CheckSum: {}".format(md5_string))
 
     return md5_string
 
@@ -1797,19 +1798,15 @@ def check_pii(db):
         # logging.error("Error processing table:{} \n{}".format(table_name,e))
 
 
-
-
-
 # stole from stack overflow
 # https://stackoverflow.com/questions/305378/list-of-tables-db-schema-dump-etc-using-the-python-sqlite3-api
-def sqlite_to_csv(full_file_path,out_file_path=None):
+def sqlite_to_csv(full_file_path, out_file_path=None):
     import sqlite3
     import pandas as pd
     db = sqlite3.connect(full_file_path)
     abs_file_path = os.path.dirname(".")
     if out_file_path is not None:
-        abs_file_path=os.path.dirname(out_file_path)
- 
+        abs_file_path = os.path.dirname(out_file_path)
 
     cursor = db.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -1818,7 +1815,8 @@ def sqlite_to_csv(full_file_path,out_file_path=None):
         table_name = table_name[0]
         table = pd.read_sql_query("SELECT * from %s" % table_name, db)
         print("Extracting table: {}".format(table_name))
-        table.to_csv(os.path.join(abs_file_path,(table_name + '.csv')), index_label='index', header=True, index=False, encoding='utf-8')
+        table.to_csv(os.path.join(abs_file_path, (table_name + '.csv')),
+                     index_label='index', header=True, index=False, encoding='utf-8')
 
 
 def sql_to_excel(db, sql_string, full_file_path, column_names):
