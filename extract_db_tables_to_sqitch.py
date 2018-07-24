@@ -23,11 +23,11 @@ pgdatabase = os.environ['PGDATABASE']
 
 # sqlserver = db_utils.Connection(dbschema='dbo', database='enforce', dbtype='MSSQL', host=host, commit=False)
 
-schemas = [pgdatabase, 'stg', 'logging']
+schemas = [pgdatabase, 'stg', 'sqitch','logging']
 for s in schemas:
     db_postgres = db_utils.Connection(dbschema=s, database=pgdatabase,
-                                      dbtype='POSTGRES', host=pghost, commit=False)
+                                      dbtype='POSTGRES', host=pghost, commit=True)
     migu.change_table_owner(db_postgres, s, 'operational_dba')
     migu.change_view_owner(db_postgres, s, 'operational_dba')
 
-    migu.print_create_table(db_postgres, folder="/home/cfpb/nguyenhu/_{}/{}/".format(pgdatabase, s), targetschema=s, file_prefix='{}.'.format(s))
+    migu.print_create_table(db_postgres, folder="~/_{}/{}/".format(pgdatabase, s), targetschema=s, file_prefix='{}.'.format(s))
