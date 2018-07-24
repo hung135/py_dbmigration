@@ -5,7 +5,9 @@ import sys
 import pandas as pd
 import numpy as np
 import db_utils
-from openpyxl import load_workbook
+import db_table
+import migrate_utils
+import re
 
 import pprint
 
@@ -30,9 +32,11 @@ def process(db, foi, df):
     limit_rows = foi.limit_rows
     table_name = foi.table_name
     target_schema = foi.schema_name
+    table_name_extract = foi.table_name_extract
     header = foi.header_row
     names = foi.header_list_returned or foi.column_list
     file_type = foi.file_type
+    file_id = df.meta_source_file_id
 
     delim = foi.new_delimiter or foi.file_delimiter
     append_file_id = foi.append_file_id
@@ -42,16 +46,22 @@ def process(db, foi, df):
         sqlalchemy_conn, meta = db.connect_sqlalchemy()
 
         if table_name is None:
-            table_name = migrate_utils.static_func.convert_str_snake_case(os.path.basename((file)))
-        counter = 0
+            table_name = str(os.path.basename((file)))
 
+        counter = 0
+        if table_name_extract is not None:
+            table_name_regex = re.compile(table_name_extract)
+            # table_name = table_name_regex.match(table_name))
+            table_name = re.search(table_name_extract, table_name).group(1)
+
+            logging.info("\t\tExtracted tableName from file: {} ".format(table_name))
         if lowercase:
             table_name = str.lower(str(table_name))
         try:
 
             if limit_rows is not None:
                 logging.debug("Pandas Read Limit SET: {0}:ROWS".format(limit_rows))
-
+            foi.table_name = table_name
             # names = ','.join(foi.column_list)
             # names = ','.join(foi.header_list_returned)
 
@@ -69,10 +79,18 @@ def process(db, foi, df):
                                                 # foi.column_list
                                                 names
                                                 )  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
+                    else:
+                        col_list = dataframe.columns.tolist()
+
+                # cols_new = [i.split(' ', 1)[1].replace(" ", "_").lower() for i in col_list]
+                        cols_new = [migrate_utils.static_func.convert_str_snake_case(i) for i in col_list]
+                        dataframe.columns = cols_new
                     logging.info(
-                        "\t\tInsert Into DB: {0}->{1}-->Records:{2}".format(foi.schema_name, table_name,
-                                                                            counter * chunk_size))
+                        "\t\tInserting: {0}->{1}-->Chunk#: {2} Chunk Size: {3}".format(foi.schema_name, table_name,
+                                                                                       counter, chunk_size))
                     ####################################################################################################
+                    if counter == 0 and append_file_id:
+                        dataframe['file_id'] = file_id
                     dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
                                      index=False, index_label=names)
                     ####################################################################################################
@@ -85,23 +103,23 @@ def process(db, foi, df):
             else:  # assume everything else is Excel for now
                 print("Reading Excel File")
 
-                df = pd.read_excel(file, encoding='unicode',  index_col=None, header=0)
+                dataframe = pd.read_excel(file, encoding='unicode',  index_col=None, header=0)
                 # xl = pd.ExcelFile(file)
                 # df = xl.parse(1)
-                col_list = df.columns.tolist()
+                col_list = dataframe.columns.tolist()
 
                 # cols_new = [i.split(' ', 1)[1].replace(" ", "_").lower() for i in col_list]
                 cols_new = [migrate_utils.static_func.convert_str_snake_case(i) for i in col_list]
                 # df.columns = df.columns.str.split(' ', 1)
-                df.columns = cols_new
+                dataframe.columns = cols_new
                 dataframe_columns = cols_new
                 # df = df[1: 10]
                 if append_file_id:
-                    df['file_id'] = self.meta_source_file_id
+                    dataframe['file_id'] = self.meta_source_file_id
 
                 df.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
                           index=False, index_label=names)
-                dataframe_columns = df.columns.tolist()
+                dataframe_columns = dataframe.columns.tolist()
 
             continue_processing = True
 
@@ -126,5 +144,11 @@ def process(db, foi, df):
                 import time
                 print("sleeping so you can read:", ee)
                 time.sleep(5)
-
+    logging.info("\t\tRows Inserted: {}".format(rows_inserted))
+    t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+    row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
+    row.total_rows = rows_inserted
+    row.database_table = target_schema + '.' + table_name
+    t.session.commit()
+    t.session.close()
     return continue_processing

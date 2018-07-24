@@ -137,7 +137,8 @@ class FilesOfInterest:
                  append_crc=False, limit_rows=None, header_row_location=0, count_via=COUNT_VIA_PANDAS,
                  new_delimiter=None, dataset_name=None, redaction_file=None,
                  upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
-                 post_action=None, pre_action=None, process_logic=None, project_name='Default'):
+                 post_action=None, pre_action=None, process_logic=None, project_name=None,
+                 table_name_extract=None):
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -187,6 +188,7 @@ class FilesOfInterest:
         self.pre_action = pre_action
         self.process_logic = process_logic
         self.project_name = project_name
+        self.table_name_extract = table_name_extract
     # def __str__(self):
 
 
