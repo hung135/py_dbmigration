@@ -49,7 +49,7 @@ def process(db, foi, df):
     else:
         # remove file_id in the case we got headers from db
         cols = ','.join(cols)
-    #print("---->", cols, type(cols), table_name, target_schema)
+    # print("---->", cols, type(cols), table_name, target_schema)
     ImporLogger = db_logging.logger.ImportLogger(db)
     header = ''
     if foi.use_header or foi.header_added:
@@ -122,7 +122,7 @@ def process(db, foi, df):
     # set values into meta_source_files table
     t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
     row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
-    row.total_rows = rows_inserted
+    row.rows_inserted = rows_inserted
     row.database_table = target_schema + '.' + table_name
     row.last_error_msg = error_msg
     t.session.commit()
