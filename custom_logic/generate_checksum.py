@@ -28,11 +28,16 @@ def custom_logic(db, foi, df):
     target_schema = foi.schema_name
     file_id = df.meta_source_file_id
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
-
-    crc = migrate_utils.static_func.md5_file(abs_file_path)
-    rows_updated = db.execute(update_sql.format(crc, file_id))
-    if rows_updated == 0:
-        raise ValueError('Unexpected thing happend now rows updated')
+    sql = "select 1 from logging.meta_source_files where id = {} and crc is not null limit 1".format(df.meta_source_file_id)
+    # print(sql)
+    if db.has_record(sql):
+        logging.info("\t\tChecksum already Exists, skipping:")
+    else:
+        logging.info("\t\tCheck Not Exists, generating:")
+        crc = migrate_utils.static_func.md5_file(abs_file_path)
+        rows_updated = db.execute(update_sql.format(crc, file_id))
+        if rows_updated == 0:
+            raise ValueError('Unexpected thing happend now rows updated')
 
     return continue_processing
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any

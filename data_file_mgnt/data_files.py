@@ -196,7 +196,7 @@ def get_mapped_table(file_name, foi_list):
     import copy
 
     for i in foi_list:
-        print(i.regex)
+        # print(i.regex)
         # if i.table_name is not None:
         assert isinstance(i, FilesOfInterest)
 

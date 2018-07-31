@@ -846,6 +846,110 @@ def print_table_dict(db, folder='.', targetschema=None):
 """
 
 
+def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
+    import sqlalchemy
+    import os
+    if db._dbtype != 'POSTGRES':
+        raise "Create Functions currnly only supports POSTGRES"
+    sql_list = """SELECT routine_name FROM information_schema.routines 
+        WHERE routine_type='FUNCTION' AND specific_schema='{}'"""
+
+    sql_def = """SELECT pg_get_functiondef('{schema_name}.{view_name}'::regproc);"""
+
+    rs = db.query(sql_list.format(db.dbschema))
+    func_list = []
+    for row in rs:
+        func_list.append(row[0])
+    # print dir(meta.tables)
+    folder_deploy = folder + "deploy/functions/"
+    folder_revert = folder + "revert/functions/"
+    folder_verify = folder + "verify/functions/"
+    try:
+        os.makedirs(folder_deploy)
+    except:
+        pass
+    try:
+        os.makedirs(folder_revert)
+    except:
+        pass
+    try:
+        os.makedirs(folder_verify)
+    except:
+        pass
+    count = 0
+    sqitch = []
+    functions = []
+
+    dbschema = targetschema or db.dbschema
+
+    # for n, t in meta.tables.iteritems():
+    for t in func_list:
+
+        count += 1
+
+        if file_prefix is not None:
+            filename = file_prefix + t.lower() + ".sql"
+            fqn = file_prefix
+        else:
+            filename = t.lower() + ".sql"
+            fqn = ""
+        basefilename = t.lower()
+        rs_def = db.query(sql_def.format(schema_name=dbschema, view_name=t))
+
+        createsql = ''
+        for row in rs_def:
+
+            createsql += row[0]
+
+        logging.debug("Generating Create Statement for Functions: {}".format(t.lower()))
+
+        line = ("\nsqitch --plan-file functions.plan add functions/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
+
+        sqitch.append(line)
+
+        m = {"function": basefilename, "sql": createsql + ";\n", "filename": filename}
+        functions.append(m)
+
+    if folder is None:
+        for i in functions:
+            print(i)
+        for s in sqitch:
+            print(s)
+    else:
+        for i in functions:
+            file_path = os.path.join(folder_deploy + i["filename"])
+            print("Writing:")
+            print(file_path)
+            sql_grant = """GRANT ALL ON FUNCTION {schema_name}.{function} TO operational_dba;"""
+            with open(file_path, "wb") as f:
+                f.write(bytes(i["sql"]))
+                f.write(sql_grant.format(schema_name=dbschema, function=i["function"]))
+
+            drop = "BEGIN;\nDROP FUNCTION IF EXISTS {schema_name}.{function};\n".format(
+                schema_name=dbschema, function=i["function"])
+
+            v_str = """SELECT 1  FROM information_schema.routines 
+            WHERE routine_type='FUNCTION' AND specific_schema='{}'
+            AND routine_name='{}';\n""".format(db.dbschema, i["function"])
+            verify = "BEGIN;\n" + v_str
+            file_path = os.path.join(folder_revert + i["filename"])
+            with open(file_path, "wb") as f:
+                f.write(bytes(drop))
+                f.write(bytes("COMMIT;\n"))
+            file_path = os.path.join(folder_verify + i["filename"])
+            with open(file_path, "wb") as f:
+                f.write(bytes(verify))
+                f.write(bytes("ROLLBACK;\n"))
+
+        with open(folder + "sqitchplanadd_functions.bash", "wb") as f:
+            f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_functions()"))
+        for s in sqitch:
+            with open(folder + "sqitchplanadd_functions.bash", "a") as f:
+                f.write(s)
+
+    print("Total Functions:{}".format(count))
+
+
 def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     import sqlalchemy
     import os
@@ -1002,7 +1106,7 @@ def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
         sqitch.append(line)
         sql_view = "CREATE VIEW {schema_name}.{view_name} as {sql}"
         createsql = sql_view.format(schema_name=dbschema, view_name=t, sql=createsql)
-        m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
+        m = {"table": basefilename, "sql": createsql + "\n", "filename": filename}
         tables.append(m)
 
     if folder is None:

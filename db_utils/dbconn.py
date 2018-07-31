@@ -284,7 +284,7 @@ class Connection:
         except Exception as e:
             print("Error Execute SQL:{}".format(e))
         logging.debug("DB Execute Completed: {}:{}:{}".format(self._userid, self._host, self._database_name))
-        
+
         return rowcount
 
     def drop_schema(self, schema):
@@ -450,9 +450,9 @@ class Connection:
     # @migrate_utils.static_func.timer
     def get_all_columns_schema(self, dbschema, table_name):
         # print("----- wuh")
-        sql = """SELECT table_name,column_name,upper(data_type) as type, 
+        sql = """SELECT table_name,column_name,upper(data_type) as type,
         is_identity,
-        character_maximum_length 
+        character_maximum_length
         FROM information_schema.columns
         WHERE table_schema = '{}'
         AND table_name   = '{}'
@@ -535,12 +535,19 @@ class Connection:
         x = 0
         if self.dbtype == 'POSTGRES':
             self.vacuum(table_name)
-            row = self.query("""select n_live_tup 
-                    from pg_stat_user_tables 
+            row = self.query("""select n_live_tup
+                    from pg_stat_user_tables
                     where schemaname='{}' and relname='{}'""".format(schema, table_name))
             x = row[0][0]
 
         return x
+
+    def get_a_value(self, sql):
+
+        x = self.query(sql)
+        value = x[0][0]
+
+        return value
 
     def get_tables_row_count(self, schema=None):
         if schema is None:

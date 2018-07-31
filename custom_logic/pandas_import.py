@@ -115,12 +115,13 @@ def process(db, foi, df):
                 dataframe_columns = cols_new
                 # df = df[1: 10]
                 if append_file_id:
-                    dataframe['file_id'] = self.meta_source_file_id
+                    dataframe['file_id'] = df.meta_source_file_id
 
-                df.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
-                          index=False, index_label=names)
+                dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
+                                 index=False, index_label=names)
                 dataframe_columns = dataframe.columns.tolist()
 
+                rows_inserted = (len(dataframe))
             continue_processing = True
 
         except Exception as e:
