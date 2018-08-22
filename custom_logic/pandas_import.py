@@ -49,12 +49,13 @@ def process(db, foi, df):
             table_name = str(os.path.basename((file)))
 
         counter = 0
-        if table_name_extract is not None:
-            table_name_regex = re.compile(table_name_extract)
-            # table_name = table_name_regex.match(table_name))
-            table_name = re.search(table_name_extract, table_name).group(1)
+        # if table_name_extract is not None:
+        #     table_name_regex = re.compile(table_name_extract)
+        #     # table_name = table_name_regex.match(table_name))
+        #     print("----", table_name_extract, table_name)
+        #     table_name = re.search(table_name_extract, table_name).group(1)
 
-            logging.info("\t\tExtracted tableName from file: {} ".format(table_name))
+        #     logging.info("\t\tExtracted tableName from file: {} ".format(table_name))
         if lowercase:
             table_name = str.lower(str(table_name))
         try:
@@ -148,8 +149,10 @@ def process(db, foi, df):
     logging.info("\t\tRows Inserted: {}".format(rows_inserted))
     t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
     row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
-    row.total_rows = rows_inserted
+    row.rows_inserted = rows_inserted
+    row.last_error_msg = error_msg
     row.database_table = target_schema + '.' + table_name
     t.session.commit()
     t.session.close()
+    db.commit()
     return continue_processing

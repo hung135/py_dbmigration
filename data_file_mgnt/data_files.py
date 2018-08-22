@@ -138,7 +138,7 @@ class FilesOfInterest:
                  new_delimiter=None, dataset_name=None, redaction_file=None,
                  upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
                  post_action=None, pre_action=None, process_logic=None, project_name=None,
-                 table_name_extract=None):
+                 table_name_extract=None, reprocess=True):
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -189,6 +189,8 @@ class FilesOfInterest:
         self.process_logic = process_logic
         self.project_name = project_name
         self.table_name_extract = table_name_extract
+        self.reprocess = reprocess
+
     # def __str__(self):
 
 
@@ -387,7 +389,7 @@ class DataFile:
             file_found = x[0][0]
 
             if file_found == 0:
-                print("New file found", full_file_path)
+                logging.debug("New file found: {}".format(full_file_path))
                 # if get_mapped_table(walked_filed_name,
                 # self.file_pattern_list):
                 if id_regex is not None:
@@ -429,6 +431,7 @@ class DataFile:
                 ,current_worker_host=null
                 ,current_worker_host_pid=null
                 ,file_process_state='RAW'
+                ,reporcess = True
                 ,total_rows=0
                 WHERE  1=1
                 AND {}
@@ -443,6 +446,7 @@ class DataFile:
                 ,last_error_msg=null
                 ,file_process_state='RAW'
                 WHERE  upper(file_process_state)='FAILED'
+                AND reprocess = True
                 AND {}
                 """.format(where_clause))
         if option.upper() == 'RAW':
@@ -606,6 +610,7 @@ class DataFile:
                     (select file_path ||file_name
                         FROM {0}.meta_source_files
                         WHERE  file_process_state='RAW' and current_worker_host is null
+                        and reprocess=True
                         and project_name in ({3})
                         ORDER BY
                         file_type asc,
@@ -655,6 +660,7 @@ class DataFile:
                 self.source_file_path, self.curr_src_working_file)
             foi = get_mapped_table(full_file_name, self.foi_list)
             if foi is not None:
+
                 # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
                 logging.info(
                     "->Processing file:\n\t{}".format(self.curr_src_working_file))

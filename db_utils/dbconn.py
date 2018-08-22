@@ -287,6 +287,17 @@ class Connection:
 
         return rowcount
 
+    def execute_permint_execption(self, sqlstring, debug=False):
+        # cloning previous method to avoid breaking things already in place
+        logging.debug("Debug DB Execute: {}:{}:{} \n\t{} ".format(self._userid, self._host, self._database_name, sqlstring))
+        rowcount = 0
+
+        self._cur.execute(sqlstring)
+        rowcount = self._cur.rowcount
+        self.commit()
+
+        return rowcount
+
     def drop_schema(self, schema):
         logging.debug(
             "Drop Database Schema: \n\tHost:{0}\n\tDatabase:{1}\nSchema:{2}".format(self._host, self._database_name,

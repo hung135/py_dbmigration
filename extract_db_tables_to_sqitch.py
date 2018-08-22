@@ -35,4 +35,4 @@ for s in schemas:
     migu.print_create_functions(db_postgres, folder="../../../_{}/{}/".format(pgdatabase, s),
                                 targetschema=s, file_prefix='{}.'.format(s))
     migu.print_create_views(db_postgres, folder="../../../_{}/{}/".format(pgdatabase, s),
-                                targetschema=s, file_prefix='{}.'.format(s))
+                            targetschema=s, file_prefix='{}.'.format(s))

@@ -855,7 +855,7 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
         WHERE routine_type='FUNCTION' AND specific_schema='{}'"""
 
     sql_def = """SELECT pg_get_functiondef('{schema_name}.{view_name}'::regproc);"""
-
+    error_function = []
     rs = db.query(sql_list.format(db.dbschema))
     func_list = []
     for row in rs:
@@ -884,31 +884,35 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
 
     # for n, t in meta.tables.iteritems():
     for t in func_list:
+        try:
+            count += 1
 
-        count += 1
+            if file_prefix is not None:
+                filename = file_prefix + t.lower() + ".sql"
+                fqn = file_prefix
+            else:
+                filename = t.lower() + ".sql"
+                fqn = ""
+            basefilename = t.lower()
+            rs_def = db.query(sql_def.format(schema_name=dbschema, view_name=t))
 
-        if file_prefix is not None:
-            filename = file_prefix + t.lower() + ".sql"
-            fqn = file_prefix
-        else:
-            filename = t.lower() + ".sql"
-            fqn = ""
-        basefilename = t.lower()
-        rs_def = db.query(sql_def.format(schema_name=dbschema, view_name=t))
+            createsql = ''
+            for row in rs_def:
 
-        createsql = ''
-        for row in rs_def:
+                createsql += row[0]
 
-            createsql += row[0]
+            logging.debug("Generating Create Statement for Functions: {}".format(t.lower()))
 
-        logging.debug("Generating Create Statement for Functions: {}".format(t.lower()))
+            line = ("\nsqitch --plan-file functions.plan add functions/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
 
-        line = ("\nsqitch --plan-file functions.plan add functions/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
+            sqitch.append(line)
 
-        sqitch.append(line)
-
-        m = {"function": basefilename, "sql": createsql + ";\n", "filename": filename}
-        functions.append(m)
+            m = {"function": basefilename, "sql": createsql + ";\n", "filename": filename}
+            functions.append(m)
+        except Exception as e:
+            print("Error with function: {}:\n{}".format(basefilename, e))
+            error_function.append(basefilename)
+            db.rollback()
 
     if folder is None:
         for i in functions:
@@ -918,8 +922,8 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
     else:
         for i in functions:
             file_path = os.path.join(folder_deploy + i["filename"])
-            print("Writing:")
-            print(file_path)
+            # print("Writing:")
+            # print(file_path)
             sql_grant = """GRANT ALL ON FUNCTION {schema_name}.{function} TO operational_dba;"""
             with open(file_path, "wb") as f:
                 f.write(bytes(i["sql"]))
@@ -948,6 +952,7 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
                 f.write(s)
 
     print("Total Functions:{}".format(count))
+    print("Errored Furnctions: \n{}".format(error_function))
 
 
 def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
@@ -1017,8 +1022,8 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
             print(s)
     else:
         for i in tables:
-            print("Writing:")
-            print(folder_deploy + i["table"])
+            # print("Writing:")
+            #print(folder_deploy + i["table"])
             with open(folder_deploy + i["filename"], "wb") as f:
                 f.write(bytes(i["sql"]))
                 f.write("ALTER TABLE {}.{}\n\tOWNER TO operational_dba;".format(dbschema, i["table"]))
@@ -1116,8 +1121,8 @@ def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
             print(s)
     else:
         for i in tables:
-            print("Writing:")
-            print(folder_deploy + i["table"])
+            # print("Writing:")
+            # print(folder_deploy + i["table"])
             sql_grant = """GRANT ALL ON TABLE {schema_name}.{table_name} TO operational_dba;"""
             with open(folder_deploy + i["filename"], "wb") as f:
                 f.write(bytes(i["sql"]))
