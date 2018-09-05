@@ -1502,7 +1502,7 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
 
 
 # this will return sql to do upsert based on the primary keys
-def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
+def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None, file_id=None):
     import db_utils.dbconn
     assert isinstance(db, db_utils.dbconn.Connection)
     if trg_schema is None:
@@ -1534,10 +1534,10 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None):
 
     primary_keys = db.get_primary_keys(schema + '.' + table_name)
 
-    sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {} \nWHERE file_id=p_file_id\nON CONFLICT ({}) 
+    sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {} \nWHERE file_id={}\nON CONFLICT ({}) 
     DO UPDATE SET \n\t{}\n WHERE \n\tmd5(ROW({})::Text)\n!= md5(ROW({})::Text);""".format(
         schema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
-        source_schema + '.' + table_name, ','.join(primary_keys), z, md5_src, md5_trg)
+        source_schema + '.' + table_name, file_id, ','.join(primary_keys),  z, md5_src, md5_trg)
 
     return sql_template
 

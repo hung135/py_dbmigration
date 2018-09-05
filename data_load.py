@@ -128,9 +128,6 @@ def process_yaml():
         datafiles = []
     return datafiles
 
-
-FILE_PATH = os.environ['RAWFILEPATH']
-writable_path = os.environ['WORKINGPATH']
 PGDATASCHEMA = os.environ['PGDATASCHEMA']
 """
     Creating a Database connection object
