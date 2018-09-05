@@ -287,7 +287,7 @@ class Connection:
 
         return rowcount
 
-    def execute_permint_execption(self, sqlstring, debug=False):
+    def execute_permit_execption(self, sqlstring, debug=False):
         # cloning previous method to avoid breaking things already in place
         logging.debug("Debug DB Execute: {}:{}:{} \n\t{} ".format(self._userid, self._host, self._database_name, sqlstring))
         rowcount = 0
