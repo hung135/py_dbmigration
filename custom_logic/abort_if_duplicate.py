@@ -33,7 +33,7 @@ def custom_logic(db, foi, df):
     if already_processed:
         # raise execption to continue with the next file
         # raise valuerror to abort process
-        logging.error("Duplicate File Found")
+        logging.error("\t\tDuplicate File Found")
         #raise Exception('Unexpected thing happend now rows updated')
         continue_processing = False
     return continue_processing

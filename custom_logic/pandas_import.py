@@ -135,7 +135,7 @@ def process(db, foi, df):
                 # cols = list(delta)
                 # if len(cols) > 1:
                 #    cols = str(list(delta))
-                logging.error("ERROR: \n---->{0}".format(e))
+                logging.error("ERROR: \n---->{0}".format(str(e)[: 200]))
                 error_msg = str(e)[:256]
 
                 # additional_info = (','.join(cols) + str(e))[:2000]

@@ -7,6 +7,7 @@ import socket
 import commands
 
 import datetime
+import time
 import pandas as pd
 import db_logging
 import db_table.db_table_def
@@ -138,7 +139,8 @@ class FilesOfInterest:
                  new_delimiter=None, dataset_name=None, redaction_file=None,
                  upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
                  post_action=None, pre_action=None, process_logic=None, project_name=None,
-                 table_name_extract=None, reprocess=True):
+                 table_name_extract=None, reprocess=True, yaml=None):
+        self.yaml = yaml
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -278,7 +280,7 @@ class DataFile:
             if files_of_interest.file_path is not None:
                 assert isinstance(files_of_interest, FilesOfInterest)
 
-                self.FilesOfInterest = self.walk_dir(files_of_interest,  db=db)
+                self.FilesOfInterest = self.walk_dir(files_of_interest,  db=db, yaml=files_of_interest.yaml)
 
                 self.FilesOfInterest.parent_file_id = self.meta_source_file_id
 
@@ -288,18 +290,31 @@ class DataFile:
                     # print(self.FilesOfInterest.file_list, "----Match-----",self.FilesOfInterest.regex)
                     self.insert_working_files(
                         db, self.FilesOfInterest, self.parent_file_id)
+                # extracting date from file_name and setting field in database
+                if files_of_interest.yaml is not None:
+                    extract_file_name = files_of_interest.yaml.get('extract_file_name_data', None)
+                    date_format = files_of_interest.yaml.get('format_extracted_date', None)
+
+                    if extract_file_name is not None and date_format is not None:
+                        sql_update_file_data_date = """update logging.meta_source_files set file_name_data=date(to_date(substring(file_name,'{extract_regex}') ,'{date_format_pattern}')) where file_name_data is null or file_name_data='0'"""
+
+                        db.execute_permit_execption(sql_update_file_data_date.format(
+                            extract_regex=extract_file_name, date_format_pattern=date_format))
+                        print(sql_update_file_data_date.format(
+                            extract_regex=extract_file_name, date_format_pattern=date_format))
+
                 # else:
-                    # print(self.FilesOfInterest.files_list,"<--------->",FilesOfInterest.files_list)
+                # print(self.FilesOfInterest.files_list,"<--------->",FilesOfInterest.files_list)
 
-                    # logging.debug(
-                    #    "No Files Found while walking source directory: file_type= {} \n file_path= '{}' \n REGEX= '{}'".format(
-                    # self.FilesOfInterest.file_type,
-                    # self.FilesOfInterest.file_path,
-                    # self.FilesOfInterest.regex))
+                # logging.debug(
+                #    "No Files Found while walking source directory: file_type= {} \n file_path= '{}' \n REGEX= '{}'".format(
+                # self.FilesOfInterest.file_type,
+                # self.FilesOfInterest.file_path,
+                # self.FilesOfInterest.regex))
 
-                    # function that will append the file id passed in to every row in a data file.
-                    # also adding fucntion to generate a checksum of that row
-                    # for later use
+                # function that will append the file id passed in to every row in a data file.
+                # also adding fucntion to generate a checksum of that row
+                # for later use
 
     def insert_into_file(self, foi, file_id, db=None):
         assert isinstance(foi, FilesOfInterest)
@@ -614,9 +629,10 @@ class DataFile:
                         and project_name in ({3})
                         ORDER BY
                         file_type asc,
-                        id asc,
-                        file_size asc,
-                        file_name_data desc
+                        
+                        file_name_data asc,
+                        file_path asc,
+                        file_name asc
                         limit 1)
                 """).format(db_table.db_table_def.MetaSourceFiles.DbSchema, self.host, self.curr_pid, project_list)
         t.engine.execute(sql)
@@ -663,7 +679,10 @@ class DataFile:
 
                 # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
                 logging.info(
-                    "->Processing file:\n\t{}".format(self.curr_src_working_file))
+                    "->Processing file_id: {}:\n\t{}".format(self.meta_source_file_id, self.curr_src_working_file))
+                logging.info(
+                    "->Path:\n\t{}".format(self.source_file_path))
+
                 self.set_work_file_status(
                     db, self.meta_source_file_id, 'Processing Started', '')
                 utils.process_logic(foi, db, self)

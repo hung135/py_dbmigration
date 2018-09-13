@@ -25,7 +25,8 @@ def inject_frame_work_data(sql, foi, df):
 def execute_sql(db, sql_list, foi, df):
     for id, sql in enumerate(sql_list):
         # print(sql['sql'], "executing sike", type(sql))
-        logging.info("\tSQL Step #: {}".format(id))
+        shorten_sql = (sql[:50] + "...") if len(sql) > 75 else sql
+        logging.info("\tSQL Step #: {} {}".format(id, shorten_sql))
         x = inject_frame_work_data(sql['sql'], foi, df)
         db.execute_permit_execption(x)
 
