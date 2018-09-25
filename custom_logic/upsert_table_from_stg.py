@@ -35,7 +35,7 @@ def custom_logic(db, foi, df):
     if len(primary_key) == 0:
         no_upsert_sql = """insert into {target_schema}.{table_name} ({column_list}) select {column_list} from {src_schema}.{table_name}"""
         col_list = db.get_columns(table_name, data_schema)
-        colums_str = ", ".join(col_list)
+        colums_str = "\"" + "\", \"".join(col_list) + "\""
         update_sql = no_upsert_sql.format(column_list=colums_str, target_schema=data_schema,
                                           src_schema=stage_schema, table_name=table_name)
         logging.info("\t\tNo Primary Key found, Loading directly:")

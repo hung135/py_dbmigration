@@ -1539,8 +1539,14 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None, fil
     sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {}  ON CONFLICT ({}) 
     DO UPDATE SET \n\t{}\n WHERE \n\tmd5(ROW({})::Text)\n!= md5(ROW({})::Text)
                     """.format(
-        schema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
-        source_schema + '.' + src_table, file_id, ','.join(primary_keys),  z, md5_src, md5_trg)
+						        schema + '.' + table_name,
+						        ',\n\t\t'.join(columns),
+						        ',\n\t\t'.join(columns),
+						        source_schema + '.' + src_table,
+						        ','.join(primary_keys),
+						        z,
+						        md5_src,
+						        md5_trg)
 
     return sql_template
 

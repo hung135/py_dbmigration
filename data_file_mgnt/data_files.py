@@ -280,7 +280,7 @@ class DataFile:
             if files_of_interest.file_path is not None:
                 assert isinstance(files_of_interest, FilesOfInterest)
 
-                self.FilesOfInterest = self.walk_dir(files_of_interest,  db=db, yaml=files_of_interest.yaml)
+                self.FilesOfInterest = self.walk_dir(files_of_interest,  db=db)
 
                 self.FilesOfInterest.parent_file_id = self.meta_source_file_id
 
@@ -290,18 +290,31 @@ class DataFile:
                     # print(self.FilesOfInterest.file_list, "----Match-----",self.FilesOfInterest.regex)
                     self.insert_working_files(
                         db, self.FilesOfInterest, self.parent_file_id)
-                # extracting date from file_name and setting field in database
-                if files_of_interest.yaml is not None:
-                    extract_file_name = files_of_interest.yaml.get('extract_file_name_data', None)
-                    date_format = files_of_interest.yaml.get('format_extracted_date', None)
+                # # extracting date from file_name and setting field in database
+                # if files_of_interest.yaml is not None:
+                #     extract_file_name = files_of_interest.yaml.get('extract_file_name_data', None)
+                #     project_name = files_of_interest.yaml.get('project_name', None)
+                #     date_format = files_of_interest.yaml.get('format_extracted_date', None)
+                #     self.extract_file_name_data(db, files_of_interest)
 
-                    if extract_file_name is not None and date_format is not None:
-                        sql_update_file_data_date = """update logging.meta_source_files set file_name_data=date(to_date(substring(file_name,'{extract_regex}') ,'{date_format_pattern}')) where file_name_data is null or file_name_data='0'"""
+                    # if extract_file_name is not None and date_format is not None:
+                    #     sql_update_file_data_date = """update logging.meta_source_files set file_name_data=date(to_date(substring(file_name,'{extract_regex}') ,'{date_format_pattern}'))
+                    #     where parent_file_id=0 and (file_name_data is null or file_name_data='0') and project_name='{project_name}'"""
+                    #     sql_update_file_data_date_children = """update logging.meta_source_files a
+                    #     set a.file_name_data=date(to_date(substring(parent.file_name,'{extract_regex}') ,'{date_format_pattern}'))
+                    #     from logging.meta_source_files parent
+                    # where a.parent_file_id=parent.id and a.parent_file_id>0 and
+                    # (a.file_name_data is null or a.file_name_data='0') and
+                    # a.project_name='{project_name}'"""
 
-                        db.execute_permit_execption(sql_update_file_data_date.format(
-                            extract_regex=extract_file_name, date_format_pattern=date_format))
-                        print(sql_update_file_data_date.format(
-                            extract_regex=extract_file_name, date_format_pattern=date_format))
+                    #     db.execute_permit_execption(sql_update_file_data_date.format(
+                    #         extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
+                    #     db.execute_permit_execption(sql_update_file_data_date_children.format(
+                    #         extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
+
+                    #     print(sql_update_file_data_date.format(
+                    #         extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
+                    #     time.sleep(5)
 
                 # else:
                 # print(self.FilesOfInterest.files_list,"<--------->",FilesOfInterest.files_list)
@@ -315,6 +328,28 @@ class DataFile:
                 # function that will append the file id passed in to every row in a data file.
                 # also adding fucntion to generate a checksum of that row
                 # for later use
+    def extract_file_name_data(self, db, files_of_interest):
+        if files_of_interest.yaml is not None:
+            extract_file_name = files_of_interest.yaml.get('extract_file_name_data', None)
+            project_name = files_of_interest.yaml.get('project_name', None)
+            date_format = files_of_interest.yaml.get('format_extracted_date', None)
+
+            if extract_file_name is not None and date_format is not None:
+                sql_update_file_data_date = """update logging.meta_source_files set file_name_data=date(to_date(substring(file_name,'{extract_regex}') ,'{date_format_pattern}'))
+                        where parent_file_id=0 and (file_name_data is null or file_name_data='0') and project_name='{project_name}'"""
+                sql_update_file_data_date_children = """update logging.meta_source_files a
+                        set a.file_name_data=date(to_date(substring(parent.file_name,'{extract_regex}') ,'{date_format_pattern}'))
+                        from logging.meta_source_files parent 
+                        where a.parent_file_id=parent.id and a.parent_file_id>0 and (a.file_name_data is null or a.file_name_data='0') and a.project_name='{project_name}'"""
+
+                db.execute_permit_execption(sql_update_file_data_date.format(
+                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
+                db.execute_permit_execption(sql_update_file_data_date_children.format(
+                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
+
+                print(sql_update_file_data_date.format(
+                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
+                # time.sleep(5)
 
     def insert_into_file(self, foi, file_id, db=None):
         assert isinstance(foi, FilesOfInterest)
@@ -609,6 +644,8 @@ class DataFile:
         assert isinstance(self.foi_list, list)
         self.reset_stat()
         x = set(self.project_list)
+        for foi in self.foi_list:
+            self.extract_file_name_data(db, foi)
         project_list = (','.join("'" + item + "'" for item in x))
 
         t = db_table.db_table_func.RecordKeeper(

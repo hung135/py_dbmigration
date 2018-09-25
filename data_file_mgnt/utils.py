@@ -1,6 +1,7 @@
 
 import db_utils
 import data_file_mgnt
+import migrate_utils
 import time
 import logging as log
 import re
@@ -38,7 +39,10 @@ def process_logic(foi, db, df):
     if foi.table_name_extract is not None:
         table_name_regex = re.compile(foi.table_name_extract)
         # table_name = table_name_regex.match(table_name))
-        foi.table_name = re.search(foi.table_name_extract, df.curr_src_working_file).group(1)
+        #print(foi.table_name_extract, df.curr_src_working_file)
+        foi.table_name = migrate_utils.static_func.convert_str_snake_case(re.search(foi.table_name_extract, df.curr_src_working_file).group(1))
+
+        #print(foi.table_name)
     set_sql = "update logging.meta_source_files set reprocess={} where id={}".format(foi.reprocess, df.meta_source_file_id)
     db.execute_permit_execption(set_sql)
 
