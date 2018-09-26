@@ -22,7 +22,7 @@ class MetaSourceFiles(MetaBase):
     project_name = Column(c.String(256), nullable=False)
     file_name = Column(c.String(256), nullable=False)
     file_path = Column(c.String(256), nullable=False)
-    process_date = Column(c.DateTime)
+ 
     file_name_data = Column(c.String(256), nullable=True)
     file_type = Column(c.String(256), nullable=True)
     file_process_state = Column(c.String(256), default='RAW')
