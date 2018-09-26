@@ -3,6 +3,7 @@ import tarfile
 import gzip
 import os
 import logging
+import shutil
 
 
 class object:
@@ -15,19 +16,23 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
     returns list of file names and path
     """
     dir_exist = os.path.isdir(writeable_path)
-    print("-------------------------", writeable_path)
+    #print("---------unzip into----------------", writeable_path)
 
     if skip_ifexists and dir_exist:
-        logging.debug("Extract Target Directory Exists and Skip=True:\nSkipping to Save Time")
+        logging.warning("Extract Target Directory Exists and Skip=True:\nSkipping to Save Time")
     else:
         zip_type = zip_type.lower()
-
+        # shutil.rmtree(writeable_path)
         if zip_type == 'zip':
-            logging.info("Extracting Zip File:{0}".format(source_file))
+
             file = zipfile.ZipFile(source_file)
             if skip is False:
+                logging.info("Extracting Zip File:{0}".format(source_file))
+
                 file.extractall(writeable_path)
                 file.close()
+            else:
+                print("Skippppppping cause skip is True----------")
             namelist = list(file.namelist())
         # print(source_file)
         if zip_type == 'tar':
@@ -50,7 +55,9 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
 # print writeable_path
 # cleanup_file(file.namelist(),writeable_path)
 
-    logging.debug("Files Extracted:{0}".format(list(namelist)))
+    #logging.debug("Files Extracted:{0}".format(list(namelist)))
+    import pprint
+    pprint.pprint(list(namelist))
 
     return list(namelist)
 

@@ -59,7 +59,7 @@ class Connection:
             self._conn = self._connect_oracle()
         self._cur = self._conn.cursor()
         self.url = None  # db url
-        logging.debug("DB Connected To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
+        logging.debug("DB Connected To: {0}:{1}:{2}:{3}".format(self._host, self._database_name, dbtype, self._userid))
 
         self._sqlalchemy_con = None
         self._sqlalchemy_meta = {}
@@ -224,14 +224,22 @@ class Connection:
 
         return [c.name for c in table.columns]
 
+    def has_record(self, sqlstring):
+        rs = self.query(sqlstring)
+        if len(rs) > 0:
+            return True
+        return False
+
     def query(self, sqlstring):
         """ runs query or procedure that returns record set
         """
+        logging.debug('Running Query: {}\n\t{}'.format(datetime.datetime.now().time(), sqlstring))
         if sqlstring.lower().startswith('select') or sqlstring.lower().startswith('call'):
             self._cur.execute(sqlstring)
             rows = self._cur.fetchall()
         else:
             raise Exception('Only Selects allowed')
+        logging.debug('Query Completed: {}'.format(datetime.datetime.now().time()))
         return rows
 
     def insert_table(self, table_name, column_list, values, onconflict=''):
@@ -244,16 +252,19 @@ class Connection:
         """ Default to commit after every transaction
                 Will check instance variable to decide if a commit is needed
         """
-        if self._commit:
-            self._cur.execute("commit")
+        self._cur.execute("COMMIT")
+
+    def rollback(self):
+        self._cur.execute("ROLLBACK")
 
     def vacuum(self, dbschema=None, table_name=None):
         """ Default to commit after every transaction
                 Will check instance variable to decide if a commit is needed
         """
-        assert isinstance(table_name, str)
+
+        self.commit()
         if table_name is None or table_name == '':
-            self._cur.execute("vacuum")
+            self._cur.execute("vacuum analyze")
             logging.debug("Vacuuming Schema")
         elif '.' in table_name:
             logging.debug("Vacuuming Table:{0}".format(table_name))
@@ -264,13 +275,28 @@ class Connection:
 
     def execute(self, sqlstring, debug=False):
 
-        logging.debug("Debug DB Execute: {0}".format(sqlstring))
+        logging.debug("Debug DB Execute: {}:{}:{} \n\t{} ".format(self._userid, self._host, self._database_name, sqlstring))
+        rowcount = 0
         try:
             self._cur.execute(sqlstring)
-            self._cur.execute("commit")
+            rowcount = self._cur.rowcount
             self.commit()
         except Exception as e:
             print("Error Execute SQL:{}".format(e))
+        logging.debug("DB Execute Completed: {}:{}:{}".format(self._userid, self._host, self._database_name))
+
+        return rowcount
+
+    def execute_permit_execption(self, sqlstring, debug=False):
+        # cloning previous method to avoid breaking things already in place
+        logging.debug("Debug DB Execute: {}:{}:{} \n\t{} ".format(self._userid, self._host, self._database_name, sqlstring))
+        rowcount = 0
+
+        self._cur.execute(sqlstring)
+        rowcount = self._cur.rowcount
+        self.commit()
+
+        return rowcount
 
     def drop_schema(self, schema):
         logging.debug(
@@ -332,6 +358,7 @@ class Connection:
         conn = psycopg2.connect(dbname=self._database_name, user=self._userid, password=self._password, port=self._port,
                                 host=self._host, application_name=self.appname)
         conn.set_client_encoding('UNICODE')
+        logging.debug('Connected to POSTGRES: {}:{}:{}'.format(self._host, self._database_name, self._userid))
         return conn
 
     def _connect_mssql(self, appname='py_dbutils'):
@@ -393,11 +420,8 @@ class Connection:
 
     def copy_to_csv(self, sqlstring, full_file_path, delimiter):
         # save the Current shell password
-        prev_password = os.environ['PGPASSWORD']
-        os.environ['PGPASSWORD'] = self._password
-        prev_pguser = os.environ['PGUSER']
-        os.environ['PGUSER'] = self._userid
-
+        self._save_environment_vars()
+        self._replace_environment_vars()
         # copy_command_client_side = """psql -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
         shell_command = """psql -c "\copy ({0}) to '{1}' WITH DELIMITER AS '{2}' CSV QUOTE AS '\\"' " """
 
@@ -407,15 +431,13 @@ class Connection:
 
         logging.info("Dumping Data to CSV STARTED:{0}".format(full_file_path))
         logging.debug("SQL:{0}".format(sqlstring))
-        logging.debug("Command string: {}".format(command_text))
-        txt_out = commands.getstatusoutput(command_text)
+        logging.debug("Command string: \nt\t{}".format(command_text))
+        error_code, txt_out = commands.getstatusoutput(command_text)
         logging.debug("Dumping Data to CSV COMPLETED:{0}".format(txt_out))
-        # put the password back
-        os.environ['PGPASSWORD'] = prev_password
-        os.environ['PGUSER'] = prev_pguser
-        if txt_out[0] > 0:
+        self._restore_environment_vars()
+        if error_code > 0:
             raise Exception
-        i = txt_out[1].split()
+        i = txt_out.split()
         logging.info("Total Rows Dumped: {0}".format(i[1]))
         return i[1]
 
@@ -430,12 +452,18 @@ class Connection:
         result_set = self.query(sql)
         return [r[0] for r in result_set]
 
+    def get_view_list_via_query(self, dbschema):
+        sql = """SELECT table_name FROM information_schema.tables a
+            WHERE table_schema='{}' and table_type='VIEW'""".format(dbschema)
+        result_set = self.query(sql)
+        return [r[0] for r in result_set]
+
     # @migrate_utils.static_func.timer
     def get_all_columns_schema(self, dbschema, table_name):
         # print("----- wuh")
-        sql = """SELECT table_name,column_name,upper(data_type) as type, 
+        sql = """SELECT table_name,column_name,upper(data_type) as type,
         is_identity,
-        character_maximum_length 
+        character_maximum_length
         FROM information_schema.columns
         WHERE table_schema = '{}'
         AND table_name   = '{}'
@@ -518,12 +546,19 @@ class Connection:
         x = 0
         if self.dbtype == 'POSTGRES':
             self.vacuum(table_name)
-            row = self.query("""select n_live_tup 
-                    from pg_stat_user_tables 
+            row = self.query("""select n_live_tup
+                    from pg_stat_user_tables
                     where schemaname='{}' and relname='{}'""".format(schema, table_name))
             x = row[0][0]
 
         return x
+
+    def get_a_value(self, sql):
+
+        x = self.query(sql)
+        value = x[0][0]
+
+        return value
 
     def get_tables_row_count(self, schema=None):
         if schema is None:
@@ -536,7 +571,7 @@ class Connection:
             # print(n, t.name)
 
             # print(type(n), n, dir(t))
-            x = self.query("select count(*) from {}".format(t.key))
+            x = self.query("select count(1) from {}".format(t.key))
             rowcount = x[0][0]
             # print(type(rowcount),dir(rowcount))
             d = dict({"db": self._database_name, "schema": self.dbschema, "table_name": t.name, "row_counts": rowcount})
@@ -554,8 +589,9 @@ class Connection:
             AND    i.indisprimary;""".format(table_name)
         result = self.query(sql)
         field_list = []
-        for r in result:
-            field_name, data_type = r
+        for row in result:
+            # convert tuple to variable when having atleast 2 columns
+            field_name, data_type = row
             field_list.append(field_name)
         return field_list
 
@@ -582,10 +618,43 @@ class Connection:
         z = df.to_sql(table_name, conn, schema=self.dbschema, index=False, if_exists='append', chunksize=None,
                       dtype=None)
         return z
+    # certain commans requires the environment variables for the session
+    # we need to save that and replace with our current and put it back after we are done
+
+    def _save_environment_vars(self):
+        if self._dbtype == 'POSTGRES':
+            self._pg_password = os.environ['PGPASSWORD']
+            self._pg_userid = os.environ['PGUSER']
+            self._pg_sslmode = os.environ['PGSSLMODE']
+            self._pg_host = os.environ['PGHOST']
+            self._pg_port = os.environ['PGPORT']
+            self._pg_database_name = os.environ['PGDATABASE']
+
+    def _restore_environment_vars(self):
+        if self._dbtype == 'POSTGRES':
+            os.environ['PGPASSWORD'] = self._pg_password
+            os.environ['PGUSER'] = self._pg_userid
+            os.environ['PGSSLMODE'] = self._pg_sslmode
+            os.environ['PGHOST'] = self._pg_host
+            os.environ['PGPORT'] = self._pg_port
+            os.environ['PGDATABASE'] = self._pg_database_name
+
+    def _replace_environment_vars(self):
+        if self._dbtype == 'POSTGRES':
+            os.environ['PGPASSWORD'] = self._password
+            os.environ['PGUSER'] = self._userid
+            os.environ['PGSSLMODE'] = self._sslmode
+            os.environ['PGHOST'] = self._host
+            os.environ['PGPORT'] = self._port
+            os.environ['PGDATABASE'] = self._database_name
 
     # simple import using client side
     # this assumes the csv has data exactly in the same structure as the target table
+
     def import_file_client_side(self, full_file_path, table_name_fqn, file_delimiter):
+
+        self._save_environment_vars()
+        self._replace_environment_vars()
         copy_command_client_side = """psql --dbname={3} --host={4} -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
 
         data_file = full_file_path
@@ -595,16 +664,14 @@ class Connection:
         command_text = copy_command_client_side.format(table_name_fqn, data_file, file_delimiter, self._database_name,
                                                        self._host)
         logging.info("Copy Command STARTED:{0} Time:{1}".format(table_name_fqn, t))
-        txt_out = commands.getstatusoutput(command_text)
+        error_code, txt_out = commands.getstatusoutput(command_text)
         logging.debug("Copy Command Completed:{0} Time:{1}".format(txt_out, datetime.datetime.now()))
-        logging.info("Total Time:{0} ".format(datetime.datetime.now() - t))
-
-        if txt_out[0] > 0:
+        logging.debug("Total Time:{0} ".format(datetime.datetime.now() - t))
+        self._restore_environment_vars()
+        if error_code > 0:
             raise Exception
-        else:
-            pass
-            # self.vacuum(table_name=table_name_fqn)
 
-        i = txt_out[1].split()
+        i = txt_out.split()
         logging.info("Total Rows Loaded: {0}".format(i[1]))
+
         return i[1]

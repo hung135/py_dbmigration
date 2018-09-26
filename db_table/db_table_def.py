@@ -19,6 +19,7 @@ class MetaSourceFiles(MetaBase):
 
     __table_args__ = (UniqueConstraint('file_name', 'file_path', name='uq_uniq_files'), {"schema": DbSchema})
     id = Column(c.Integer, primary_key=True)
+    project_name = Column(c.String(256), nullable=False)
     file_name = Column(c.String(256), nullable=False)
     file_path = Column(c.String(256), nullable=False)
     process_date = Column(c.DateTime)
@@ -38,35 +39,41 @@ class MetaSourceFiles(MetaBase):
     last_error_msg = Column(c.String(2000), nullable=True)
     database_table = Column(c.String(256), nullable=True)
     parent_file_id = Column(c.Integer, default=0)
-
-
+    crc = Column(c.String(32), nullable=True)
+    upsert_time = Column(c.DateTime)
+    publish_time = Column(c.DateTime)
+    upsert_function_name = Column(c.String(256), nullable=True)
+    reprocess = Column(c.Boolean, default=True)
+    process_msg_trail = Column(c.String(2000), nullable=True)
 # table to store regex for data files to be imported into a table
-class TableFilesRegex(MetaBase):
-    DbSchema = 'logging'
-    __tablename__ = 'table_file_regex'
-    __table_args__ = {"schema": DbSchema}
-    regex = Column(c.String(256), primary_key=True, nullable=False)
-    delimiter = Column(c.String(16), nullable=False)
-    db_schema = Column(c.String(256), nullable=False)
-    table_name = Column(c.String(256), nullable=False)
-    last_update_time = Column(c.DateTime)
-    append_crc = Column(c.Boolean, default=True)
-    append_file_id = Column(c.Boolean, default=True)
-    active = Column(c.Boolean, default=True)
+
+
+# class TableFilesRegex(MetaBase):
+#     DbSchema = 'logging'
+#     __tablename__ = 'table_file_regex'
+#     __table_args__ = {"schema": DbSchema}
+#     regex = Column(c.String(256), primary_key=True, nullable=False)
+#     delimiter = Column(c.String(16), nullable=False)
+#     db_schema = Column(c.String(256), nullable=False)
+#     table_name = Column(c.String(256), nullable=False)
+#     last_update_time = Column(c.DateTime)
+#     append_crc = Column(c.Boolean, default=True)
+#     append_file_id = Column(c.Boolean, default=True)
+#     active = Column(c.Boolean, default=True)
 
 
 # table to store regex for directories and data files to search inorder to inventory into meta_source_files
-class DirFilesRegex(MetaBase):
-    DbSchema = 'logging'
-    __tablename__ = 'dir_file_regex'
-    __table_args__ = {"schema": DbSchema}
-    regex = Column(c.String(256), primary_key=True, nullable=False)
-    # to be used to extract data from the directory or file name
-    file_path_data_regex = Column(c.String(256), primary_key=True, nullable=False)
-    directory = Column(c.String(512), nullable=False)
-    table_name = Column(c.String(256), nullable=False)
-    last_update_time = Column(c.DateTime)
-    active = Column(c.Boolean, default=True)
+# class DirFilesRegex(MetaBase):
+#     DbSchema = 'logging'
+#     __tablename__ = 'dir_file_regex'
+#     __table_args__ = {"schema": DbSchema}
+#     regex = Column(c.String(256), primary_key=True, nullable=False)
+#     # to be used to extract data from the directory or file name
+#     file_path_data_regex = Column(c.String(256), primary_key=True, nullable=False)
+#     directory = Column(c.String(512), nullable=False)
+#     table_name = Column(c.String(256), nullable=False)
+#     last_update_time = Column(c.DateTime)
+#     active = Column(c.Boolean, default=True)
 
 
 class PublishLog(MetaBase):
