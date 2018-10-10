@@ -36,6 +36,8 @@ def execute_sql(db, sql_list, foi, df):
 
 
 def process_logic(foi, db, df):
+    #store result of action you do in this variable
+    df.load_status_msg = None
     if foi.table_name_extract is not None:
         table_name_regex = re.compile(foi.table_name_extract)
         # table_name = table_name_regex.match(table_name))
@@ -78,7 +80,7 @@ def process_logic(foi, db, df):
 
         if not continue_next_process:
             logging.error('\t->Abort Processing for this file Because of Error: {}'.format(df.curr_src_working_file))
-            df.set_work_file_status(db, df.meta_source_file_id, 'FAILED', custom_logic)
+            df.set_work_file_status(db, df.meta_source_file_id, 'FAILED', custom_logic+'\n'+str(df.load_status_msg or ''))
             break
 
     # if everything was kosher else file should have been tailed 'FAILED'

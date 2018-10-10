@@ -45,6 +45,7 @@ class MetaSourceFiles(MetaBase):
     upsert_function_name = Column(c.String(256), nullable=True)
     reprocess = Column(c.Boolean, default=True)
     process_msg_trail = Column(c.String(2000), nullable=True)
+    duplicate_file = Column(c.Boolean,default=False)
 # table to store regex for data files to be imported into a table
 
 

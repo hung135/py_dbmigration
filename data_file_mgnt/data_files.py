@@ -139,8 +139,9 @@ class FilesOfInterest:
                  new_delimiter=None, dataset_name=None, redaction_file=None,
                  upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
                  post_action=None, pre_action=None, process_logic=None, project_name=None,
-                 table_name_extract=None, reprocess=True, yaml=None):
+                 table_name_extract=None, reprocess=True, yaml=None,mapping=None):
         self.yaml = yaml
+        self.mapping = mapping
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -243,6 +244,7 @@ class DataFile:
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
         assert isinstance(foi_list[0], FilesOfInterest)
+        self.load_status_msg = None
         self.parent_file_id = parent_file_id
         self.db = db
         self.working_path = os.path.abspath(working_path)
@@ -347,8 +349,8 @@ class DataFile:
                 db.execute_permit_execption(sql_update_file_data_date_children.format(
                     extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
 
-                print(sql_update_file_data_date.format(
-                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
+                #print(sql_update_file_data_date.format(
+                #    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
                 # time.sleep(5)
 
     def insert_into_file(self, foi, file_id, db=None):
@@ -483,6 +485,7 @@ class DataFile:
                 ,file_process_state='RAW'
                 ,reporcess = True
                 ,total_rows=0
+                ,duplicate_file=False
                 WHERE  1=1
                 AND {}
                 """.format(where_clause))
@@ -495,6 +498,7 @@ class DataFile:
                 ,current_worker_host_pid=null
                 ,last_error_msg=null
                 ,file_process_state='RAW'
+                ,duplicate_file=False
                 WHERE  upper(file_process_state)='FAILED'
                 AND reprocess = True
                 AND {}
@@ -508,6 +512,7 @@ class DataFile:
                 ,current_worker_host_pid=null
                 ,last_error_msg=null
                 ,file_process_state='RAW'
+                ,duplicate_file=False
                 WHERE  upper(file_process_state)='RAW'
                 AND file_type in ('CSV','DATA')
                 AND {}
@@ -521,6 +526,7 @@ class DataFile:
                 ,current_worker_host_pid=null
                 ,last_error_msg=null
                 ,file_process_state='RAW'
+                ,duplicate_file=False
                 WHERE   file_type in ('CSV','DATA')
                 AND {}
                 """.format(where_clause))
@@ -665,9 +671,11 @@ class DataFile:
                         and reprocess=True
                         and project_name in ({3})
                         ORDER BY
-                        file_type asc,
+
+
                         
                         file_name_data asc,
+                        parent_file_id asc,
                         file_path asc,
                         file_name asc
                         limit 1)
