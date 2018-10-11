@@ -20,16 +20,24 @@ def inject_frame_work_data(sql, foi, df):
     x = x.replace("{schema_name}", foi.schema_name)
     x = x.replace("{table_name}", foi.table_name)
 
+    x = x.replace("{column_list}",','.join(foi.column_list))
+
     return x
 
 
 def execute_sql(db, sql_list, foi, df):
+
     for id, sql in enumerate(sql_list):
         # print(sql['sql'], "executing sike", type(sql))
-        shorten_sql = (sql[:50] + "...") if len(sql) > 75 else sql
+
+        modified_sql = inject_frame_work_data(sql['sql'], foi, df)
+        shorten_sql = (modified_sql[:50] + "...") if len(modified_sql) > 75 else modified_sql
         logging.info("\tSQL Step #: {} {}".format(id, shorten_sql))
-        x = inject_frame_work_data(sql['sql'], foi, df)
-        db.execute_permit_execption(x)
+
+        t = time.time()
+        db.execute_permit_execption(modified_sql)
+        time_delta = round(time.time() - t,3)
+        logging.info("\t\tExecution Time: {}sec".format(time_delta))
 
 # pull the list of modules configured in the yaml file under process_logic
 # it will execute each of the logic on this file in the order it was entered in the yaml file
@@ -73,7 +81,10 @@ def process_logic(foi, db, df):
             logic_name, df.meta_source_file_id)
         db.execute_permit_execption(sql_set_process_trail)
         try:
+            t = time.time()
             continue_next_process = imp.process(db, foi, df)
+            time_delta = round(time.time() - t,3)
+            logging.info("\t\t\tExecution Time: {}sec".format(time_delta))
         except ValueError as e:
             df.set_work_file_status(db, df.meta_source_file_id, custom_logic, '{}: {}'.format(custom_logic, e))
         logging.debug('\t->Dynamic Module Ended: {}'.format(custom_logic))

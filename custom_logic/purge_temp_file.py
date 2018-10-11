@@ -28,15 +28,15 @@ def custom_logic(db, foi, df):
 
     parent_file_id=db.query(check_finish_sql.format(df.meta_source_file_id))
  
-    print(parent_file_id)
+    #print(parent_file_id)
     for id,file_name,file_path in parent_file_id:
             delete_path=file_path.split(file_name)
             delete_path=os.path.join(delete_path[0],file_name)
 
             #hardcoded to project accidental deletion of source data directory
             if('/home/dtwork/dw/file_transfers'  in delete_path):
-                print("Deleting....temp files",delete_path)
- 
+                #print("Deleting....temp files",delete_path)
+                logging.debug("All files imported removing Tempfiles: \n\t{}".format(delete_path))
                 shutil.rmtree(delete_path)
 
  

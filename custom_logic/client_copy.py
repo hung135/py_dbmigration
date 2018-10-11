@@ -45,10 +45,11 @@ def process(db, foi, df):
     names = foi.header_list_returned or foi.column_list
     cols = foi.column_list or db.get_columns(table_name, target_schema)
     encoding = foi.encoding
-
+    
     column_count=len(cols)
      
     #count_column_csv(full_file_path, header_row_location=0, sample_size=200, delimiter=','):
+    logging.debug("Delimiter: {}".format(foi.file_delimiter))
     file_column_count=migrate_utils.static_func.count_column_csv(data_file,header,10,foi.file_delimiter)
 
 

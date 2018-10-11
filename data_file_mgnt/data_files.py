@@ -331,11 +331,21 @@ class DataFile:
                 # also adding fucntion to generate a checksum of that row
                 # for later use
     def extract_file_name_data(self, db, files_of_interest):
+         
         if files_of_interest.yaml is not None:
             extract_file_name = files_of_interest.yaml.get('extract_file_name_data', None)
             project_name = files_of_interest.yaml.get('project_name', None)
             date_format = files_of_interest.yaml.get('format_extracted_date', None)
-
+             
+            if extract_file_name is not None and date_format is None:
+                sql_update_file_data_date = """update logging.meta_source_files 
+                        set file_name_data= substring(file_name,'{extract_regex}')  
+                        where parent_file_id=0 and (file_name_data is null or file_name_data='0') 
+                        and project_name='{project_name}'"""
+                sql_update_file_data_date_children = """update logging.meta_source_files a
+                        set a.file_name_data= substring(parent.file_name,'{extract_regex}')  
+                        from logging.meta_source_files parent 
+                        where a.parent_file_id=parent.id and a.parent_file_id>0 and (a.file_name_data is null or a.file_name_data='0') and a.project_name='{project_name}'"""
             if extract_file_name is not None and date_format is not None:
                 sql_update_file_data_date = """update logging.meta_source_files set file_name_data=date(to_date(substring(file_name,'{extract_regex}') ,'{date_format_pattern}'))
                         where parent_file_id=0 and (file_name_data is null or file_name_data='0') and project_name='{project_name}'"""
@@ -344,6 +354,8 @@ class DataFile:
                         from logging.meta_source_files parent 
                         where a.parent_file_id=parent.id and a.parent_file_id>0 and (a.file_name_data is null or a.file_name_data='0') and a.project_name='{project_name}'"""
 
+            if extract_file_name is not None:
+ 
                 db.execute_permit_execption(sql_update_file_data_date.format(
                     extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
                 db.execute_permit_execption(sql_update_file_data_date_children.format(
