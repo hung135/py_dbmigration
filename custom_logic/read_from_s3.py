@@ -10,6 +10,7 @@ import pandas as pd
 import boto3
 import gc
 
+
 rx = re.compile(r'.*un.*.zip')
 rx_sas = re.compile(r'.*sas7bdat')
 
@@ -27,7 +28,7 @@ def genbytes(lines):
 
 for obj in bucket.objects.all() :
     key = obj.key
-    if rx.search(key) and 400<=(obj.size >>20) <= 3000:
+    if rx.search(key) and 6 <=(obj.size >>20) <= 7  :
 
 
         gc.collect()
@@ -40,26 +41,24 @@ for obj in bucket.objects.all() :
 
             archive = zipfile.ZipFile(fin)
 
-
-        #archive = zipfile.ZipFile(io.BytesIO(genbytes(x)))
-
-
-
-
             #body = obj.get()['Body'].read()
             #print(body)
             print("xxx")
             for f in archive.namelist():
                 if rx_sas.search(f):
 
-                    print(f)
+                    print("fileName",f)
 
-                    xfile = io.BytesIO(archive.read(f))
-                    print("yyy")
-                    df = pd.read_sas(xfile, format='sas7bdat', encoding='iso-8859-1', chunksize=1, iterator=True)
-                    # print(list(df),"xxxxxx")
-                    print("zzz")
-                    for chunk in df:
-                        #print((chunk.columns.values))
-                        print("column_count",len(chunk.columns.values) )
-                        break
+                    #xfile = io.BytesIO(archive.read(f))
+                    #with smart_open(fin, 'rb') as xfile:
+                    with io.BufferedReader(archive.open(f,'r')) as xfile:
+
+                        print("yyy",type(xfile) )
+                        x = io.BytesIO(xfile.read() )
+                        df = pd.read_sas(x, format='sas7bdat', encoding='iso-8859-1', chunksize=1, iterator=True)
+                        # print(list(df),"xxxxxx")
+                        print("zzz")
+                        for chunk in df:
+                            #print((chunk.columns.values))
+                            print("column_count",len(chunk.columns.values) )
+                            break
