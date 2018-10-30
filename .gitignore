@@ -2,4 +2,5 @@
 env_vars.rc
 .py/
 *.pyc
-
+.pyenv/
+settings.json
