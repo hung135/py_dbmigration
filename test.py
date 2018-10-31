@@ -13,7 +13,7 @@ logging.setLevel(log.DEBUG)
 
 class Test_db_utils_postgres(unittest.TestCase):
     HOST = 'localhost'
-    HOST = '192.168.99.100'
+    HOST = 'localhost'
     DATABASE = 'postgres'
     USERID = 'postgres'
     DBTYPE = 'POSTGRES'
