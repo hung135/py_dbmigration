@@ -27,7 +27,7 @@ class Connection:
     # _sqlalchemy_con = None this needs to be instance
     # _sqlalchemy_meta = None this needs to be instance
 
-    def __init__(self, dbschema, commit=True, password=None, userid=None, host=None, port=None, database=None,
+    def __init__(self, dbschema, commit=True, password=None, userid=None, host='localhost', port=None, database=None,
                  dbtype='POSTGRES', appname='py_dbutils'):
         """ Default to commit after every transaction
         """

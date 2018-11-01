@@ -6,7 +6,7 @@ from data_file_mgnt.data_files import *
 from migrate_utils import *
 import db_table
 import logging as log
-import boto3
+#import boto3
 
 logging = log.getLogger()
 logging.setLevel(log.DEBUG)
@@ -36,7 +36,7 @@ class Test_db_utils_postgres(unittest.TestCase):
             print(row)
     def test_02(self):
    
-        ec2client = boto3.client('ec2')
+        ec2client = boto.client('ec2')
         response = ec2client.describe_instances()
         for reservation in response["Reservations"]:
             for instance in reservation["Instances"]:
