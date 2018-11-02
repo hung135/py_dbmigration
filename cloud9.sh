@@ -19,7 +19,7 @@ docker pull dpage/pgadmin4
 docker run \
 -p 8080:80 \
 --name docker-pgadmin4 \
--e "PGADMIN_DEFAULT_EMAIL=admin@localhost.com" \
+-e "PGADMIN_DEFAULT_EMAIL=admin" \
 -e "PGADMIN_DEFAULT_PASSWORD=docker" \
 -e "DEFAULT_USER=postgres" \
 --link docker-postgres:postgres \
