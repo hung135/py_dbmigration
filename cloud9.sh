@@ -4,7 +4,7 @@
 #source .env/bin/activate
 #pip install -r requirements.txt
 sudo yum install git-tools -y
-git config --global credential.helper cache
+git config --global credential.helper store
 sudo pip install -r requirements.txt
 docker pull postgres
 docker stop docker-postgres || true && docker rm docker-postgres -f || true
