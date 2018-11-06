@@ -10,6 +10,7 @@ docker pull postgres
 docker pull nginx
 docker pull dpage/pgadmin4
 
+#clean out stale containers
 docker stop $(docker ps -aq)
 docker rm $(docker ps -a -q)
 #docker system prune -a -f
@@ -18,15 +19,7 @@ docker run --name docker-postgres -p 5432:5432 -e POSTGRES_PASSWORD=docker -d po
 
 #pgadmin setup
 /etc/pki/tls/certs/make-dummy-cert dummy_cert.txt
-
-
-# docker run \
-# --name docker-pgadmin4 \
-# -e "PGADMIN_DEFAULT_EMAIL=admin" \
-# -e "PGADMIN_DEFAULT_PASSWORD=docker" \
-# -e "DEFAULT_USER=postgres" \
-# --link docker-postgres:docker-postgres \
-# -d dpage/pgadmin4 
+ 
 #documentation
 #https://docs.c9.io/docs/run-an-application
 head -n 29 dummy_cert.txt>certificate.key

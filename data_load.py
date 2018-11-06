@@ -170,7 +170,7 @@ if __name__ == '__main__':
         # db.truncate_table("logging", "meta_source_files")
 
         df = dfm.data_files.DataFile(writable_path, db, datafiles)
-
+        df.init_db()
         df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
 
         df.do_work(db, cleanup=False,    skip_ifexists=False)

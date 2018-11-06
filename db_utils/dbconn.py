@@ -225,7 +225,12 @@ class Connection:
         return [c.name for c in table.columns]
 
     def has_record(self, sqlstring):
-        rs = self.query(sqlstring)
+        rs=None
+        try:
+            rs = self.query(sqlstring)
+        except Exception as e:
+            logging.error("error in dbconn.has_record: {}".format(sqlstring))
+            
         if len(rs) > 0:
             return True
         return False

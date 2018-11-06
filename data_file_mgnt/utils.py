@@ -86,8 +86,10 @@ def process_logic(foi, db, df):
             continue_next_process = imp.process(db, foi, df)
             time_delta = round(time.time() - t,3)
             logging.info("\t\t\tExecution Time: {}sec".format(time_delta))
-        except ValueError as e:
+ 
+        except Exception as e:
             df.set_work_file_status(db, df.meta_source_file_id, custom_logic, '{}: {}'.format(custom_logic, e))
+            
         logging.debug('\t->Dynamic Module Ended: {}'.format(custom_logic))
 
         if not continue_next_process:
