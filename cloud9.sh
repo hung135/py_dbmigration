@@ -43,7 +43,7 @@ docker run  --name docker-pgadmin4 \
 
 docker run --name docker-nginx \
 -p 8080:80 \
--v /home/ec2-user/environment/nginx.conf:/etc/nginx/nginx.conf:ro \
+-v $(pwd)/nginx.conf:/etc/nginx/nginx.conf:ro \
 --link docker-pgadmin4:docker-pgadmin4 \
 -d nginx
  
