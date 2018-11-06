@@ -779,7 +779,7 @@ class DataFile:
     # When it is done with the processing of the record it we stamp the process_end_dtm
     # signifying the file has been processed
 
-    def do_work(self, db, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False):
+    def do_work(self, db, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False,do_once=False):
 
         # iterate over each file in the logging.meta_source_files table
         # get work will lock 1 file and store the id into meta_source_file_id
@@ -808,3 +808,6 @@ class DataFile:
 
             if cleanup:
                 self.cleanup_files()  # import_files(files,loan_acquisition)
+            if do_once:
+                
+                break
