@@ -25,21 +25,26 @@ check_finish_sql ="select p.id,p.file_name,c.file_path from logging.meta_source_
 def custom_logic(db, foi, df):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     continue_processing = True
+    try:
+        
+        if not 's3://' in df.source_file_path:
+            parent_file_id=db.query(check_finish_sql.format(df.meta_source_file_id))
+        #print(parent_file_id)
+            for id,file_name,file_path in parent_file_id:
+                    delete_path=file_path.split(file_name)
+                    delete_path=os.path.join(delete_path[0],file_name)
+        
+                    #hardcoded to project accidental deletion of source data directory
+                    if('/home/dtwork/dw/file_transfers'  in delete_path):
+                        #print("Deleting....temp files",delete_path)
+                        logging.debug("All files imported removing Tempfiles: \n\t{}".format(delete_path))
+                        shutil.rmtree(delete_path)
+        else:
+            logging.info("Will not delete from s3")
 
-    parent_file_id=db.query(check_finish_sql.format(df.meta_source_file_id))
- 
-    #print(parent_file_id)
-    for id,file_name,file_path in parent_file_id:
-            delete_path=file_path.split(file_name)
-            delete_path=os.path.join(delete_path[0],file_name)
-
-            #hardcoded to project accidental deletion of source data directory
-            if('/home/dtwork/dw/file_transfers'  in delete_path):
-                #print("Deleting....temp files",delete_path)
-                logging.debug("All files imported removing Tempfiles: \n\t{}".format(delete_path))
-                shutil.rmtree(delete_path)
-
- 
+    except Exception as e:
+        logging.error("Error in purge_temp_file : {}".format(e))
+        continue_processing=False
     return continue_processing
 
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
