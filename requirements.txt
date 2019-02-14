@@ -16,3 +16,4 @@ RandomWords
 nose_parameterized
 statistics
 pyyaml
+#boto3

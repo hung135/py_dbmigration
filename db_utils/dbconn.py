@@ -27,7 +27,7 @@ class Connection:
     # _sqlalchemy_con = None this needs to be instance
     # _sqlalchemy_meta = None this needs to be instance
 
-    def __init__(self, dbschema, commit=True, password=None, userid=None, host=None, port=None, database=None,
+    def __init__(self, dbschema=None, commit=True, password=None, userid=None, host=None, port=None, database=None,
                  dbtype='POSTGRES', appname='py_dbutils'):
         """ Default to commit after every transaction
         """
@@ -163,6 +163,60 @@ class Connection:
                 out.writerow(result.keys())
                 out.writerow(result)
 
+    def get_schema_col_stats(self, schema=None):
+        v_schema = self.dbschema if schema is None else schema
+        sql = """select  schemaname,tablename,attname as columnname,n_distinct , reltuples::bigint
+            ,( (select   distinct(True)  from pg_index ix,pg_attribute ab where  ab.attnum = ANY(ix.indkey)
+            and ab.attrelid = a.oid
+            and ix.indrelid=a.oid 
+            and ab.attname=p.attname    )   )as is_index
+            from pg_stats p,
+            pg_class a
+            where 
+            a.oid=concat(schemaname,'.',tablename)::regclass and 
+            a.relkind='r' and 
+            a.relname=tablename and
+            schemaname='bk_mpo' and 
+            n_distinct>0 order by 5,4;
+            """.format(v_schema)
+        return self.query(sql)
+
+    def get_schema_index(self, schema=None):
+        import pprint
+
+        v_schema = self.dbschema if schema is None else schema
+
+        return (self.query("""select
+    ns.nspname,
+    t.relname as table_name,
+    i.relname as index_name,
+    array_to_string(array_agg(  a.attname), ', ') as column_names,
+    ix.indisprimary as is_primarykey
+from
+    pg_namespace ns,
+    pg_class t,
+    pg_class i,
+    pg_index ix,
+    pg_attribute a
+where
+    ns.oid=t.relnamespace
+    and t.oid = ix.indrelid
+    and i.oid = ix.indexrelid
+    and a.attrelid = t.oid
+    and a.attnum = ANY(ix.indkey)
+    and t.relkind = 'r'
+    -- and t.relname like 'test%'
+    and nspname='{}'
+group by
+    t.relname,
+    i.relname,
+    ns.nspname,
+
+    ix.indisprimary
+order by
+    t.relname,
+    i.relname;""".format(v_schema)))
+
     def print_tables(self, table_list):
         import sqlalchemy
 
@@ -178,6 +232,146 @@ class Connection:
             except:
                 # print("Cannot Find Table: {}".format(t))
                 logging.Error("Cannot Find Table: {}".format(t))
+
+    def get_create_table(self, table_name):
+        sql = """SELECT                                          
+  'CREATE TABLE ' || relname || E'\n(\n' ||
+  array_to_string(
+    array_agg(
+      '    ' || column_name || ' ' ||  type || ' '|| not_null
+    )
+    , E',\n'
+  ) || E'\n);\n'
+from
+(
+  SELECT 
+    c.relname, a.attname AS column_name,
+    pg_catalog.format_type(a.atttypid, a.atttypmod) as type,
+    case 
+      when a.attnotnull
+    then 'NOT NULL' 
+    else 'NULL' 
+    END as not_null 
+  FROM pg_class c,
+   pg_attribute a,
+   pg_type t
+   WHERE c.relname = {table_name}
+   AND a.attnum > 0
+   AND a.attrelid = c.oid
+   AND a.atttypid = t.oid
+ ORDER BY a.attnum
+) as tabledefinition
+group by relname;""".format(table_name)
+        create_sql = self.get_a_value(sql)
+        return create_sql
+
+    def get_create_table_via_dump(self, table_name, target_name=None, gen_pk=True, gen_index=True, gen_fk=True):
+        v_source_schema = table_name.split('.')[0]
+        v_target_schema = target_name.split('.')[0]
+        if target_name is None:
+            target_name = table_name
+
+        self._save_environment_vars()
+        self._replace_environment_vars()
+
+        cli = """pg_dump -st {} {}""".format(table_name, v_source_schema)
+
+        sql = ''
+
+        bash_error_code, txt_out = commands.getstatusoutput(cli)
+        lines = txt_out.split('\n')
+        line_list = []
+        logging.debug(txt_out)
+        if len(lines) < 3:
+            raise Exception(txt_out)
+        for i, line in enumerate(lines):
+            if not (line.startswith('--') or line == ''):
+                line_list.append(line)
+        lines2 = '\n'.join(line_list)
+        lines2 = lines2.split(';\n')
+        for i, line in enumerate(lines2):
+            print(i, line)
+
+        self._restore_environment_vars()
+        if v_index_sql == '':
+            v_index_sql = None
+        return sql, v_index_sql
+
+    def get_create_table_cli(self, table_name, target_name=None, gen_pk=True, gen_index=True, gen_fk=True):
+        v_source_schema = table_name.split('.')[0]
+        v_target_schema = target_name.split('.')[0]
+        if target_name is None:
+            target_name = table_name
+
+        self._save_environment_vars()
+        self._replace_environment_vars()
+
+        cli = """psql -c"\d+ {}" """.format(table_name)
+        #cli = """psql {6} -c "\copy {0} FROM '{1}' with (format csv,{4} FORCE_NULL ({3}),delimiter '{2}', ENCODING '{5}')" """
+
+        sql = ''
+        v_index_sql = ''
+        bash_error_code, txt_out = commands.getstatusoutput(cli)
+        lines = txt_out.split('\n')
+        v_index = False
+        logging.debug(txt_out)
+        if len(lines) < 3:
+            raise Exception(txt_out)
+        for i, line in enumerate(lines):
+            if i == 0:
+                sql += "Create table {}(".format(target_name)
+            elif (line == 'Indexes:' or line == 'Foreign-key constraints:' or line.startswith('Options:')
+                    or line.startswith('Referenced by:')):
+                if not v_index:
+                    sql += '); '
+                v_index = True
+            elif i > 2 and not v_index and len(line) > 1:
+                x = line.split('|')
+                v_default = ''
+                if len(x[3]) > 1:
+                    v_default = ' ' + x[3]
+                if i == 3:
+                    sql += '\n' + x[0] + ' ' + x[1] + ' ' + x[2]
+                else:
+                    sql += ',\n' + x[0] + ' ' + x[1] + ' ' + x[2]
+                sql += v_default
+
+            elif v_index and len(line) > 1 and 'PRIMARY KEY' in line:
+                if gen_pk:
+                    v_index_sql += 'ALTER TABLE {0} ADD PRIMARY KEY ('.format(target_name)
+                    v_index_sql += line.split('(')[1] + ';\n'
+
+            elif v_index and len(line) > 1 and 'FOREIGN KEY' in line:
+                if gen_fk:
+
+                    if 'REFERENCES' in line and line.startswith('TABLE '):
+                        v_referenced_table = line.split('"')[1]
+                        v_index_sql += 'ALTER TABLE {0} ADD CONSTRAINT FOREIGN KEY ('.format(v_referenced_table)
+                        v_index_sql += str(line.split('(')[1] + ';\n').replace(v_source_schema + '.', v_target_schema + '.')
+                    else:
+                        v_index_sql += 'ALTER TABLE {0} ADD CONSTRAINT FOREIGN KEY ('.format(target_name)
+                        v_index_sql += str(line.split('(')[1] + ';\n').replace(v_source_schema + '.', v_target_schema + '.')
+            elif v_index and len(line) > 1 and 'UNIQUE' in line:
+                if gen_index:
+                    v_index_sql += 'CREATE UNIQUE INDEX  ON {0} ('.format(target_name)
+                    v_index_sql += str(line.split('(')[1] + ';\n')
+            elif v_index and len(line) > 1 and 'btree' in line:
+                if gen_index:
+                    v_index_sql += 'CREATE INDEX  ON {0} '.format(target_name)
+                    v_index_sql += str(line.split('btree')[1] + ';\n')
+            else:
+                if len(line) > 5 and i > 3:
+                    raise Exception(line)
+                logging.debug("get_create_table_cli - Unknown Line: {0}:{1}".format(i, line))
+
+            # if no index where ever found close the bracket
+        if v_index is False:
+            sql += ');'
+
+        self._restore_environment_vars()
+        if v_index_sql == '':
+            v_index_sql = None
+        return sql, v_index_sql
 
     def print_create_table(self, folder=None):
         import migrate_utils as mig
@@ -224,8 +418,22 @@ class Connection:
 
         return [c.name for c in table.columns]
 
+    def table_exists(self, table_name):
+        v_table_exists = False
+        v_schema = table_name.split('.')[0]
+        v_table_name = table_name.split('.')[1]
+        v_table_exists = self.has_record(
+            """select 1 from information_schema.tables where table_schema='{0}' and table_name='{1}'""".format(v_schema, v_table_name))
+
+        return v_table_exists
+
     def has_record(self, sqlstring):
-        rs = self.query(sqlstring)
+        rs=None
+        try:
+            rs = self.query(sqlstring)
+        except Exception as e:
+            logging.error("error in dbconn.has_record: {}".format(sqlstring))
+            
         if len(rs) > 0:
             return True
         return False
@@ -282,7 +490,11 @@ class Connection:
             rowcount = self._cur.rowcount
             self.commit()
         except Exception as e:
-            print("Error Execute SQL:{}".format(e))
+            #print("Error Execute SQL:{}".format(e))
+            logging.warning("SQL error Occurred But Continuing:\n{}".format(e))
+            import time
+            time.sleep(2)
+
         logging.debug("DB Execute Completed: {}:{}:{}".format(self._userid, self._host, self._database_name))
 
         return rowcount
@@ -668,7 +880,11 @@ class Connection:
         logging.debug("Copy Command Completed:{0} Time:{1}".format(txt_out, datetime.datetime.now()))
         logging.debug("Total Time:{0} ".format(datetime.datetime.now() - t))
         self._restore_environment_vars()
+        #logging.error("Inserted :{}".format(data_file))
         if error_code > 0:
+            logging.error(txt_out)
+            logging.error(data_file)
+            logging.error(error_code)
             raise Exception
 
         i = txt_out.split()

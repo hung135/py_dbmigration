@@ -11,6 +11,7 @@ import logging as log
 log.basicConfig()
 logging = log.getLogger()
 logging.setLevel(log.INFO)
+logging.setLevel(log.DEBUG)
 
 
 def merge_two_dicts(x, y):
@@ -21,8 +22,11 @@ def merge_two_dicts(x, y):
     return z
 
 
-def process_yaml():
-    yaml_file = "data_load.yaml"
+def process_yaml(yaml_file=None):
+    if yaml_file is None:
+         
+        yaml_file = os.path.join(os.getcwd(),"data_load.yaml")
+    logging.debug("loaind yaml file: {}".format(yaml_file))
     paths = yaml.load(open(yaml_file))
 
     datafiles = []
@@ -55,7 +59,9 @@ def process_yaml():
                 pre_action_sql = path_dict.get('pre_action_sql', None)
                 limit_rows = path_dict.get('limit_rows', None)
                 new_delimiter = path_dict.get('new_delimiter', None)
+                reprocess = path_dict.get('reprocess', True)
 
+                table_name_extract = path_dict.get('table_name_extract', None)
                 global_process_logic = path_dict.get('process_logic', None)
 
                 for id, regex_dict in enumerate(mapping):
@@ -80,13 +86,16 @@ def process_yaml():
                         pre_action_sql = regex_dict.get('pre_action_sql', pre_action_sql)
                         limit_rows = limit_rows
                         new_delimiter = regex_dict.get('new_delimiter', new_delimiter)
+                        table_name_extract = regex_dict.get('table_name_extract', table_name_extract)
                         # for key, val in regex_dict.iteritems():
                         # if not val == 'None':
                         # print(key, val)
                         limit_rows = regex_dict.get('limit_rows', None)
+                        reprocess_file = regex_dict.get('reprocess', reprocess)
                         post_action = regex_dict.get('post_action', None)
                         pre_action = regex_dict.get('pre_action', None)
                         logic = regex_dict.get('process_logic', global_process_logic)
+
                         # process_logic=merge_two_dicts(global_process_logic,logic)
                         process_logic = ((global_process_logic or []) + (logic or []))
                         #print(" logic \n:", process_logic)
@@ -115,7 +124,9 @@ def process_yaml():
                                                                             post_action=post_action,
                                                                             pre_action=pre_action,
                                                                             process_logic=process_logic,
-                                                                            project_name=project_name)
+                                                                            project_name=project_name,
+                                                                            table_name_extract=table_name_extract,
+                                                                            reprocess=reprocess_file, yaml=path_dict,mapping=regex_dict)
                                              )
                             mapping_counter += 1
                             logging.debug("{} Regex Pattern Configured: {} \n\t\tFile Type: {}".format(
@@ -128,22 +139,41 @@ def process_yaml():
         datafiles = []
     return datafiles
 
-PGDATASCHEMA = os.environ['PGDATASCHEMA']
-"""
-    Creating a Database connection object
-"""
-datafiles = process_yaml()
 
-if len(datafiles) > 0:
-    db = db_utils.dbconn.Connection(dbschema=PGDATASCHEMA, dbtype='POSTGRES')
+if __name__ == '__main__':
+    import sys
+    import argparse
 
-    # db.truncate_table("logging", "meta_source_files")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--yaml')
+    parser.add_argument('--logging')
+    args = parser.parse_args()
+    if args.logging is 'debug':
+ 
+        logging.setLevel(log.DEBUG)
+    else:
+ 
+        logging.setLevel(log.INFO)
 
-    df = dfm.data_files.DataFile(writable_path, db, datafiles)
+    datafiles =None
+    if args.yaml is not None:
+        datafiles = process_yaml(os.path.abspath(args.yaml))
+    else:
+        datafiles = process_yaml(None)
+ 
+    writable_path = os.getenv('WORKINGPATH',os.getcwd())
+    PGDATASCHEMA = os.getenv('PGDATASCHEMA',os.getcwd())
+ 
+    if len(datafiles) > 0:
+        db = db_utils.dbconn.Connection(dbschema=PGDATASCHEMA, dbtype='POSTGRES')
 
-    df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
+        # db.truncate_table("logging", "meta_source_files")
 
-    df.do_work(db, cleanup=False,    skip_ifexists=False)
-    db.execute('vacuum analyze logging.meta_source_files')
-else:
-    logging.info("No configruation Items found...Exiting.")
+        df = dfm.data_files.DataFile(writable_path, db, datafiles)
+        df.init_db()
+        df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
+
+        df.do_work(db, cleanup=False,    skip_ifexists=False)
+        db.execute('vacuum analyze logging.meta_source_files')
+    else:
+        logging.info("No configruation Items found...Exiting.")

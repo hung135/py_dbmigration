@@ -139,8 +139,9 @@ class FilesOfInterest:
                  new_delimiter=None, dataset_name=None, redaction_file=None,
                  upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
                  post_action=None, pre_action=None, process_logic=None, project_name=None,
-                 table_name_extract=None, reprocess=True, yaml=None):
+                 table_name_extract=None, reprocess=True, yaml=None,mapping=None):
         self.yaml = yaml
+        self.mapping = mapping
         # avoid trying to put any logic here
         self.regex = file_regex
         self.folder_regex = folder_regex
@@ -162,10 +163,10 @@ class FilesOfInterest:
         self.file_name_data_regex = file_name_data_regex
         self.append_crc = append_crc
 
-        if file_path is not None:
+        if file_path is not None and not(file_path[:5]=='s3://'):
             self.file_path = file_path = os.path.abspath(file_path)
         else:
-            self.file_path = None
+            self.file_path = file_path
         self.parent_file_id = parent_file_id
         self.insert_option = insert_option
         self.encoding = encoding
@@ -222,7 +223,7 @@ def convert_to_sql(instring):
 #       acquisition from the source directory
 #       extracted, processed, tagged w/ file_id, checksum every row
 #       imported into target database table
-#       logs any errorr
+#       logs any error
 #           Pandas will import in chunks
 #           Client side CopyCommand All or Nothing
 
@@ -243,6 +244,7 @@ class DataFile:
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
         assert isinstance(foi_list[0], FilesOfInterest)
+        self.load_status_msg = None
         self.parent_file_id = parent_file_id
         self.db = db
         self.working_path = os.path.abspath(working_path)
@@ -279,8 +281,16 @@ class DataFile:
         for files_of_interest in self.foi_list:
             if files_of_interest.file_path is not None:
                 assert isinstance(files_of_interest, FilesOfInterest)
-
-                self.FilesOfInterest = self.walk_dir(files_of_interest,  db=db)
+                file_path = files_of_interest.file_path[:5]
+                print(file_path,"xxxxx",files_of_interest.file_path)
+                if file_path=='s3://':
+                    logging.info("Walking AWS s3")
+                    self.FilesOfInterest = self.walk_s3(files_of_interest,  db=db)
+                else:
+                    if os.path.isdir(files_of_interest.file_path):
+                        self.FilesOfInterest = self.walk_dir(files_of_interest,  db=db)
+                    else:
+                        logging.error("Directory from Yaml does not exists: {}".format(files_of_interest.file_path))
 
                 self.FilesOfInterest.parent_file_id = self.meta_source_file_id
 
@@ -328,12 +338,25 @@ class DataFile:
                 # function that will append the file id passed in to every row in a data file.
                 # also adding fucntion to generate a checksum of that row
                 # for later use
+    def init_db(self):
+        t = db_table.db_table_func.RecordKeeper(
+            self.db, db_table.db_table_def.MetaSourceFiles)
     def extract_file_name_data(self, db, files_of_interest):
+         
         if files_of_interest.yaml is not None:
             extract_file_name = files_of_interest.yaml.get('extract_file_name_data', None)
             project_name = files_of_interest.yaml.get('project_name', None)
             date_format = files_of_interest.yaml.get('format_extracted_date', None)
-
+             
+            if extract_file_name is not None and date_format is None:
+                sql_update_file_data_date = """update logging.meta_source_files 
+                        set file_name_data= substring(file_name,'{extract_regex}')  
+                        where parent_file_id=0 and (file_name_data is null or file_name_data='0') 
+                        and project_name='{project_name}'"""
+                sql_update_file_data_date_children = """update logging.meta_source_files a
+                        set a.file_name_data= substring(parent.file_name,'{extract_regex}')  
+                        from logging.meta_source_files parent 
+                        where a.parent_file_id=parent.id and a.parent_file_id>0 and (a.file_name_data is null or a.file_name_data='0') and a.project_name='{project_name}'"""
             if extract_file_name is not None and date_format is not None:
                 sql_update_file_data_date = """update logging.meta_source_files set file_name_data=date(to_date(substring(file_name,'{extract_regex}') ,'{date_format_pattern}'))
                         where parent_file_id=0 and (file_name_data is null or file_name_data='0') and project_name='{project_name}'"""
@@ -342,13 +365,15 @@ class DataFile:
                         from logging.meta_source_files parent 
                         where a.parent_file_id=parent.id and a.parent_file_id>0 and (a.file_name_data is null or a.file_name_data='0') and a.project_name='{project_name}'"""
 
+            if extract_file_name is not None:
+ 
                 db.execute_permit_execption(sql_update_file_data_date.format(
                     extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
                 db.execute_permit_execption(sql_update_file_data_date_children.format(
                     extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
 
-                print(sql_update_file_data_date.format(
-                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
+                #print(sql_update_file_data_date.format(
+                #    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
                 # time.sleep(5)
 
     def insert_into_file(self, foi, file_id, db=None):
@@ -419,14 +444,18 @@ class DataFile:
         t = db_table.db_table_func.RecordKeeper(
             db, db_table.db_table_def.MetaSourceFiles)
         id_regex = file_of_interest_obj.file_name_data_regex
-        # print("------insertworkingfile")
+        
 
         for walked_filed_name in file_of_interest_obj.file_list:
             p = None
             extracted_id = None
             file_id = '0'
-            full_file_path = os.path.join(
-                file_of_interest_obj.file_path, walked_filed_name)
+            print(file_of_interest_obj.file_path, walked_filed_name)
+            if 's3://' in file_of_interest_obj.file_path:
+                full_file_path=walked_filed_name
+            else:
+                full_file_path = os.path.join(
+                    file_of_interest_obj.file_path, walked_filed_name)
             file_name = os.path.basename(full_file_path)
             file_path = os.path.dirname(full_file_path)
 
@@ -483,6 +512,7 @@ class DataFile:
                 ,file_process_state='RAW'
                 ,reporcess = True
                 ,total_rows=0
+                ,duplicate_file=False
                 WHERE  1=1
                 AND {}
                 """.format(where_clause))
@@ -495,6 +525,7 @@ class DataFile:
                 ,current_worker_host_pid=null
                 ,last_error_msg=null
                 ,file_process_state='RAW'
+                ,duplicate_file=False
                 WHERE  upper(file_process_state)='FAILED'
                 AND reprocess = True
                 AND {}
@@ -508,6 +539,7 @@ class DataFile:
                 ,current_worker_host_pid=null
                 ,last_error_msg=null
                 ,file_process_state='RAW'
+                ,duplicate_file=False
                 WHERE  upper(file_process_state)='RAW'
                 AND file_type in ('CSV','DATA')
                 AND {}
@@ -521,11 +553,54 @@ class DataFile:
                 ,current_worker_host_pid=null
                 ,last_error_msg=null
                 ,file_process_state='RAW'
+                ,duplicate_file=False
                 WHERE   file_type in ('CSV','DATA')
                 AND {}
                 """.format(where_clause))
         db.commit()
+    @staticmethod
+    def walk_s3(foi,  db=None):
+        import boto3
+        
+        regex = None
+        try:
+            regex = re.compile(foi.regex)
+        except Exception as e:
+            logging.error(
+                "Bad Regex Pattern for Walking Directory: '{}'".format(foi.regex))
+            raise
+ 
+        
+        s3 = boto3.resource('s3')
+        split_url=foi.file_path.replace('s3://','').split('/')
+        bucket_name=split_url[0]
+        
+        bucket = s3.Bucket(bucket_name)
+       
 
+
+        files_list = []
+        #for o in bucket.objects.filter(Delimiter='/'):
+        #    files_list.append(o.key)
+
+             
+        #s3 = boto3.client("s3")
+        #all_objects = s3.list_objects(Bucket = bucket_name) 
+        #contents = all_objects.get('Contents')
+        filter1='s3://'+bucket_name+'/'
+        
+        files = list(bucket.objects.filter(Prefix=foi.file_path.replace(filter1,'')))
+        #print(len(files))
+        for item in files:
+     
+            file_name=item.key  
+            files_list.append(filter1+file_name)
+            
+            #print(item.get('Key'))
+            #print("\n")
+        match_list = list(filter(regex.match, files_list))
+        foi.file_list = match_list
+        return foi
     @staticmethod
     def walk_dir(foi,  db=None):
         """Walks a directory structure and returns all files that match the regex pattern
@@ -537,7 +612,7 @@ class DataFile:
         logging.debug("Walking Directory: '{}' : Search Pattern: {}".format(
             file_path, foi.regex))
 
-        regex = re.compile('zip')
+        regex = None
         try:
             regex = re.compile(foi.regex)
         except Exception as e:
@@ -665,9 +740,11 @@ class DataFile:
                         and reprocess=True
                         and project_name in ({3})
                         ORDER BY
-                        file_type asc,
+
+
                         
                         file_name_data asc,
+                        parent_file_id asc,
                         file_path asc,
                         file_name asc
                         limit 1)
@@ -702,7 +779,7 @@ class DataFile:
     # When it is done with the processing of the record it we stamp the process_end_dtm
     # signifying the file has been processed
 
-    def do_work(self, db, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False):
+    def do_work(self, db, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False,do_once=False):
 
         # iterate over each file in the logging.meta_source_files table
         # get work will lock 1 file and store the id into meta_source_file_id
@@ -731,3 +808,6 @@ class DataFile:
 
             if cleanup:
                 self.cleanup_files()  # import_files(files,loan_acquisition)
+            if do_once:
+                
+                break

@@ -1821,6 +1821,8 @@ def md5_file(full_file_path):
     if platform.system() == 'Linux':
         os_specific_cmd = 'md5sum'
         status_code, msg = commands.getstatusoutput("{} '{}'".format(os_specific_cmd, full_file_path))
+        if status_code !=0:
+            logging.error(str(status_code) + " : "+ msg)
         x = msg.split(' ')
         md5_string = x[0]
     elif platform.system() == 'Darwin':

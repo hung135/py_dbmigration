@@ -6,6 +6,7 @@ import db_utils
 import data_file_mgnt
 import db_logging
 import db_table
+import migrate_utils
 import commands
 
 
@@ -30,6 +31,7 @@ def process(db, foi, df):
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.dbconn.Connection)
 
+
     rows_inserted = 0
     import_status = None
     additional_info = None
@@ -43,6 +45,19 @@ def process(db, foi, df):
     names = foi.header_list_returned or foi.column_list
     cols = foi.column_list or db.get_columns(table_name, target_schema)
     encoding = foi.encoding
+    
+    column_count=len(cols)
+     
+    #count_column_csv(full_file_path, header_row_location=0, sample_size=200, delimiter=','):
+    logging.debug("Delimiter: {}".format(foi.file_delimiter))
+    file_column_count=migrate_utils.static_func.count_column_csv(data_file,header,10,foi.file_delimiter)
+
+
+    if column_count!=file_column_count:
+        logging.info('Using column_list2 since column counts differr:')
+        logging.info('Config Column Count:{} Datafile Column Count: {}'.format(column_count,file_column_count))
+        cols=foi.mapping.get('column_list2').split(',')
+
     if foi.header_list_returned is not None:
 
         cols = ','.join(foi.header_list_returned)
@@ -112,6 +127,7 @@ def process(db, foi, df):
         # if txt_out[0] > 0 and not ('ERROR' in txt_out[1]):
         if int(bash_error_code) > 0:
             error_msg = str(txt_out)[:2000]
+            df.load_status_msg = error_msg
             error_code = bash_error_code
             additional_msg = str(command_text)[:2000]
 
@@ -124,8 +140,9 @@ def process(db, foi, df):
     row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
     row.rows_inserted = rows_inserted
     row.database_table = target_schema + '.' + table_name
-    row.last_error_msg = error_msg
+    row.last_error_msg = ( error_msg or '')+'\n'+str(row.last_error_msg or '')
     t.session.commit()
     t.session.close()
+
 
     return continue_processing
