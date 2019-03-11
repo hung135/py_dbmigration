@@ -176,7 +176,7 @@ class Connection:
             a.oid=concat(schemaname,'.',tablename)::regclass and 
             a.relkind='r' and 
             a.relname=tablename and
-            schemaname='bk_mpo' and 
+            schemaname='{}' and 
             n_distinct>0 order by 5,4;
             """.format(v_schema)
         return self.query(sql)
@@ -306,7 +306,7 @@ group by relname;""".format(table_name)
         self._save_environment_vars()
         self._replace_environment_vars()
 
-        cli = """psql -c"\d+ {}" """.format(table_name)
+        cli = """psql -c"\d {}" """.format(table_name)
         #cli = """psql {6} -c "\copy {0} FROM '{1}' with (format csv,{4} FORCE_NULL ({3}),delimiter '{2}', ENCODING '{5}')" """
 
         sql = ''
@@ -320,8 +320,8 @@ group by relname;""".format(table_name)
         for i, line in enumerate(lines):
             if i == 0:
                 sql += "Create table {}(".format(target_name)
-            elif (line == 'Indexes:' or line == 'Foreign-key constraints:' or line.startswith('Options:')
-                    or line.startswith('Referenced by:')):
+            elif (line == 'Indexes:' or line == 'Foreign-key constraints:' or line.startswith('Options:') or
+                  line.startswith('Referenced by:')):
                 if not v_index:
                     sql += '); '
                 v_index = True
@@ -359,6 +359,8 @@ group by relname;""".format(table_name)
                 if gen_index:
                     v_index_sql += 'CREATE INDEX  ON {0} '.format(target_name)
                     v_index_sql += str(line.split('btree')[1] + ';\n')
+            elif line == 'Triggers:':
+                break
             else:
                 if len(line) > 5 and i > 3:
                     raise Exception(line)
@@ -418,6 +420,14 @@ group by relname;""".format(table_name)
 
         return [c.name for c in table.columns]
 
+    def schema_exists(self, schema_name):
+        v_found = False
+
+        v_found = self.has_record(
+            """select 1 from information_schema.schemata where schema_name='{0}' limit 1""".format(schema_name))
+
+        return v_found
+
     def table_exists(self, table_name):
         v_table_exists = False
         v_schema = table_name.split('.')[0]
@@ -428,12 +438,12 @@ group by relname;""".format(table_name)
         return v_table_exists
 
     def has_record(self, sqlstring):
-        rs=None
+        rs = None
         try:
             rs = self.query(sqlstring)
         except Exception as e:
             logging.error("error in dbconn.has_record: {}".format(sqlstring))
-            
+
         if len(rs) > 0:
             return True
         return False
