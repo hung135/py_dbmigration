@@ -4,7 +4,7 @@ import os
 import commands
 import sys
 import datetime
-from sqlalchemy.ext.automap import automap_base
+
 import migrate_utils
 
 
@@ -578,39 +578,35 @@ group by relname;""".format(table_name)
         if self._port == '':
             self._port = 5432
         conn = psycopg2.connect(dbname=self._database_name, user=self._userid, password=self._password, port=self._port,
-                                host=self._host, application_name=self.appname)
+                                host=self._host, application_name=self.appname,sslmode='prefer')
         conn.set_client_encoding('UNICODE')
         logging.debug('Connected to POSTGRES: {}:{}:{}'.format(self._host, self._database_name, self._userid))
         return conn
 
-    def _connect_mssql(self, appname='py_dbutils'):
+    def _connect_mssql(self ):
         import pymssql
 
-        try:
-            self._password = os.environ['MSPASSWORD']
-            self._userid = os.environ['MSUSER']
-            if self._host is None:
-                self._host = os.environ['MSSQLHOST']
-            if self._port is None:
-                self._port = os.environ['MSPORT']
-            if self._database_name is None:
-                self._database_name = os.environ['MSDATABASE']
-        except Exception:
-            logging.error(
-                "Error Getting Environment Variables MSSQL:\nUser:{}\nHost:{}\nPort:{}\nDB:{}".format(self._userid,
-                                                                                                      self._host,
-                                                                                                      self._port,
-                                                                                                      self._database_name))
-            sys.exit()
+        self._password = os.environ.get('MSPASSWORD',None)
 
-        if self._port == '':
-            self._port = 1433
+        
 
-        conn = pymssql.connect(server=self._host, user=self._userid, password=self._password,
-                               database=self._database_name, host=self._host, port=self._port, conn_properties=None,
-                               timeout=0, login_timeout=60, charset='UTF-8', as_dict=False, appname=appname,
-                               autocommit=self._commit, tds_version='7.1')
-
+        # conn = pymssql.connect(server=self._host, user=self._userid, password=self._password,
+        #                       database=self._database_name, host=self._host, port=self._port, conn_properties=None,
+        #                       timeout=0, login_timeout=60, charset='UTF-8', as_dict=False, appname=appname,
+        #                       autocommit=self._commit, tds_version='7.1')
+        print(
+             self._host,
+             self._port,
+             self._userid,
+             self._password,
+             self._database_name)
+        
+        conn = pymssql.connect(
+            server=self._host,
+            port=self._port,
+            user=self._userid,
+            password=self._password,
+            database=self._database_name)
         return conn
 
     def _connect_mysql(self):
@@ -709,6 +705,7 @@ group by relname;""".format(table_name)
     # this one breaks w/ sqlserver
     @migrate_utils.static_func.timer
     def get_table_list(self, dbschema=None):
+        from sqlalchemy.ext.automap import automap_base
         print("getting schema: {}".format(dbschema))
         Base = automap_base()
 
@@ -818,6 +815,7 @@ group by relname;""".format(table_name)
         return field_list
 
     def print_table_info(self, table_name, dbschema):
+        from sqlalchemy.ext.automap import automap_base
         Base = automap_base()
         # from sqlalchemy.orm import Session
 

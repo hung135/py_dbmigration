@@ -13,6 +13,7 @@ import time
 from datetime import datetime
 import copy
 import pprint
+
 lg.basicConfig()
 logging = lg.getLogger()
 # logging.setLevel(lg.INFO)
@@ -23,9 +24,9 @@ logging.setLevel(lg.DEBUG)
 # delivery_type:
 # source_sql:
 # source_table:
-FILE_PATH = os.environ['RAWFILEPATH']
-WORKINGPATH = os.environ['WORKINGPATH']
-DB_SCHEMA = os.environ['PGDATASCHEMA']
+ 
+WORKINGPATH=os.environ.get('WORKINGPATH',None)
+ 
 DELIVERY_TRUNCATE = 'KILLFILL'
 DELIVERY_FILE_ID = 'FILE_ID'
 DELIVERY_LAST_UPDATE = 'CDO_LAST_UPDATE'
@@ -46,12 +47,10 @@ LOGGING_TBL_SQL = """CREATE TABLE {0}
 ) """
 WORK_TBL_SQL = """CREATE TABLE {0}
 (
-
     src_sql_hash uuid,
     src_sql character varying COLLATE pg_catalog."default",
     trg_table character varying COLLATE pg_catalog."default" ,
     pid integer,
-
     start_time timestamp without time zone,
     end_time timestamp without time zone,
     state character varying,
@@ -434,7 +433,7 @@ def add_work(trg_db, src_db, migration_list):
 
         trg_db.execute(insert_sql)
 
-
+# close out a file that has completed processing
 def finish_work(trg_db, work_table, pk):
     sql = ("""UPDATE {0}
                 SET
@@ -485,45 +484,40 @@ def set_log_level(debug_level):
 
 
 def get_src_trg_db(publish_item, proc_num=0):
+    import pprint
     source_db = None
     target_db = None
     source_host = None
     target_host = None
+    pprint.pprint(publish_item)
     appname = publish_item.get('appname', 'py_publish') + "_" + str(proc_num)
-    source_db = publish_item.get(
-        'source_db', os.environ['PGDATABASE_INTERNAL'])
-    source_schema = publish_item.get(
-        'source_schema', os.environ['PGDATABASE_INTERNAL'])
-    source_host = publish_item.get(
-        'source_host', os.environ['PGHOST_INTERNAL'])
-    source_db_type = publish_item.get('source_db_type', 'POSTGRES')
-    src_db = db_utils.dbconn.Connection(host=source_host,
-                                        port=os.environ['PGPORT_INTERNAL'],
-                                        database=source_db,
-                                        dbschema=source_schema,
-                                        userid=os.environ['PGUSER_INTERNAL'],
-                                        password=os.environ['PGPASSWORD_INTERNAL'],
-                                        dbtype=source_db_type,
+    yaml_db =publish_item.get('db', None)
+    source_db = yaml_db['source_db']
+
+    src_db = db_utils.dbconn.Connection(host=source_db['host'],
+                                        port=source_db['port'],
+                                        database=source_db['db'],
+                                        dbschema=source_db['schema'],
+                                        userid=source_db['userid'],
+                                        password=os.environ.get(source_db['password_envir_var'],None),
+                                        dbtype=source_db['type'],
                                         appname=appname)
-    target_db_type = publish_item.get('target_db_type', 'POSTGRES')
-    target_db = publish_item.get(
-        'target_db', os.environ['PGDATABASE_EXTERNAL'])
-    target_schema = publish_item.get(
-        'target_schema', os.environ['PGDATABASE_EXTERNAL'])
-    target_host = publish_item.get(
-        'target_host', os.environ['PGHOST_EXTERNAL'])
-    trg_db = db_utils.dbconn.Connection(host=target_host,
-                                        port=os.environ['PGPORT_EXTERNAL'],
-                                        database=target_db,
-                                        dbschema=target_schema,
-                                        userid=os.environ['PGUSER_EXTERNAL'],
-                                        password=os.environ['PGPASSWORD_EXTERNAL'],
-                                        dbtype=target_db_type,
+    
+    target_db = yaml_db['target_db']
+    trg_db= None
+    trg_db = db_utils.dbconn.Connection(host=target_db['host'],
+                                        port=target_db['port'],
+                                        database=target_db['db'],
+                                        dbschema=target_db['schema'],
+                                        userid=target_db['userid'],
+                                        password=os.environ.get(target_db['password_envir_var'],None),
+                                        dbtype=target_db['type'],
                                         appname=appname)
 
+    # sys.exit()
     return src_db, trg_db
 
-
+    
 def mp_do_work(publish_item, proc_num, return_dict=None):
 
     src_db, trg_db = get_src_trg_db(publish_item, proc_num)
@@ -627,7 +621,7 @@ def process_yaml(yaml_data, args):
             delivery_type = publish_item['delivery_type']
             enabled = publish_item.get('enabled', True)
             set_log_level(publish_item.get('debug_level', log_level))
-
+            yaml_target_db=publish_item['db']['target_db']
             skipped = False
 
             if delivery_type == DELIVERY_SCHEMA and enabled:
@@ -650,8 +644,8 @@ def process_yaml(yaml_data, args):
 
                 if args.show_index or args.count_index or args.show_col_stats:
                     break
-                v_trg_schema = publish_item['target_schema']
-                if (publish_item.get('create_target_schema', False) and not trg_db.schema_exists(v_trg_schema)):
+                v_trg_schema = yaml_target_db['schema']
+                if (yaml_target_db.get('create_target_schema', False) and not trg_db.schema_exists(v_trg_schema)):
                     trg_db.execute_permit_execption('Create schema {} authorization operational_dba'.format(v_trg_schema))
                     sql = "SELECT run_command_on_workers($cmd$ Create schema {} authorization operational_dba; $cmd$);".format(v_trg_schema)
                     trg_db.execute_permit_execption(sql)

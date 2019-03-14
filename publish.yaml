@@ -44,24 +44,37 @@
   num_process: 50
   appname: some_db_migration #used to tag dbconnection for visibility in db
   move_data: True # must be ste to true to move the data else it will be a dry
-  source_host: source_db_ip
-  target_host: target_db_ip
-  source_db: test
-  target_db: test
-  create_target_schema: True
-  target_db_type: 'POSTGRES'
-  source_db_type: 'POSTGRES'
-  source_schema: "{{source_db}}"
-  target_schema: testxx
+  # fill all these out
+  db:
+    source_db:
+      db: rdsadmin
+      host: test-instance-sqlserver.c4f3btp5oddk.us-east-1.rds.amazonaws.com
+      port: 1433
+      type: 'MSSQL'
+      schema: "dbo"
+      userid: 'master'
+      password_envir_var: MSPASSWORD #set environment variable MSPASSWORD
+    target_db:
+      db: 'postgres'
+      host: localhost
+      port: 5432
+      type: 'POSTGRES'
+      schema: "postgres"
+      userid: 'postgres'
+      password_envir_var: PGPASSWORD #set environment variable PGPASSWORD
+      create_target_schema: True
+      create_target_tables: True
+      truncate_target: False
+ 
   #retain_data_file_path: 'backup/'
   logging_table: "{{target_schema}}.migration_log"
   work_table: "{{target_schema}}.migration_work"
   #trg_pre_action_sql:
     #- "truncate table {{target_schema}}.migration_log"
     #- "truncate table {{target_schema}}.migration_work"
-  truncate_target: False
+  
   partition_column: file_id
-  create_target_tables: True
+  
   all_tables: True
   # tables:
   #   - batch_method: COLUMN
