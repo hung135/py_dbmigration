@@ -124,24 +124,24 @@ def move_data(sql_string, trg_table_name, src_db, trg_db, label='', skip_if_exis
         try:
             os.makedirs(os.path.dirname(WORKINGPATH))
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                traceback.print_exc()
-                raise
+            
+            traceback.print_exc()
+            raise
 
     if retain_data_file_path is not None and not os.path.exists(os.path.dirname(retain_data_file_path)):
         try:
 
             os.makedirs(os.path.dirname(retain_data_file_path))
         except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                traceback.print_exc()
-                raise
+            
+            traceback.print_exc()
+            raise
     tmp_file_name = os.path.join(
         WORKINGPATH, '_tmp_{0}{1}.csv'.format(trg_table_name, label))
     copy_status = None
     v_start_time = datetime.now()
     if not (os.path.exists(os.path.dirname(tmp_file_name)) and skip_if_exists):
-
+        
         copy_status = src_db.copy_to_csv(sql_string, tmp_file_name, ',')
         set_state(trg_db, work_table, pk,
                   'Rows Dumped: {}'.format(copy_status))
@@ -213,12 +213,10 @@ def move_item(yaml, src_db, trg_db, p_trg_table, p_source_sql, src_yaml=None, Tr
 
 
 def plan_work(publish_item, src_db, trg_db):
-
-    truncate_target = publish_item.get('truncate_target', False)
-    source_schema = publish_item.get(
-        'source_schema', os.environ['PGDATABASE_INTERNAL'])
-    target_schema = publish_item.get(
-        'target_schema', os.environ['PGDATABASE_EXTERNAL'])
+    pprint.pprint(publish_item)
+    truncate_target = publish_item['db']['target_db'].get('truncate_target', False)
+    source_schema = publish_item['db']['source_db']['schema']
+    target_schema = publish_item['db']['target_db']['schema']
 
     partition_column = publish_item.get('partition_column', None)
     v_trg_table = None
@@ -245,10 +243,11 @@ def plan_work(publish_item, src_db, trg_db):
     # print(source_tables)
 
     def get_migration_list(source_tables):
+        print("xxxxsdfasdfasldkfasd;fl",source_tables)
         for src_table in source_tables:
             #table = recurse_replace_yaml(src_table, src_table)
             #table = recurse_replace_yaml(table, publish_item)
-            table = src_table
+            table = str(src_table)
             all_tables_batch = False
             migration_list = []
             v_trg_table = None
@@ -256,12 +255,16 @@ def plan_work(publish_item, src_db, trg_db):
             logging.info('Migrating Table: {}'.format(table))
             migration_item = dict(publish_item)
 
+
+    
             if isinstance(table, str):
                 migration_item['migration_params'] = dict(
                     {'batch_method': 'ALL'})
             else:
+                print("xxxxxxxxxxxxx",type(table))
+                #pprint.pprint(migration_item)
                 migration_item['migration_params'] = dict(table)
-
+                assert isinstance(all_tables_batch, dict)
                 all_tables_batch = table.get('all_tables', False)
 
             if isinstance(table, dict):
@@ -359,6 +362,7 @@ def create_data_table(trg_db, src_db, p_src_table, p_trg_table, partition_column
         time.sleep(2)
         trg_db.execute(v_idx_sql)
         trg_db.commit()
+       
         trg_db.execute(
             'ALTER TABLE {0} OWNER to operational_dba;'.format(p_trg_table))
         trg_db.execute("""select create_distributed_table('{table_name}','{field_name}'); """.format(
@@ -367,7 +371,8 @@ def create_data_table(trg_db, src_db, p_src_table, p_trg_table, partition_column
 
 
 def create_work_table(trg_db, migration_item):
-    work_table = migration_item['work_table']
+    pprint.pprint(migration_item)
+    work_table = migration_item['db']['target_db']['work_table']
     # print(work_table)
     if trg_db.table_exists(work_table) == False:
         # print(WORK_TBL_SQL.format(work_table))
@@ -389,7 +394,7 @@ def add_work(trg_db, src_db, migration_list):
                 values {1} ON CONFLICT (src_sql_hash) DO NOTHING;"""
         values = []
 
-        work_table = migration_item['work_table']
+        work_table = migration_item['db']['target_db']['work_table']
         # print('querying source db for ids....then breaking')
         # import pprint
         # pprint.pprint(migration_item)
@@ -489,7 +494,7 @@ def get_src_trg_db(publish_item, proc_num=0):
     target_db = None
     source_host = None
     target_host = None
-    pprint.pprint(publish_item)
+     
     appname = publish_item.get('appname', 'py_publish') + "_" + str(proc_num)
     yaml_db =publish_item.get('db', None)
     source_db = yaml_db['source_db']
@@ -521,8 +526,8 @@ def get_src_trg_db(publish_item, proc_num=0):
 def mp_do_work(publish_item, proc_num, return_dict=None):
 
     src_db, trg_db = get_src_trg_db(publish_item, proc_num)
-
-    work_table = publish_item['work_table']
+    
+    work_table = publish_item['db']['target_db']['work_table']
     x = get_work(trg_db, work_table)
 
     while x is not None:
@@ -646,12 +651,14 @@ def process_yaml(yaml_data, args):
                     break
                 v_trg_schema = yaml_target_db['schema']
                 if (yaml_target_db.get('create_target_schema', False) and not trg_db.schema_exists(v_trg_schema)):
+                    trg_db.execute("create role operational_dba")
                     trg_db.execute_permit_execption('Create schema {} authorization operational_dba'.format(v_trg_schema))
-                    sql = "SELECT run_command_on_workers($cmd$ Create schema {} authorization operational_dba; $cmd$);".format(v_trg_schema)
-                    trg_db.execute_permit_execption(sql)
+                    if trg_db._dbtype=='CITUS':
+                        sql = "SELECT run_command_on_workers($cmd$ Create schema {} authorization operational_dba; $cmd$);".format(v_trg_schema)
+                        trg_db.execute_permit_execption(sql)
 
                 run_pre_sql_action(src_db, trg_db, publish_item)
-                work_table = publish_item['work_table']
+                work_table = publish_item['db']['target_db']['work_table']
                 create_work_table(trg_db, publish_item)
                 # divide_work(trg_db,publish_item)
                 if not trg_db.has_record('select 1 from {}'.format(work_table)):

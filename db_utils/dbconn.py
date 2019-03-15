@@ -1,4 +1,4 @@
-import logging
+import logging as lg
 import os
 # import subprocess as commands
 import commands
@@ -6,7 +6,10 @@ import sys
 import datetime
 
 import migrate_utils
-
+lg.basicConfig()
+logging = lg.getLogger()
+# logging.setLevel(lg.INFO)
+logging.setLevel(lg.DEBUG)
 
 # Decorator function to log and time how long a function took to run
 
@@ -27,7 +30,7 @@ class Connection:
     # _sqlalchemy_con = None this needs to be instance
     # _sqlalchemy_meta = None this needs to be instance
 
-    def __init__(self, dbschema=None, commit=True, password=None, userid=None, host=None, port=None, database=None,
+    def __init__(self, dbschema=None, commit=True, password=None, userid=None, host=None, port=5432, database=None,
                  dbtype='POSTGRES', appname='py_dbutils'):
         """ Default to commit after every transaction
         """
@@ -49,7 +52,7 @@ class Connection:
 
         logging.debug("DB Connecting To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
         self._dbtype = dbtype.upper()
-        if self._dbtype == 'POSTGRES':
+        if self._dbtype in ['POSTGRES','CITUS']:
             self._conn = self._connect_postgres
         if self._dbtype == 'MSSQL':
             self._conn = self._connect_mssql()
@@ -231,7 +234,7 @@ order by
                 print(str(stmt) + ";")
             except:
                 # print("Cannot Find Table: {}".format(t))
-                logging.Error("Cannot Find Table: {}".format(t))
+                logging.ERROR("Cannot Find Table: {}".format(t))
 
     def get_create_table(self, table_name):
         sql = """SELECT                                          
@@ -563,7 +566,7 @@ group by relname;""".format(table_name)
             if self._userid is None:
                 self._userid = os.getenv('PGUSER', 'postgres')
             if self._sslmode is None:
-                self._sslmode = os.getenv('PGSSLMODE', None)
+                self._sslmode = os.getenv('PGSSLMODE', 'prefer')
             if self._host is None:
                 self._host = os.getenv('PGHOST', '192.168.99.100')
             if self._port is None:
@@ -637,27 +640,41 @@ group by relname;""".format(table_name)
             pass
 
     def copy_to_csv(self, sqlstring, full_file_path, delimiter):
-        # save the Current shell password
-        self._save_environment_vars()
-        self._replace_environment_vars()
-        # copy_command_client_side = """psql -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
-        shell_command = """psql -c "\copy ({0}) to '{1}' WITH DELIMITER AS '{2}' CSV QUOTE AS '\\"' " """
-
-        command_text = (shell_command.format(sqlstring, full_file_path, delimiter))
-
-        prev_password = os.environ['PGPASSWORD']
-
-        logging.info("Dumping Data to CSV STARTED:{0}".format(full_file_path))
-        logging.debug("SQL:{0}".format(sqlstring))
-        logging.debug("Command string: \nt\t{}".format(command_text))
-        error_code, txt_out = commands.getstatusoutput(command_text)
-        logging.debug("Dumping Data to CSV COMPLETED:{0}".format(txt_out))
-        self._restore_environment_vars()
-        if error_code > 0:
-            raise Exception
-        i = txt_out.split()
-        logging.info("Total Rows Dumped: {0}".format(i[1]))
-        return i[1]
+        total_rows=0
+        if self._dbtype in ['POSTGRES','CITUS']:
+        
+            # save the Current shell password
+            self._save_environment_vars()
+            self._replace_environment_vars()
+            # copy_command_client_side = """psql -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
+            shell_command = """psql -c "\copy ({0}) to '{1}' WITH DELIMITER AS '{2}' CSV QUOTE AS '\\"' " """
+    
+            command_text = (shell_command.format(sqlstring, full_file_path, delimiter))
+    
+            prev_password = os.environ['PGPASSWORD']
+    
+            logging.info("Dumping Data to CSV STARTED:{0}".format(full_file_path))
+            logging.debug("SQL:{0}".format(sqlstring))
+            logging.debug("Command string: \nt\t{}".format(command_text))
+            error_code, txt_out = commands.getstatusoutput(command_text)
+            logging.debug("Dumping Data to CSV COMPLETED:{0}".format(txt_out))
+            self._restore_environment_vars()
+            if error_code > 0:
+                raise Exception
+            i = txt_out.split()
+            logging.info("Total Rows Dumped: {0}".format(i[1]))
+            total_rows=int(i[1])
+        if  self._dbtype in ['MSSQL']:
+            import pandas
+             
+            df=pandas.read_sql_query(sqlstring, self._conn, index_col=None, coerce_float=True, params=None, parse_dates=None, chunksize=100000)
+            #df.to_csv(full_file_path,header=false,sep=delimiter)
+           
+            for chunk in df:
+                total_rows+=len(chunk)
+                chunk.to_csv(full_file_path,header=False,sep=delimiter,index=False, mode='a')
+            
+        return total_rows
 
     def get_conn_url(self):
 
@@ -763,7 +780,7 @@ group by relname;""".format(table_name)
     @migrate_utils.static_func.timer
     def get_table_row_count_fast(self, table_name, schema=None):
         x = 0
-        if self.dbtype == 'POSTGRES':
+        if self.dbtype in ['POSTGRES','CITUS']:
             self.vacuum(table_name)
             row = self.query("""select n_live_tup
                     from pg_stat_user_tables
@@ -842,16 +859,16 @@ group by relname;""".format(table_name)
     # we need to save that and replace with our current and put it back after we are done
 
     def _save_environment_vars(self):
-        if self._dbtype == 'POSTGRES':
-            self._pg_password = os.environ['PGPASSWORD']
-            self._pg_userid = os.environ['PGUSER']
-            self._pg_sslmode = os.environ['PGSSLMODE']
-            self._pg_host = os.environ['PGHOST']
-            self._pg_port = os.environ['PGPORT']
-            self._pg_database_name = os.environ['PGDATABASE']
+        if self._dbtype in ['POSTGRES','CITUS']:
+            self._pg_password = os.environ.get('PGPASSWORD',self._password)
+            self._pg_userid = os.environ.get('PGUSER',self._userid)
+            self._pg_sslmode = os.environ.get('PGSSLMODE',self._sslmode)
+            self._pg_host = os.environ.get('PGHOST',self._host)
+            self._pg_port = os.environ.get('PGPORT',str(self._port))
+            self._pg_database_name = os.environ.get('PGDATABASE',self._database_name)
 
     def _restore_environment_vars(self):
-        if self._dbtype == 'POSTGRES':
+        if self._dbtype in ['POSTGRES','CITUS']:
             os.environ['PGPASSWORD'] = self._pg_password
             os.environ['PGUSER'] = self._pg_userid
             os.environ['PGSSLMODE'] = self._pg_sslmode
@@ -860,12 +877,12 @@ group by relname;""".format(table_name)
             os.environ['PGDATABASE'] = self._pg_database_name
 
     def _replace_environment_vars(self):
-        if self._dbtype == 'POSTGRES':
+        if self._dbtype in ['POSTGRES','CITUS']:
             os.environ['PGPASSWORD'] = self._password
             os.environ['PGUSER'] = self._userid
             os.environ['PGSSLMODE'] = self._sslmode
             os.environ['PGHOST'] = self._host
-            os.environ['PGPORT'] = self._port
+            os.environ['PGPORT'] = str(self._port)
             os.environ['PGDATABASE'] = self._database_name
 
     # simple import using client side
