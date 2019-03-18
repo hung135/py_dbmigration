@@ -66,7 +66,9 @@ def recurse_replace_yaml(p_trg_data, p_base_dict):
         dict_keys = yaml.keys()
         # print('before ', str_data)
         for key in dict_keys:
-            if not (isinstance(yaml[key], list) or isinstance(yaml[key], dict)):
+            if isinstance(yaml[key], dict):
+                str_data=recurse_replace_yaml(str_data,yaml[key])
+            elif not (isinstance(yaml[key], list) or isinstance(yaml[key], dict)):
                 str_data = str_data.replace("{{" + key + "}}", str(yaml[key]))
         # print('after ', str_data)
         return str_data
@@ -91,6 +93,10 @@ def recurse_replace_yaml(p_trg_data, p_base_dict):
         for trg_key in p_trg_data.keys():
             trg_item = p_trg_data[trg_key]
             if isinstance(trg_item, str):
+                if trg_key=='logging_table':
+                    print(trg_item)
+                    import pprint 
+                    pprint.pprint(p_base_dict)
                 trg_item = inject_yaml_data(trg_item, p_base_dict)
             elif isinstance(trg_item, list) or isinstance(trg_item, dict):
                 trg_item = recurse_replace_yaml(trg_item, p_base_dict)
@@ -151,7 +157,10 @@ def move_data(sql_string, trg_table_name, src_db, trg_db, label='', skip_if_exis
     logging.info("PID: {} Dummping Data:".format(os.getpid()))
     load_status = 0
     if int(copy_status) > 0:
-        load_status = trg_db.import_file_client_side(
+        # load_status = trg_db.import_file_client_side(
+        #     tmp_file_name, trg_table_name, ',')
+            
+        load_status = trg_db.import_pyscopg2_copy(
             tmp_file_name, trg_table_name, ',')
     set_state(trg_db, work_table, pk, 'Rows Inserted: {}'.format(load_status))
 
@@ -225,9 +234,9 @@ def plan_work(publish_item, src_db, trg_db):
     all_yaml_tables = []
     source_tables = publish_item.get('tables', [])
     all_tables = publish_item.get('all_tables', False)
-    drop_recreate = publish_item.get('drop_recreate', False)
+    drop_recreate = publish_item['db']['target_db'].get('drop_recreate', False)
 
-    create_target_tables = publish_item.get('create_target_tables', False)
+    create_target_tables = publish_item['db']['target_db'].get('create_target_tables', False)
 
     for table in source_tables:
         if table.get('table', None) is not None:
@@ -243,7 +252,7 @@ def plan_work(publish_item, src_db, trg_db):
     # print(source_tables)
 
     def get_migration_list(source_tables):
-        print("xxxxsdfasdfasldkfasd;fl",source_tables)
+         
         for src_table in source_tables:
             #table = recurse_replace_yaml(src_table, src_table)
             #table = recurse_replace_yaml(table, publish_item)
@@ -261,7 +270,7 @@ def plan_work(publish_item, src_db, trg_db):
                 migration_item['migration_params'] = dict(
                     {'batch_method': 'ALL'})
             else:
-                print("xxxxxxxxxxxxx",type(table))
+                 
                 #pprint.pprint(migration_item)
                 migration_item['migration_params'] = dict(table)
                 assert isinstance(all_tables_batch, dict)
@@ -355,11 +364,18 @@ def plan_work(publish_item, src_db, trg_db):
 def create_data_table(trg_db, src_db, p_src_table, p_trg_table, partition_column):
     if not trg_db.table_exists(p_trg_table):
         logging.info("Table don't exixts so Creating: {}".format(p_trg_table))
-        v_create_sql, v_idx_sql = src_db.get_create_table_cli(
-            p_src_table, p_trg_table, gen_fk=False)
-        print(v_create_sql)
+        v_create_sql=None
+        v_idx_sql=None
+        # if src_db.dbtype in ['POSTGRES','CITUS']:
+        #     v_create_sql, v_idx_sql = src_db.get_create_table_cli(
+        #         p_src_table, p_trg_table, gen_fk=False)
+        # else: 
+        v_create_sql  = src_db.get_create_table_sqlalchemy(  p_src_table,trg_db)
+        v='COLLATE "SQL_Latin1_General_CP1_CI_AS"'
+        v_create_sql=str(v_create_sql).replace(p_src_table,p_trg_table).replace(v,'')
+        src_db.print_tables([p_src_table.split('.')[-1]])
         trg_db.execute_permit_execption(v_create_sql)
-        time.sleep(2)
+        
         trg_db.execute(v_idx_sql)
         trg_db.commit()
        
@@ -604,7 +620,8 @@ def pre_process_yaml(yaml_file):
 
                 j = recurse_replace_yaml(j, yaml_obj)
 
-    # pprint.pprint(mig_list)
+    #pprint.pprint(mig_list)
+    sys.exit()
     return mig_list
 
 

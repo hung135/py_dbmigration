@@ -14,7 +14,7 @@ docker pull dpage/pgadmin4
 docker stop $(docker ps -aq)
 docker rm $(docker ps -a -q)
 #docker system prune -a -f
-docker run --name docker-postgres -p 5432:5432 -e POSTGRES_PASSWORD=docker -d postgres
+docker run --restart "unless-stopped" --name docker-postgres -p 5432:5432 -e POSTGRES_PASSWORD=docker -d postgres
 #sleep 2 && docker run -it --rm -e "PGPASSWORD=docker" --link docker-postgres:postgres postgres psql -h postgres -U postgres
 
 #pgadmin setup
@@ -25,6 +25,7 @@ docker run --name docker-postgres -p 5432:5432 -e POSTGRES_PASSWORD=docker -d po
 head -n 29 dummy_cert.txt>certificate.key
 tail -n 26 dummy_cert.txt>certificate.cert
 docker run  --name docker-pgadmin4 \
+--restart "unless-stopped" \
 -v "/private/var/lib/pgadmin:/var/lib/pgadmin" \
 -v "$(pwd)/certificate.cert:/certs/server.cert" \
 -v "$(pwd)/certificate.key:/certs/server.key" \
@@ -36,6 +37,7 @@ docker run  --name docker-pgadmin4 \
 
 docker run --name docker-nginx \
 -p 8080:80 \
+--restart "unless-stopped" \
 -v $(pwd)/nginx.conf:/etc/nginx/nginx.conf:ro \
 --link docker-pgadmin4:docker-pgadmin4 \
 -d nginx

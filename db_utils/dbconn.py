@@ -68,34 +68,34 @@ class Connection:
         self._sqlalchemy_meta = {}
 
     # @migrate_utils.static_func.timer
-    def connect_sqlalchemy(self, schema=None, db=None):
+    def connect_sqlalchemy(self, schema=None, db_type=None):
         import sqlalchemy
         # import pymssql
         '''Returns a connection and a metadata object'''
         # We connect with the help of the PostgreSQL URL
         # postgresql://federer:grandestslam@localhost:5432/tennis
 
-        if db is None and self._dbtype is None:
-            db = "POSTGRES"
+        if db_type is None and self._dbtype is None:
+            db_type = "POSTGRES"
         else:
-            db = self._dbtype
+            db_type = self._dbtype
         if schema is None:
             schema = self.dbschema
 
         if self._sqlalchemy_con is None or self._sqlalchemy_meta.get(schema, None) is None:
 
-            if db.upper() == "POSTGRES":
+            if db_type.upper() == "POSTGRES":
                 self.url = 'postgresql://{}:{}@{}:{}/{}'
                 self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
 
                 if self._sqlalchemy_con is None:
                     self._sqlalchemy_con = sqlalchemy.create_engine(self.url, client_encoding="utf-8",
                                                                     connect_args={"application_name": self.appname})
-            if db.upper() == "MSSQL":
+            if db_type.upper() == "MSSQL":
                 self.url = 'mssql+pymssql://{}:{}@{}:{}/{}'
                 self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
                 self._sqlalchemy_con = sqlalchemy.create_engine(self.url)
-            if db.upper() == "MYSQL":
+            if db_type.upper() == "MYSQL":
                 # 'mysql+pymysql://root:test@192.168.99.100:3306/mysql'
                 self.url = "mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8"
                 self.url = self.url.format(self._userid, self._password, self._host, self._port, self._database_name)
@@ -219,7 +219,22 @@ group by
 order by
     t.relname,
     i.relname;""".format(v_schema)))
-
+    def get_create_table_sqlalchemy(self, table_name,trg_db):
+        import sqlalchemy
+        stmt=None
+        con, meta = self.connect_sqlalchemy()
+        t=table_name.split('.')[-1]
+      
+        table = sqlalchemy.Table(t, meta, autoload=True, autoload_with=con)
+        print("xxxxx ",type(table))
+        trg_con,trg_meta=trg_db.connect_sqlalchemy()
+        stmt = sqlalchemy.schema.CreateTable(table)
+       
+        print(stmt,'xxx')
+            
+        print(str(stmt).strip())
+        return stmt
+        
     def print_tables(self, table_list):
         import sqlalchemy
 
@@ -499,7 +514,7 @@ group by relname;""".format(table_name)
         logging.debug("Debug DB Execute: {}:{}:{} \n\t{} ".format(self._userid, self._host, self._database_name, sqlstring))
         rowcount = 0
         try:
-            self._cur.execute(sqlstring)
+            self._cur.execute(str(sqlstring).strip())
             rowcount = self._cur.rowcount
             self.commit()
         except Exception as e:
@@ -516,8 +531,8 @@ group by relname;""".format(table_name)
         # cloning previous method to avoid breaking things already in place
         logging.debug("Debug DB Execute: {}:{}:{} \n\t{} ".format(self._userid, self._host, self._database_name, sqlstring))
         rowcount = 0
-
-        self._cur.execute(sqlstring)
+        
+        self._cur.execute(str(sqlstring).strip())
         rowcount = self._cur.rowcount
         self.commit()
 
@@ -885,6 +900,14 @@ group by relname;""".format(table_name)
             os.environ['PGPORT'] = str(self._port)
             os.environ['PGDATABASE'] = self._database_name
 
+    def import_pyscopg2_copy(self, full_file_path, table_name_fqn, file_delimiter):
+   
+        f = open(full_file_path)
+        #cur.copy_from(f, table_name_fqn, columns=('col1', 'col2'), sep=",")
+        x=self._cur.copy_from(f, table_name_fqn,  sep=",")
+        self._conn.commit()
+        print("-----xxxx pyscop copy: ",x)
+        return x
     # simple import using client side
     # this assumes the csv has data exactly in the same structure as the target table
 
