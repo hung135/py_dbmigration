@@ -5,14 +5,13 @@ import os
 import shutil
 import db_utils
 import socket
-import traceback
 import sys
 import pprint
 import logging as lg
 import time
 from datetime import datetime
 import copy
-import pprint
+ 
 
 lg.basicConfig()
 logging = lg.getLogger()
@@ -131,7 +130,7 @@ def move_data(sql_string, trg_table_name, src_db, trg_db, label='', skip_if_exis
             os.makedirs(os.path.dirname(WORKINGPATH))
         except OSError as exc:  # Guard against race condition
             
-            traceback.print_exc()
+            logging.error("Error in move data making WORKINGPATH: {}".format(str(exc)))
             raise
 
     if retain_data_file_path is not None and not os.path.exists(os.path.dirname(retain_data_file_path)):
@@ -140,7 +139,7 @@ def move_data(sql_string, trg_table_name, src_db, trg_db, label='', skip_if_exis
             os.makedirs(os.path.dirname(retain_data_file_path))
         except OSError as exc:  # Guard against race condition
             
-            traceback.print_exc()
+            logging.error("Error in movde data making retain_data_file_path: {}".format(str(exc)))
             raise
     tmp_file_name = os.path.join(
         WORKINGPATH, '_tmp_{0}{1}.csv'.format(trg_table_name, label))
@@ -256,7 +255,7 @@ def plan_work(publish_item, src_db, trg_db):
         for src_table in source_tables:
             #table = recurse_replace_yaml(src_table, src_table)
             #table = recurse_replace_yaml(table, publish_item)
-            table = str(src_table)
+            table = src_table
             all_tables_batch = False
             migration_list = []
             v_trg_table = None
@@ -273,7 +272,7 @@ def plan_work(publish_item, src_db, trg_db):
                  
                 #pprint.pprint(migration_item)
                 migration_item['migration_params'] = dict(table)
-                assert isinstance(all_tables_batch, dict)
+                assert isinstance(table, dict)
                 all_tables_batch = table.get('all_tables', False)
 
             if isinstance(table, dict):
@@ -621,7 +620,7 @@ def pre_process_yaml(yaml_file):
                 j = recurse_replace_yaml(j, yaml_obj)
 
     #pprint.pprint(mig_list)
-    sys.exit()
+     
     return mig_list
 
 
