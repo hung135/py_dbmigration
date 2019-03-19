@@ -5,13 +5,14 @@ import commands
 import sys
 import datetime
 
-import migrate_utils
+#import migrate_utils
 lg.basicConfig()
 logging = lg.getLogger()
 # logging.setLevel(lg.INFO)
 logging.setLevel(lg.DEBUG)
 
 # Decorator function to log and time how long a function took to run
+
 
 class Connection:
     # _conn = None this need to be instance
@@ -52,7 +53,7 @@ class Connection:
 
         logging.debug("DB Connecting To: {0}:{1}:{2}".format(self._host, self._database_name, dbtype))
         self._dbtype = dbtype.upper()
-        if self._dbtype in ['POSTGRES','CITUS']:
+        if self._dbtype in ['POSTGRES', 'CITUS']:
             self._conn = self._connect_postgres
         if self._dbtype == 'MSSQL':
             self._conn = self._connect_mssql()
@@ -219,22 +220,23 @@ group by
 order by
     t.relname,
     i.relname;""".format(v_schema)))
-    def get_create_table_sqlalchemy(self, table_name,trg_db):
+
+    def get_create_table_sqlalchemy(self, table_name, trg_db):
         import sqlalchemy
-        stmt=None
+        stmt = None
         con, meta = self.connect_sqlalchemy()
-        t=table_name.split('.')[-1]
-      
+        t = table_name.split('.')[-1]
+
         table = sqlalchemy.Table(t, meta, autoload=True, autoload_with=con)
-        print("xxxxx ",type(table))
-        trg_con,trg_meta=trg_db.connect_sqlalchemy()
+        print("xxxxx ", type(table))
+        trg_con, trg_meta = trg_db.connect_sqlalchemy()
         stmt = sqlalchemy.schema.CreateTable(table)
-       
-        print(stmt,'xxx')
-            
+
+        print(stmt, 'xxx')
+
         print(str(stmt).strip())
         return stmt
-        
+
     def print_tables(self, table_list):
         import sqlalchemy
 
@@ -249,7 +251,7 @@ order by
                 print(str(stmt) + ";")
             except:
                 # print("Cannot Find Table: {}".format(t))
-                logging.ERROR("Cannot Find Table: {}".format(t))
+                logging.Error("Cannot Find Table: {}".format(t))
 
     def get_create_table(self, table_name):
         sql = """SELECT                                          
@@ -520,8 +522,6 @@ group by relname;""".format(table_name)
         except Exception as e:
             #print("Error Execute SQL:{}".format(e))
             logging.warning("SQL error Occurred But Continuing:\n{}".format(e))
-            import time
-            time.sleep(2)
 
         logging.debug("DB Execute Completed: {}:{}:{}".format(self._userid, self._host, self._database_name))
 
@@ -531,7 +531,7 @@ group by relname;""".format(table_name)
         # cloning previous method to avoid breaking things already in place
         logging.debug("Debug DB Execute: {}:{}:{} \n\t{} ".format(self._userid, self._host, self._database_name, sqlstring))
         rowcount = 0
-        
+
         self._cur.execute(str(sqlstring).strip())
         rowcount = self._cur.rowcount
         self.commit()
@@ -546,11 +546,13 @@ group by relname;""".format(table_name)
 
         self.commit()
 
-    def truncate_table(self, dbschema, table_name):
+    def truncate_table(self, table_name=None):
+        dbschema = table_name.split('.')[0]
+
         logging.debug(
             "Truncating Table: \n\tHost:{0}\n\tDatabase:{1}\n\tTablename:{2}\n\tSchema:{3}".format(self._host, self._database_name,
                                                                                                    table_name, dbschema))
-        self._cur.execute('TRUNCATE table {0}.{1} cascade'.format(dbschema, table_name))
+        self._cur.execute('TRUNCATE table {0} cascade'.format(table_name))
 
         self.commit()
         self.vacuum(dbschema, table_name)
@@ -596,29 +598,27 @@ group by relname;""".format(table_name)
         if self._port == '':
             self._port = 5432
         conn = psycopg2.connect(dbname=self._database_name, user=self._userid, password=self._password, port=self._port,
-                                host=self._host, application_name=self.appname,sslmode='prefer')
+                                host=self._host, application_name=self.appname, sslmode='prefer')
         conn.set_client_encoding('UNICODE')
         logging.debug('Connected to POSTGRES: {}:{}:{}'.format(self._host, self._database_name, self._userid))
         return conn
 
-    def _connect_mssql(self ):
+    def _connect_mssql(self, appname='py_dbutils'):
         import pymssql
 
-        self._password = os.environ.get('MSPASSWORD',None)
-
-        
+        self._password = os.environ.get('MSPASSWORD', None)
 
         # conn = pymssql.connect(server=self._host, user=self._userid, password=self._password,
         #                       database=self._database_name, host=self._host, port=self._port, conn_properties=None,
         #                       timeout=0, login_timeout=60, charset='UTF-8', as_dict=False, appname=appname,
         #                       autocommit=self._commit, tds_version='7.1')
         print(
-             self._host,
-             self._port,
-             self._userid,
-             self._password,
-             self._database_name)
-        
+            self._host,
+            self._port,
+            self._userid,
+            self._password,
+            self._database_name)
+
         conn = pymssql.connect(
             server=self._host,
             port=self._port,
@@ -655,19 +655,19 @@ group by relname;""".format(table_name)
             pass
 
     def copy_to_csv(self, sqlstring, full_file_path, delimiter):
-        total_rows=0
-        if self._dbtype in ['POSTGRES','CITUS']:
-        
+        total_rows = 0
+        if self._dbtype in ['POSTGRES', 'CITUS']:
+
             # save the Current shell password
             self._save_environment_vars()
             self._replace_environment_vars()
             # copy_command_client_side = """psql -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
             shell_command = """psql -c "\copy ({0}) to '{1}' WITH DELIMITER AS '{2}' CSV QUOTE AS '\\"' " """
-    
+
             command_text = (shell_command.format(sqlstring, full_file_path, delimiter))
-    
+
             prev_password = os.environ['PGPASSWORD']
-    
+
             logging.info("Dumping Data to CSV STARTED:{0}".format(full_file_path))
             logging.debug("SQL:{0}".format(sqlstring))
             logging.debug("Command string: \nt\t{}".format(command_text))
@@ -678,17 +678,17 @@ group by relname;""".format(table_name)
                 raise Exception
             i = txt_out.split()
             logging.info("Total Rows Dumped: {0}".format(i[1]))
-            total_rows=int(i[1])
-        if  self._dbtype in ['MSSQL']:
+            total_rows = int(i[1])
+        if self._dbtype in ['MSSQL']:
             import pandas
-             
-            df=pandas.read_sql_query(sqlstring, self._conn, index_col=None, coerce_float=True, params=None, parse_dates=None, chunksize=100000)
-            #df.to_csv(full_file_path,header=false,sep=delimiter)
-           
+
+            df = pandas.read_sql_query(sqlstring, self._conn, index_col=None, coerce_float=True, params=None, parse_dates=None, chunksize=100000)
+            # df.to_csv(full_file_path,header=false,sep=delimiter)
+
             for chunk in df:
-                total_rows+=len(chunk)
-                chunk.to_csv(full_file_path,header=False,sep=delimiter,index=False, mode='a')
-            
+                total_rows += len(chunk)
+                chunk.to_csv(full_file_path, header=False, sep=delimiter, index=False, mode='a')
+
         return total_rows
 
     def get_conn_url(self):
@@ -735,7 +735,7 @@ group by relname;""".format(table_name)
         return table
 
     # this one breaks w/ sqlserver
-    @migrate_utils.static_func.timer
+    # @migrate_utils.static_func.timer
     def get_table_list(self, dbschema=None):
         from sqlalchemy.ext.automap import automap_base
         print("getting schema: {}".format(dbschema))
@@ -754,8 +754,25 @@ group by relname;""".format(table_name)
             # for m in k:
             l.append(t)
         return l
+    # returns list of tables that are not assigned to common roles
 
-    # @migrate_utils.static_func.timer
+    def get_uncommon_tables(self, common_roles='operational_dba'):
+        sql = """SELECT t.table_schema,t.table_name ,u.usename as ownername,p.grantor,p.grantee
+            ,c.relname , c.relowner ,p.*
+            from information_schema.tables t
+            left outer join information_schema.table_privileges p on p.table_schema=t.table_schema and p.table_name=t.table_name 
+            and (grantor  in ('operational_dba') and grantee  in ('operational_dba') )
+            , pg_catalog.pg_user u,
+            pg_catalog.pg_class c
+            where t.table_name=c.relname
+            and c.relowner=u.usesysid
+            and u.usename not in ('svc_opdba','operational_dba')
+            and p.grantee is null
+            and t.table_schema not in ('pg_catalog','sys','information_schema','cfpb_admin'); 
+        """
+        return self.query(sql)
+
+    # #@migrate_utils.static_func.timer
     def get_columns(self, table_name, table_schema):
         """
 
@@ -792,10 +809,10 @@ group by relname;""".format(table_name)
 
         return table_obj
 
-    @migrate_utils.static_func.timer
+    # @migrate_utils.static_func.timer
     def get_table_row_count_fast(self, table_name, schema=None):
         x = 0
-        if self.dbtype in ['POSTGRES','CITUS']:
+        if self.dbtype in ['POSTGRES', 'CITUS']:
             self.vacuum(table_name)
             row = self.query("""select n_live_tup
                     from pg_stat_user_tables
@@ -856,6 +873,26 @@ group by relname;""".format(table_name)
         for m in l.__table__.columns:
             print(m, m.type)
 
+    def get_db_size(self):
+        sql = """SELECT  table_schema,table_name, pg_size_pretty(total_bytes) AS total
+    , pg_size_pretty(index_bytes) AS INDEX
+    , pg_size_pretty(toast_bytes) AS toast
+    , pg_size_pretty(table_bytes) AS TABLE
+    ,total_bytes-index_bytes as data_bytes
+    ,(total_bytes-index_bytes)/pow(1024,3) as data_gb
+  FROM (
+  SELECT *, total_bytes-index_bytes-COALESCE(toast_bytes,0) AS table_bytes FROM (
+      SELECT c.oid,nspname AS table_schema, relname AS TABLE_NAME
+              , c.reltuples AS row_estimate
+              , pg_total_relation_size(c.oid) AS total_bytes
+              , pg_indexes_size(c.oid) AS index_bytes
+              , pg_total_relation_size(reltoastrelid) AS toast_bytes
+          FROM pg_class c
+          LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE relkind = 'r'
+  ) a
+) a;"""
+        return self.query(sql)
     # this is only in this class for convience atm, should be moved out eventually
 
     def get_pandas_frame(self, table_name, rows=None):
@@ -873,17 +910,28 @@ group by relname;""".format(table_name)
     # certain commans requires the environment variables for the session
     # we need to save that and replace with our current and put it back after we are done
 
+    def _get_environment_vars(self):
+        envar = {}
+        if self._dbtype == 'POSTGRES':
+            envar['PGPASSWORD'] = os.environ['PGPASSWORD']
+            envar['PGUSER'] = os.environ['PGUSER']
+            envar['PGSSLMODE'] = os.environ['PGSSLMODE']
+            envar['PGHOST'] = os.environ['PGHOST']
+            envar['PGPORT'] = os.environ['PGPORT']
+            envar['PGDATABASE'] = os.environ['PGDATABASE']
+        return envar
+
     def _save_environment_vars(self):
-        if self._dbtype in ['POSTGRES','CITUS']:
-            self._pg_password = os.environ.get('PGPASSWORD',self._password)
-            self._pg_userid = os.environ.get('PGUSER',self._userid)
-            self._pg_sslmode = os.environ.get('PGSSLMODE',self._sslmode)
-            self._pg_host = os.environ.get('PGHOST',self._host)
-            self._pg_port = os.environ.get('PGPORT',str(self._port))
-            self._pg_database_name = os.environ.get('PGDATABASE',self._database_name)
+        if self._dbtype in ['POSTGRES', 'CITUS']:
+            self._pg_password = os.environ.get('PGPASSWORD', self._password)
+            self._pg_userid = os.environ.get('PGUSER', self._userid)
+            self._pg_sslmode = os.environ.get('PGSSLMODE', self._sslmode)
+            self._pg_host = os.environ.get('PGHOST', self._host)
+            self._pg_port = os.environ.get('PGPORT', str(self._port))
+            self._pg_database_name = os.environ.get('PGDATABASE', self._database_name)
 
     def _restore_environment_vars(self):
-        if self._dbtype in ['POSTGRES','CITUS']:
+        if self._dbtype in ['POSTGRES', 'CITUS']:
             os.environ['PGPASSWORD'] = self._pg_password
             os.environ['PGUSER'] = self._pg_userid
             os.environ['PGSSLMODE'] = self._pg_sslmode
@@ -892,7 +940,7 @@ group by relname;""".format(table_name)
             os.environ['PGDATABASE'] = self._pg_database_name
 
     def _replace_environment_vars(self):
-        if self._dbtype in ['POSTGRES','CITUS']:
+        if self._dbtype in ['POSTGRES', 'CITUS']:
             os.environ['PGPASSWORD'] = self._password
             os.environ['PGUSER'] = self._userid
             os.environ['PGSSLMODE'] = self._sslmode
@@ -900,29 +948,150 @@ group by relname;""".format(table_name)
             os.environ['PGPORT'] = str(self._port)
             os.environ['PGDATABASE'] = self._database_name
 
+    def set_table_owner(self, table_name_fqn, role):
+        if self._dbtype == 'POSTGRES':
+            sql = """ALTER TABLE {table_name}
+                    OWNER to {role}"""
+            self.execute(sql.format(table_name=table_name_fqn, role=role))
+        else:
+            print('Not Supported')
+            raise
+
+    def create_table_from_dataframe(self, dataframe, table_name_fqn):
+        if '.' in table_name_fqn:
+            if not self.check_table_exists(table_name_fqn):
+                df = dataframe.head()
+                schema = table_name_fqn.split('.')[0]
+                table_name = table_name_fqn.split('.')[1]
+                sqlalchemy_conn, meta = self.connect_sqlalchemy()
+
+                df.to_sql(table_name, sqlalchemy_conn, schema=schema, if_exists='append', index=False, chunksize=1000)
+                self.execute('truncate table {}'.format(table_name_fqn))
+                self.set_table_owner(table_name_fqn, 'operational_dba')
+
+                return True
+            else:
+                print("Table exists")
+                return False
+        else:
+            print('Need Fully qualified table name')
+            return False
+
+    def check_table_exists(self, table_name_fqn):
+        if self._dbtype == 'POSTGRES':
+            table_exists = False
+            sql = """select count(*) from information_schema.tables
+            WHERE table_type='BASE TABLE'
+            and table_name='{table_name}' {schema}
+            """
+            if '.' in table_name_fqn:
+                table_name = table_name_fqn.split('.')[1]
+                schema = """ and table_schema='{}'""".format(table_name_fqn.split('.')[0])
+
+                sql = sql.format(table_name=table_name, schema=schema)
+            else:
+                sql = sql.format(table_name=table_name_fqn, schema='')
+
+            x = self.get_a_value(sql)
+            if x > 0:
+                if x > 1:
+                    print('warning multiple tables found')
+                table_exists = True
+        else:
+            print('Not Supported')
+            raise
+        return table_exists
+
+    # copy using pyscopg to convert a dataframe to a file like object and pass it into pyscopg
+    # this does not write to the file system but puts all the data into memory
+    def copy_from_file(self, dataframe, table_name_fqn, encoding='utf8'):
+        from cStringIO import StringIO
+        from contextlib import contextmanager
+
+        @contextmanager
+        def readStringIO():
+            #from cStringIO import StringIO
+            try:
+                # make sure we are at the begining of the object/file
+                data_stringIO = StringIO()
+                dataframe.to_csv(data_stringIO, header=False, index=False, encoding='utf8')
+                data_stringIO.reset()
+                yield data_stringIO
+            finally:
+                data_stringIO.close()
+
+                #print("copy_from_file:", table_name_fqn, len(dataframe))
+
+        with readStringIO() as f:
+            column_list = ','.join(dataframe.columns.values.tolist())
+            cmd_string = """COPY {table} ({columns}) FROM STDIN WITH (FORMAT CSV)""".format(table=table_name_fqn, columns=column_list)
+            #print("pyscopg:", cmd_string)
+            self._cur.copy_expert(cmd_string, f)
+            self._conn.commit()
+
+    # still in the works
+
+    def import_bulk_dataframe(self, dataframe, table_name_fqn, file_delimiter=',', header=False, encoding='utf8', in_memory=False):
+        tempfile = './_tmp_bulk_import.csv'
+        if not in_memory:
+            dataframe.to_csv(tempfile, header=False, index=False, encoding=encoding)
+            self.import_file_client_side(full_file_path=tempfile, table_name_fqn=table_name_fqn,
+                                         file_delimiter=file_delimiter, header=header, encoding=encoding)
+        else:
+            # import w/out writing to a file just use available memory
+            import subprocess
+            import StringIO
+            self._save_environment_vars()
+            self._replace_environment_vars()
+            data_stringIO = StringIO.StringIO()
+
+            dataframe.to_csv(data_stringIO, header=False, index=False, encoding=encoding)
+            params = """--dbname={dbname} --host={host} -c "\copy {table_name} 
+            FROM stdin with (format csv, delimiter '{delimiter}', HEADER {header}, ENCODING '{encoding}')" """
+            command_text = params.format(table_name=table_name_fqn,
+                                         delimiter=file_delimiter, dbname=self._database_name,
+                                         host=self._host, header=header, encoding=encoding)
+            # print(data_stringIO.getvalue())
+            copy_cmd = """\copy census.geoheader FROM stdin with (format csv, ENCODING '{encoding}')"""
+            print("in memory copy command")
+            p = subprocess.Popen(('/opt/edb/as10/bin/psql',
+                                  "--dbname={dbname}".format(dbname=self._database_name),
+                                  "--host={host}".format(host=self._host),
+                                  "--username={username}".format(username=self._userid),
+                                  "--command=""{cmd}""".format(cmd=copy_cmd.format(encoding=encoding))
+                                  ), env=self._get_environment_vars(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            output, error = p.communicate(data_stringIO.getvalue())
+            if output == '':
+                print(output, error)
+                raise
+
+            self._restore_environment_vars()
+
+    # uses pyscopg2 builtin copy commmand delivered with binary
+
     def import_pyscopg2_copy(self, full_file_path, table_name_fqn, file_delimiter):
-   
+
         f = open(full_file_path)
         #cur.copy_from(f, table_name_fqn, columns=('col1', 'col2'), sep=",")
-        x=self._cur.copy_from(f, table_name_fqn,  sep=",")
+        x = self._cur.copy_from(f, table_name_fqn, sep=",")
         self._conn.commit()
-        print("-----xxxx pyscop copy: ",x)
+
         return x
+
     # simple import using client side
     # this assumes the csv has data exactly in the same structure as the target table
-
-    def import_file_client_side(self, full_file_path, table_name_fqn, file_delimiter):
+    def import_file_client_side(self, full_file_path, table_name_fqn, file_delimiter=',', header=False, encoding='utf8'):
 
         self._save_environment_vars()
         self._replace_environment_vars()
-        copy_command_client_side = """psql --dbname={3} --host={4} -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}')" """
+        copy_command_client_side = """psql --dbname={3} --host={4} -c "\copy {0} FROM '{1}' with (format csv, delimiter '{2}', HEADER {5}, ENCODING '{6}')" """
 
         data_file = full_file_path
 
         t = datetime.datetime.now()
 
         command_text = copy_command_client_side.format(table_name_fqn, data_file, file_delimiter, self._database_name,
-                                                       self._host)
+                                                       self._host, header, encoding)
         logging.info("Copy Command STARTED:{0} Time:{1}".format(table_name_fqn, t))
         error_code, txt_out = commands.getstatusoutput(command_text)
         logging.debug("Copy Command Completed:{0} Time:{1}".format(txt_out, datetime.datetime.now()))
