@@ -1,0 +1,129 @@
+#This ASSUMES all table structures are in place
+#Deliver Scenarios
+# 1: TRUNCATE: will truncate the target table and load whatever returns from the source sql
+# 2: FILE_ID:  Will pull all records with file_ids that exists in the source but not in the target table
+#     This will continually grow the table as new source files get loaded
+#     Your SQL needs to return the name number of columns that exists in the target table
+# 3: CDO_LAST_UPDATE:  Based on the Max(Time) in the target table it will pull all data in the source that is
+#     more recent and will over-write any records that have an older CDO_LAST_UPDATE time
+      #source_table: required
+      #cdo_last_update field needs to exists in both tables and ****INDEXED*****
+
+
+
+# - target_table: 'some_db.loan'
+#   delivery_type: 'KILLFILL'
+#   target_db_type: 'POSTGRES'
+#   source_db_type: 'POSTGRES'
+#   # make sure Target table structure match this query result
+#   source_sql: |
+#           select * from some_db.loan_4886
+
+# - target_table: 'some_db.loan_current'
+#   delivery_type: 'FILE_ID'
+#   target_db_type: 'POSTGRES'
+#   target_pre_action_sql: 'TRUNCATE table some_db.loan_current'
+#   source_db_type: 'POSTGRES'
+#   source_id_sql: 'SELECT distinct(file_id) from some_db.loan_current' # the place to look for file_id
+#   target_id_sql: 'SELECT distinct(file_id) from some_db.loan_current' # the place to look for file_id
+#   # make sure Target table structure match this query result
+#   source_sql: 'SELECT * from some_db.loan_current where file_id ={} '
+
+
+
+
+# create SCHEMA some_db_demo authorization operational_dba;
+# SELECT run_command_on_workers(
+#   $cmd$
+#   create SCHEMA some_db_demo authorization operational_dba;
+#   $cmd$);
+
+ # move everything for a project in meta_source_files using file_ids
+- delivery_type: 'SCHEMA'
+  enabled: True
+  num_process: 50
+  appname: some_db_migration #used to tag dbconnection for visibility in db
+  move_data: True # must be ste to true to move the data else it will be a dry
+  # fill all these out
+  db:
+    source_db:
+      db: rdsadmin
+      host: test-instance-sqlserver.c4f3btp5oddk.us-east-1.rds.amazonaws.com
+      port: 1433
+      type: 'MSSQL'
+      schema: "dbo"
+      userid: 'master'
+      password_envir_var: MSPASSWORD #set environment variable MSPASSWORD
+    target_db:
+      db: 'postgres'
+      host: localhost
+      port: 5432
+      type: 'POSTGRES'
+      schema: "postgres"
+      userid: 'postgres'
+      password_envir_var: PGPASSWORD #set environment variable PGPASSWORD
+      create_target_schema: True
+      create_target_tables: True
+      truncate_target: False
+ 
+  #retain_data_file_path: 'backup/'
+  logging_table: "{{target_schema}}.migration_log"
+  work_table: "{{target_schema}}.migration_work"
+  #trg_pre_action_sql:
+    #- "truncate table {{target_schema}}.migration_log"
+    #- "truncate table {{target_schema}}.migration_work"
+  
+  partition_column: file_id
+  
+  all_tables: True
+  # tables:
+  #   - batch_method: COLUMN
+  #     table: hpi
+  #     chunk_sql: select distinct id from logging.meta_source_files s;
+  #     column: file_id
+
+# - delivery_type: 'SCHEMA'
+#   enabled: False
+#   appname: mpo_migration
+#   move_data: False # must be ste to true to move the data else it will be a dry
+#   source_host: hostname
+#   target_host: hostname.some_db.local
+#   source_db: some_db
+#   target_db: some_db
+#   target_db_type: 'POSTGRES'
+#   source_db_type: 'POSTGRES'
+#   source_schema: some_db
+#   target_schema: some_db_demo
+#   #retain_data_file_path: './backup/'
+#   logging_table: "{{target_schema}}.migration_log"
+#   work_table: "{{target_schema}}.migration_work"
+#   #truncate_target: Falses
+#   partition_column: file_id
+#   trg_pre_action_sql:
+#     - "truncate table {{target_schema}}.migration_log"
+#     - "truncate table {{target_schema}}.migration_work"
+    # - "truncate table some_db.loan"
+    # - "truncate table some_db.loan_month"
+  #drop_recreate: False
+  #execute this after each table
+  # post_load_per_tbl_sql:
+  #   - "ALTER TABLE {{table_name}} OWNER TO operational_dba;"
+  #   - "GRANT all on {{table_name}} to operational_dba"
+  # create_target_tables: True
+  # all_tables: True
+  # tables:
+    # - batch_method: COLUMN
+    #   all_tables: True
+    #   column: bad_id
+    # - batch_method: COLUMN
+    #   table: loan
+    #   chunk_sql: select distinct last_update_dtm from some_db.loan ;
+    #   column: last_update_dtm
+    # - batch_method: COLUMN
+    #   table: loan_4886
+    #   chunk_sql: select distinct last_update_dtm from some_db.loan_4886 ;
+    #   column: last_update_dtm
+    # - batch_method: COLUMN
+    #   table: loan_month
+    #   chunk_sql: select distinct id from logging.meta_source_files where file_name like '%Month%';
+    #   column: file_id
