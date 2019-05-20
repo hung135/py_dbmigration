@@ -1,1 +1,0 @@
-	virtualenv .py -p python
