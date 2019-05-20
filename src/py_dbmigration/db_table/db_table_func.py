@@ -14,14 +14,14 @@ class RecordKeeper():
     engine_dict = {}  # using dict because class level variable not getting set
     table_dict = {}
 
-    def __init__(self, db, table_def):
+    def __init__(self, db, table_def,dbschema):
         # type: (dbutils.conn, str, str) -> object
         """
 
         :rtype: 
         """
         self.host = db.host
-        self.dbschema = db.schema
+        self.dbschema = dbschema
         self.database = db.dbname
        
         self.engine = None  # instance
@@ -39,8 +39,16 @@ class RecordKeeper():
         # call class method to make sure url attribute is set
         if self.engine_dict.get('only1', None) is None:
 
-            db.connect_sqlalchemy(schema, db._dbtype)
-            self.engine_dict['only1'] = sqlalchemy.create_engine(db.url)
+            #db.connect_SqlAlchemy()
+            sql_alchemy_uri_connected=db.sql_alchemy_uri.format(
+                    userid=db.userid,
+                    pwd=db.pwd,
+                    host=db.host,
+                    port=db.port,
+                    db=db.dbname
+                )
+            print("----------",sql_alchemy_uri_connected)
+            self.engine_dict['only1'] = sqlalchemy.create_engine(sql_alchemy_uri_connected)
             self.engine = self.engine_dict['only1']
 
             try:

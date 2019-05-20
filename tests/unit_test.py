@@ -12,13 +12,16 @@ from py_dbutils.rdbms import postgres as db_utils
 logging = log.getLogger()
 logging.setLevel(log.ERROR)
 
-
+TEST_SCHEMA = 'test'
+LOGGING_SCHEMA = 'logging'
+PROJECT_NAME= 'test_project'
 class Test_db_utils_postgres(unittest.TestCase):
     HOST = 'pgdb'
     DATABASE = 'postgres'
     USERID = 'docker'
     DBTYPE = 'POSTGRES'
     DATA_SCHEMA = 'prey'
+    
     DBPASSWORD = 'docker'
     DBPORT = 5432
     SAMPLE_DATA_LINE_COUNT = 1500
@@ -36,24 +39,29 @@ class Test_db_utils_postgres(unittest.TestCase):
 
     db = db_utils.DB(host=HOST, userid=USERID, dbname=DATABASE, schema=DATA_SCHEMA,
                                     pwd=DBPASSWORD,  port=DBPORT)
-    db.execute("create schema logging")
+    db.execute("create schema {}".format(LOGGING_SCHEMA))
+    db.execute("create schema {}".format(TEST_SCHEMA))
     dirs = {
         'sample_data_dir': "./_sample_data/",
         'sample_working_dir': "./_sample_working_dir/",
         'sample_zip_data_dir': "./_sample_zip_data/"}
 
     # this should run first test functions run alphabetically
-    @unittest.skip("only need once")
+    #@unittest.skip("only need once")
     def test_00_init(self):
         print('# In function:', sys._getframe().f_code.co_name)
         self.db.execute('create schema if not exists {}'.format(
             self.DATA_SCHEMA))  # db.execute('create  database if not exists testing')
-        self.db.commit()
+         
         tbl = self.db.get_all_tables()
+        
         for table in tbl:
-            static_func.add_column(self.db, self.DATA_SCHEMA +"."+ table, 'crc', 'uuid')
-            static_func.add_column(self.db, self.DATA_SCHEMA +"."+ table, 'file_id', 'Integer')
-        self.db.commit()
+            
+            if table.startswith(self.DATA_SCHEMA+'.'):
+                print("------------",table)
+                static_func.add_column(self.db, self.DATA_SCHEMA +"."+ table, 'crc', 'uuid')
+                static_func.add_column(self.db, self.DATA_SCHEMA +"."+ table, 'file_id', 'Integer')
+        
     # this should run last
     def test_zz_last(self):
         print('# In function:', sys._getframe().f_code.co_name)
@@ -65,8 +73,8 @@ class Test_db_utils_postgres(unittest.TestCase):
 
         print('# In function:', sys._getframe().f_code.co_name)
 
-        t = db_table.db_table_func.RecordKeeper(self.db, db_table.db_table_def.MetaSourceFiles)
-        row = db_table.db_table_def.MetaSourceFiles(file_path='.', file_name='abc', file_name_data='',
+        t = db_table.db_table_func.RecordKeeper(self.db, db_table.db_table_def.MetaSourceFiles,TEST_SCHEMA)
+        row = db_table.db_table_def.MetaSourceFiles(project_name=PROJECT_NAME, file_path='.', file_name='abc', file_name_data='',
                                                     file_type='ZIP', parent_file_id=0)
         t.add_record(row, commit=True)
         self.db.commit()
@@ -74,7 +82,7 @@ class Test_db_utils_postgres(unittest.TestCase):
     def test_03_query(self):
         print('# In function:', sys._getframe().f_code.co_name)
         self.assertTrue(self.db.query('select 1 from logging.meta_source_files limit 1;'))
-
+    @unittest.skip("Not yet")
     def test_05_upsert(self):
         sql = """insert into table_b (pk_b, b)
                 select pk_a,a from table_a
@@ -83,7 +91,7 @@ class Test_db_utils_postgres(unittest.TestCase):
         self.assertTrue((static_func.generate_postgres_upsert(self.db, 'meta_source_files', 'stg', 'logging')))
         # self.db.get_primary_keys('logging.meta_source_files')
 
-    @static_func.timer
+    #@static_func.timer
     def test_06_migrate_utils(self):
         if self.GENERATE_SAMPLE_DATA:
             # static_func.generate_data_sample(self.db,'xref_clickwrap_agreement',self.schema,'_sample_data/xref_clickwrap_agreement.csv',line_count=5)
@@ -240,6 +248,6 @@ class Test_db_utils_postgres(unittest.TestCase):
 
     def test_check_iii(self):
         print('# In function:', sys._getframe().f_code.co_name)
-        static_func.check_pii(self.db)
+        #static_func.check_pii(self.db)
 if __name__ == '__main__':
     unittest.main()
