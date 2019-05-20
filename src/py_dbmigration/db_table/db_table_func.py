@@ -5,8 +5,7 @@ import sqlalchemy
 
 from sqlalchemy.schema import CreateSchema
 import sqlalchemy
-import db_utils
-import migrate_utils
+ 
 
 from .db_table_def import *
 
@@ -21,10 +20,10 @@ class RecordKeeper():
 
         :rtype: 
         """
-        self.host = db._host
-        self.dbschema = db.dbschema
-        self.database = db._database_name
-        db_url = None
+        self.host = db.host
+        self.dbschema = db.schema
+        self.database = db.dbname
+       
         self.engine = None  # instance
         #assert isinstance(db, db_utils.dbconn.Connection)
 

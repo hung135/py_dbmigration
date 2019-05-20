@@ -1,22 +1,21 @@
 import re
 import os
 import time
-import zip_utils
+#import zip_utils
 import socket
-
-import commands
+ 
 
 import datetime
 import time
 import pandas as pd
-import db_logging
-import db_table.db_table_def
-import db_table.db_table_func
-import db_utils
-import utils
+#import db_logging
+from py_dbmigration import db_table
+#mport db_table.db_table_func
+
+ 
 import sys
 
-import migrate_utils.static_func
+from py_dbmigration import migrate_utils
 import logging as log
 
 logging = log.getLogger()

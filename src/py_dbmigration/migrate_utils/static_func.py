@@ -504,7 +504,7 @@ def show_users(db):
         join pg_roles on (pg_roles.oid=pg_auth_members.roleid)
         where rolname='{}_readonly'
         or rolname='{}_readonly
-        ;""".format(db._database_name, db.dbschema)
+        ;""".format(db._database_name, db.schema)
     return db.query(sql)
 
 
@@ -561,7 +561,7 @@ def print_postgres_table(db, folder=None, targetschema=None):
 
     import subprocess
 
-    con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
+    con, meta = db.connect_sqlalchemy(db.schema, db._dbtype)
     # print dir(meta.tables)
     folder_table = folder + "/postgrestables/"
 
@@ -577,7 +577,7 @@ def print_postgres_table(db, folder=None, targetschema=None):
         out = None
         try:
             out = subprocess.check_output(
-                ["pg_dump", "--schema-only", "enforce", "-t", "{}.{}".format(db.dbschema, t.name)])
+                ["pg_dump", "--schema-only", "enforce", "-t", "{}.{}".format(db.schema, t.name)])
         # "pg_dump -U nguyenhu enforce -t  public.temp_fl_enforcement_matters_rpt --schema-only"
         # print(out)
         except subprocess.CalledProcessError as e:
@@ -595,7 +595,7 @@ def print_postgres_table(db, folder=None, targetschema=None):
 def print_create_table_upsert(db, folder=None, targetschema=None):
     import os
 
-    con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
+    con, meta = db.connect_sqlalchemy(db.schema, db._dbtype)
     # print dir(meta.tables)
     folder_deploy = folder + "/deploy/functions/"
     folder_revert = folder + "/revert/functions/"
@@ -621,7 +621,7 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
         filename = t.name.lower() + "_upsert.sql"
         basefilename = t.name.lower()
         rows = db.query(
-            "call {}.generateUpsert_style_functions('{}','{}')".format(db._database_name, db.dbschema, t.name))
+            "call {}.generateUpsert_style_functions('{}','{}')".format(db._database_name, db.schema, t.name))
         logging.debug("Generating Upsert for Table: {}".format(t.name.lower()))
         line = ("\nsqitch --plan-file functions.plan add functions/{} -n \"Adding {}\" ".format(basefilename + "_upsert", filename))
 
@@ -631,7 +631,7 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
                 f.write(bytes(line[0]))
                 f.write(bytes("\n"))
 
-        drop = "DROP FUNCTION IF EXISTS {}.{};".format(db.dbschema, basefilename + "_upsert();")
+        drop = "DROP FUNCTION IF EXISTS {}.{};".format(db.schema, basefilename + "_upsert();")
         with open(folder_revert + filename, "wb") as f:
             f.write(bytes(drop))
             f.write(bytes("\n"))
@@ -721,7 +721,7 @@ def print_result_html_table(db, query, column_header, sortable_columns=None):
 
 def print_table_dict(db, folder='.', targetschema=None):
     if targetschema is None:
-        dbschema = db.dbschema
+        dbschema = db.schema
     else:
         dbschema = targetschema
 
@@ -754,11 +754,11 @@ def print_table_dict(db, folder='.', targetschema=None):
     import sqlalchemy
     import os
     sql_get_routines="SELECT routines.routine_name FROM information_schema.routines where routines.specific_schema='{}'"sql="SELECT pg_get_functiondef('{}.{}'::regproc)"
-    routine_list=db.query(sql_get_routines.format(db.dbschema))
+    routine_list=db.query(sql_get_routines.format(db.schema))
     for r in routine_list:
-        code=db.query(sql.format(db.dbschema,r))
+        code=db.query(sql.format(db.schema,r))
 
-    con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
+    con, meta = db.connect_sqlalchemy(db.schema, db._dbtype)
     # print dir(meta.tables)
     folder_deploy = folder + "/deploy/{}/".format(object)
     folder_revert = folder + "/revert/{}/".format(object)
@@ -780,7 +780,7 @@ def print_table_dict(db, folder='.', targetschema=None):
     db_objects = []
 
     if targetschema is None:
-        dbschema = db.dbschema
+        dbschema = db.schema
 
     else:
         dbschema = targetschema
@@ -807,7 +807,7 @@ def print_table_dict(db, folder='.', targetschema=None):
 
         sqitch.append(line)
         if targetschema is not None:
-            createsql = createsql.replace(("table " + db.dbschema + ".").lower(), "table " + targetschema + ".")
+            createsql = createsql.replace(("table " + db.schema + ".").lower(), "table " + targetschema + ".")
         m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
         db_objects.append(m)
 
@@ -856,7 +856,7 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
 
     sql_def = """SELECT pg_get_functiondef('{schema_name}.{view_name}'::regproc);"""
     error_function = []
-    rs = db.query(sql_list.format(db.dbschema))
+    rs = db.query(sql_list.format(db.schema))
     func_list = []
     for row in rs:
         func_list.append(row[0])
@@ -880,7 +880,7 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
     sqitch = []
     functions = []
 
-    dbschema = targetschema or db.dbschema
+    dbschema = targetschema or db.schema
 
     # for n, t in meta.tables.iteritems():
     for t in func_list:
@@ -934,7 +934,7 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
 
             v_str = """SELECT 1  FROM information_schema.routines 
             WHERE routine_type='FUNCTION' AND specific_schema='{}'
-            AND routine_name='{}';\n""".format(db.dbschema, i["function"])
+            AND routine_name='{}';\n""".format(db.schema, i["function"])
             verify = "BEGIN;\n" + v_str
             file_path = os.path.join(folder_revert + i["filename"])
             with open(file_path, "wb") as f:
@@ -960,7 +960,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     import os
     from sqlalchemy.dialects import postgresql
 
-    con, meta = db.connect_sqlalchemy(db.dbschema, db._dbtype)
+    con, meta = db.connect_sqlalchemy(db.schema, db._dbtype)
     # print dir(meta.tables)
     folder_deploy = folder + "/deploy/tables/"
     folder_revert = folder + "/revert/tables/"
@@ -982,7 +982,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     tables = []
 
     if targetschema is None:
-        dbschema = db.dbschema
+        dbschema = db.schema
 
     else:
         dbschema = targetschema
@@ -1011,7 +1011,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
 
         sqitch.append(line)
         if targetschema is not None:
-            createsql = createsql.replace(("table " + db.dbschema + ".").lower(), "table " + targetschema + ".")
+            createsql = createsql.replace(("table " + db.schema + ".").lower(), "table " + targetschema + ".")
         m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
         tables.append(m)
 
@@ -1059,7 +1059,7 @@ def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
                         where table_schema='{}' and table_type='VIEW'
                 """
     sql_view_def = """select pg_get_viewdef('{schema_name}.{view_name}',true);"""
-    rs_views = db.query(sql_view_list.format(db.dbschema))
+    rs_views = db.query(sql_view_list.format(db.schema))
     view_list = []
     for row in rs_views:
         view_list.append(row[0])
@@ -1083,7 +1083,7 @@ def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
     sqitch = []
     tables = []
 
-    dbschema = targetschema or db.dbschema
+    dbschema = targetschema or db.schema
 
     # for n, t in meta.tables.iteritems():
     for t in view_list:
@@ -1159,7 +1159,7 @@ def reset_migration(db):
     Drop schema if exists logging cascade;
     drop schema if exists util cascade;""")
     db._cur.execute(
-        """commit;""")  # var=raw_input("You are about to drop 5 schemas in DATABASE:>>>{}<<< Are you Sure? Y/N ".format(db._database_name))  # if var=="Y":  #     db.drop_schema("stg")  #     db.drop_schema(db.dbschema);  #     db.drop_schema("sqitch")  #     db.drop_schema("logging")  #     db.drop_schema("util")
+        """commit;""")  # var=raw_input("You are about to drop 5 schemas in DATABASE:>>>{}<<< Are you Sure? Y/N ".format(db._database_name))  # if var=="Y":  #     db.drop_schema("stg")  #     db.drop_schema(db.schema);  #     db.drop_schema("sqitch")  #     db.drop_schema("logging")  #     db.drop_schema("util")
 
 
 def make_html_meta_source_files(db, full_file_path, html_head):
@@ -1204,16 +1204,16 @@ def make_html_meta_source_files(db, full_file_path, html_head):
     if not os.path.exists(os.path.dirname(full_file_path)):
         import commands
         try:
-            os.makedirs(os.path.dirname(full_file_path), 0775)
+            os.makedirs(os.path.dirname(full_file_path), 0o0776)
 
         except OSError as exc:  # Guard against race condition
             if exc.errno != exc.errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0776)
+    os.chmod(os.path.dirname(full_file_path), 0o0776)
 
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0776)
+    os.chmod(full_file_path, 0o0776)
 
 
 def make_html_publish_error(db, full_file_path, html_head):
@@ -1237,15 +1237,15 @@ def make_html_publish_error(db, full_file_path, html_head):
     if not os.path.exists(os.path.dirname(full_file_path)):
         try:
 
-            os.makedirs(os.path.dirname(full_file_path), 0775)
+            os.makedirs(os.path.dirname(full_file_path), 0o0776)
 
         except OSError as exc:  # Guard against race condition
             if exc.errno != exc.errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0776)
+    os.chmod(os.path.dirname(full_file_path), 0o0776)
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0776)
+    os.chmod(full_file_path, 0o0776)
 
 
 def make_html_publish_log(db, full_file_path, html_head):
@@ -1278,15 +1278,15 @@ def make_html_publish_log(db, full_file_path, html_head):
     if not os.path.exists(os.path.dirname(full_file_path)):
         try:
 
-            os.makedirs(os.path.dirname(full_file_path), 0775)
+            os.makedirs(os.path.dirname(full_file_path), 0o0776)
 
         except OSError as exc:  # Guard against race condition
             if exc.errno != exc.errno.EEXIST:
                 raise
-    os.chmod(os.path.dirname(full_file_path), 0776)
+    os.chmod(os.path.dirname(full_file_path), 0o0776)
     with open(full_file_path, 'w') as f:
         f.write(html)
-    os.chmod(full_file_path, 0776)
+    os.chmod(full_file_path, 0o0776)
 
 
 # given a columna_name,type tubple return a data word for that type
@@ -1437,7 +1437,7 @@ def generate_data_sample(db, table_name, source_schema, file_name, line_count=10
             column_names.append(c.column_name)
 
     if not os.path.exists(os.path.dirname(file_name)):
-        os.makedirs(os.path.dirname(file_name), mode=0777)
+        os.makedirs(os.path.dirname(file_name), mode=0o0777)
 
     with open(os.path.abspath(file_name), 'w') as f:
         for x in range(line_count):
@@ -1479,12 +1479,12 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
     assert isinstance(db, dbconn.Connection)
     print("Dumping: {}".format(source_schema))
     if source_schema is None:
-        source_schema = db.dbschema
+        source_schema = db.schema
     # tbs = db.get_table_list(source_schema)
     tbs = db.get_table_list_via_query(source_schema)
 
     if not os.path.exists(os.path.dirname(data_directory)):
-        os.makedirs(os.path.dirname(data_directory), mode=0777)
+        os.makedirs(os.path.dirname(data_directory), mode=0o0777)
     print("Dumping data for scheam: {}".format(source_schema))
 
     for i, table_name in enumerate(tbs):
@@ -1503,16 +1503,15 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
 
 # this will return sql to do upsert based on the primary keys
 def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None, file_id=None, src_table=None):
-    import db_utils.dbconn
-    assert isinstance(db, db_utils.dbconn.Connection)
+    
     if trg_schema is None:
-        schema = db.dbschema
+        schema = db.schema
     else:
         schema = trg_schema
     if src_table is None:
         src_table = table_name
 
-    columns = db.get_table_columns(table_name, schema)
+    columns = db.get_table_columns("{}.{}".format(schema,table_name))
     z = ""
     md5_src = ""
     md5_trg = ""
@@ -1557,7 +1556,7 @@ def generate_postgres_straight_upsert(db, table_name, source_schema, trg_schema=
     import db_utils.dbconn
     assert isinstance(db, db_utils.dbconn.Connection)
     if trg_schema is None:
-        schema = db.dbschema
+        schema = db.schema
     else:
         schema = trg_schema
     if src_table is None:
@@ -1901,14 +1900,14 @@ def check_pii(db):
                             set active=True,
                             updated_dt=now(),
                             updated_by_id='{}'
-                        """.format(db._userid)
+                        """.format(db.userid)
 
     x = db.query(sql)
     # iterate through the rules table
     for id, table_name, field_name, acceptable_values in x:
         print("Iterating through", table_name, field_name)
         # try:
-        primay_key = get_primary_key(db, db.dbschema,
+        primay_key = get_primary_key(db, db.schema,
                                      table_name)
         # print(primay_key,type(primay_key))
 
@@ -1921,7 +1920,7 @@ def check_pii(db):
         key_colums_to_sql = str(primay_key[0])
         fqn_table_name = table_name
         if '.' not in table_name:
-            fqn_table_name = db.dbschema + "." + table_name
+            fqn_table_name = db.schema + "." + table_name
         jj = acceptable_values.split(';')
 
         where_clause = None
@@ -1957,7 +1956,7 @@ def check_pii(db):
                     where
                     (h.id is null) AND\n (\n{5}\n) """
 
-        sql_to_exe = sql_insert + sql_none.format(str(id), key_colums_to_sql, db._userid, fqn_table_name, id,   where_clause)
+        sql_to_exe = sql_insert + sql_none.format(str(id), key_colums_to_sql, db.userid, fqn_table_name, id,   where_clause)
         print(sql_to_exe)
         db.execute(sql_to_exe)
         # except Exception as e:

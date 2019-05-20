@@ -1,21 +1,22 @@
 import sys
 import unittest
 
-from data_file_mgnt import *
-from data_file_mgnt.data_files import *
-from migrate_utils import *
-import db_table
+from py_dbmigration.data_file_mgnt import *
+from py_dbmigration.migrate_utils import static_func
+import py_dbmigration.db_table as db_table
 import logging as log
+import os
+from py_dbutils.rdbms import postgres as db_utils
+#sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 logging = log.getLogger()
 logging.setLevel(log.ERROR)
 
 
 class Test_db_utils_postgres(unittest.TestCase):
-    HOST = 'localhost'
-    HOST = '192.168.99.100'
+    HOST = 'pgdb'
     DATABASE = 'postgres'
-    USERID = 'postgres'
+    USERID = 'docker'
     DBTYPE = 'POSTGRES'
     DATA_SCHEMA = 'prey'
     DBPASSWORD = 'docker'
@@ -33,9 +34,9 @@ class Test_db_utils_postgres(unittest.TestCase):
     START_ROW = 2
     TRUNCATE_TABLE = True
 
-    db = db_utils.dbconn.Connection(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA,
-                                    password=DBPASSWORD,
-                                    dbtype=DBTYPE, port=DBPORT)
+    db = db_utils.DB(host=HOST, userid=USERID, dbname=DATABASE, schema=DATA_SCHEMA,
+                                    pwd=DBPASSWORD,  port=DBPORT)
+    db.execute("create schema logging")
     dirs = {
         'sample_data_dir': "./_sample_data/",
         'sample_working_dir': "./_sample_working_dir/",
@@ -47,27 +48,18 @@ class Test_db_utils_postgres(unittest.TestCase):
         print('# In function:', sys._getframe().f_code.co_name)
         self.db.execute('create schema if not exists {}'.format(
             self.DATA_SCHEMA))  # db.execute('create  database if not exists testing')
-        tbl = self.db.get_table_list_via_query(self.DATA_SCHEMA)
+        self.db.commit()
+        tbl = self.db.get_all_tables()
         for table in tbl:
-            migrate_utils.static_func.add_column(self.db, self.DATA_SCHEMA +"."+ table, 'crc', 'uuid')
-            migrate_utils.static_func.add_column(self.db, self.DATA_SCHEMA +"."+ table, 'file_id', 'Integer')
+            static_func.add_column(self.db, self.DATA_SCHEMA +"."+ table, 'crc', 'uuid')
+            static_func.add_column(self.db, self.DATA_SCHEMA +"."+ table, 'file_id', 'Integer')
         self.db.commit()
     # this should run last
     def test_zz_last(self):
         print('# In function:', sys._getframe().f_code.co_name)
         # this should run last
 
-    def test_01_clean_previous(self):
-        import commands
-        print('# In function:', sys._getframe().f_code.co_name)
-
-        if self.CLEAN_PREV is not False:
-            for key, dir in self.dirs.items():
-                x = (("rm -rf {}/*").format(os.path.abspath(dir)))
-                print("Cleaning Directory:", x)
-                commands.getoutput(x)
-        else:
-            print("Skip Cleaning Previous")
+  
 
     def test_02_record_keeper(self):
 
@@ -80,7 +72,7 @@ class Test_db_utils_postgres(unittest.TestCase):
         self.db.commit()
 
     def test_03_query(self):
-        print '# In function:', sys._getframe().f_code.co_name
+        print('# In function:', sys._getframe().f_code.co_name)
         self.assertTrue(self.db.query('select 1 from logging.meta_source_files limit 1;'))
 
     def test_05_upsert(self):
@@ -206,14 +198,14 @@ class Test_db_utils_postgres(unittest.TestCase):
             _IMPORT_METHOD= params
             print('# In function:', sys._getframe().f_code.co_name)
 
-            migrate_utils.static_func.print_padded(20,
+            static_func.print_padded(20,
                   '_GENERATE_CRC', \
                   '_GENERATE_FILE_ID', \
                   '_LIMIT_ROWS', \
                   '_START_ROW', \
                   '_TRUNCATE_TABLE', \
                   '_IMPORT_METHOD')
-            migrate_utils.static_func.print_padded(20,
+            static_func.print_padded(20,
             _GENERATE_CRC,\
             _GENERATE_FILE_ID,\
             _LIMIT_ROWS,\
@@ -242,12 +234,12 @@ class Test_db_utils_postgres(unittest.TestCase):
 
     def test_profile_csv(self):
         print('# In function:', sys._getframe().f_code.co_name)
-        #migrate_utils.static_func.profile_csv(full_file_path="/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data/test_city2018.csv")
-        migrate_utils.static_func.profile_csv_directory("/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data")
+        #static_func.profile_csv(full_file_path="/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data/test_city2018.csv")
+        static_func.profile_csv_directory("/Users/hnguyen/PycharmProjects/py_dbmigration/_sample_data")
 
 
     def test_check_iii(self):
         print('# In function:', sys._getframe().f_code.co_name)
-        migrate_utils.static_func.check_pii(self.db)
+        static_func.check_pii(self.db)
 if __name__ == '__main__':
     unittest.main()
