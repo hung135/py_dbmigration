@@ -5,23 +5,22 @@ import sqlalchemy
 
 from sqlalchemy.schema import CreateSchema
 import sqlalchemy
+from sqlalchemy.ext.declarative import declarative_base
+from .db_table_def import MetaBase,MetaSourceFiles
+
  
-
-from .db_table_def import *
-
-
 class RecordKeeper():
     engine_dict = {}  # using dict because class level variable not getting set
     table_dict = {}
-
-    def __init__(self, db, table_def,dbschema):
+    
+    def __init__(self, db, table_def):
         # type: (dbutils.conn, str, str) -> object
         """
 
         :rtype: 
         """
         self.host = db.host
-        self.dbschema = dbschema
+        self.dbschema = 'logging'
         self.database = db.dbname
        
         self.engine = None  # instance
@@ -34,7 +33,7 @@ class RecordKeeper():
             self.table_dict[key] = table_def
             self.table = self.table_dict[key]
 
-        schema = self.table.DbSchema
+        
 
         # call class method to make sure url attribute is set
         if self.engine_dict.get('only1', None) is None:
@@ -46,8 +45,7 @@ class RecordKeeper():
                     host=db.host,
                     port=db.port,
                     db=db.dbname
-                )
-            print("----------",sql_alchemy_uri_connected)
+                ) 
             self.engine_dict['only1'] = sqlalchemy.create_engine(sql_alchemy_uri_connected)
             self.engine = self.engine_dict['only1']
 
@@ -59,7 +57,7 @@ class RecordKeeper():
                 pass
 
             # create tables
-            ""
+            "" 
             MetaBase.metadata.create_all(bind=self.engine)
         else:
 
@@ -120,5 +118,5 @@ class RecordKeeper():
             self.session.close()
             logging.debug("Closing db_table Session: {} {} {}".format(self.host, self.database, self.dbschema))
         except Exception as e:
-            logging.error("Error Occured Closing db_table Session: {}", e)
+            logging.error("Error Occured Closing db_table Session: {}".format(e))
             # print(e)

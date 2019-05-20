@@ -41,6 +41,7 @@ class Test_db_utils_postgres(unittest.TestCase):
                                     pwd=DBPASSWORD,  port=DBPORT)
     db.execute("create schema {}".format(LOGGING_SCHEMA))
     db.execute("create schema {}".format(TEST_SCHEMA))
+    db.execute("create schema {}".format(DATA_SCHEMA))
     dirs = {
         'sample_data_dir': "./_sample_data/",
         'sample_working_dir': "./_sample_working_dir/",
@@ -58,10 +59,12 @@ class Test_db_utils_postgres(unittest.TestCase):
         for table in tbl:
             
             if table.startswith(self.DATA_SCHEMA+'.'):
-                print("------------",table)
+                 
                 static_func.add_column(self.db, self.DATA_SCHEMA +"."+ table, 'crc', 'uuid')
                 static_func.add_column(self.db, self.DATA_SCHEMA +"."+ table, 'file_id', 'Integer')
-        
+        for x in self.dirs:
+            print(x)
+            os.makedirs(name=self.dirs[x],exist_ok = True)
     # this should run last
     def test_zz_last(self):
         print('# In function:', sys._getframe().f_code.co_name)
@@ -73,7 +76,7 @@ class Test_db_utils_postgres(unittest.TestCase):
 
         print('# In function:', sys._getframe().f_code.co_name)
 
-        t = db_table.db_table_func.RecordKeeper(self.db, db_table.db_table_def.MetaSourceFiles,TEST_SCHEMA)
+        t = db_table.db_table_func.RecordKeeper(self.db, db_table.db_table_def.MetaSourceFiles)
         row = db_table.db_table_def.MetaSourceFiles(project_name=PROJECT_NAME, file_path='.', file_name='abc', file_name_data='',
                                                     file_type='ZIP', parent_file_id=0)
         t.add_record(row, commit=True)
@@ -81,7 +84,9 @@ class Test_db_utils_postgres(unittest.TestCase):
 
     def test_03_query(self):
         print('# In function:', sys._getframe().f_code.co_name)
-        self.assertTrue(self.db.query('select 1 from logging.meta_source_files limit 1;'))
+        x=self.db.query('select 1 from logging.meta_source_files limit 1;')
+        print(x)
+        self.assertTrue(x)
     @unittest.skip("Not yet")
     def test_05_upsert(self):
         sql = """insert into table_b (pk_b, b)
@@ -105,7 +110,7 @@ class Test_db_utils_postgres(unittest.TestCase):
                                                         )
 
 
-    @unittest.skip("Skipping for now")
+    #@unittest.skip("Skipping for now")
     def test_08_walkdir_data_file(self):
         print('# In function:', sys._getframe().f_code.co_name)
         # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
@@ -118,7 +123,7 @@ class Test_db_utils_postgres(unittest.TestCase):
         table_schema,table_name,now(),TRUE
         FROM information_schema.columns a
         WHERE table_schema = '{}'""".format(self.DATA_SCHEMA))
-        self.db.commit()
+        
         # This is how we store the files we are looking for List of FileOfInterest
         foi_list = [
             data_files.FilesOfInterest('CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
@@ -133,22 +138,22 @@ class Test_db_utils_postgres(unittest.TestCase):
         result_set = self.db.query("select * from logging.meta_source_files")
         self.assertGreater(len(result_set), 0, "No files Found: Check Regex Logic")
 
-        t = db_table.db_table_func.RecordKeeper(self.db, table_def=db_table.db_table_def.TableFilesRegex)
+        # t = db_table.db_table_func.RecordKeeper(self.db, table_def=db_table.db_table_def.TableFilesRegex)
 
-        records = t.get_all_records()
+        # records = t.get_all_records()
 
-        # GENERATING FOI FROM DB META DATA IN LOGGING SCHEMA TABLE TableFilesRegex
-        for r in records:
-            assert isinstance(r, db_table.db_table_def.TableFilesRegex)
+        # # GENERATING FOI FROM DB META DATA IN LOGGING SCHEMA TABLE TableFilesRegex
+        # for r in records:
+        #     assert isinstance(r, db_table.db_table_def.TableFilesRegex)
 
-            foi_list.append(data_files.FilesOfInterest(
-                file_type='CSV', table_name=str("tbl_1"), file_regex=str(r.regex),
-                file_delimiter=str(r.delimiter), column_list=None, schema_name=str(r.db_schema),
-                has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=self.GENERATE_FILE_ID,
-                append_crc=self.GENERATE_CRC,
-                limit_rows=self.LIMIT_ROWS, start_row=self.START_ROW, insert_option=self.TRUNCATE_TABLE))
+        #     foi_list.append(data_files.FilesOfInterest(
+        #         file_type='CSV', table_name=str("tbl_1"), file_regex=str(r.regex),
+        #         file_delimiter=str(r.delimiter), column_list=None, schema_name=str(r.db_schema),
+        #         has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=self.GENERATE_FILE_ID,
+        #         append_crc=self.GENERATE_CRC,
+        #         limit_rows=self.LIMIT_ROWS, start_row=self.START_ROW, insert_option=self.TRUNCATE_TABLE))
 
-        df.do_work(self.db, cleanup=False, limit_rows=None, import_type=df.IMPORT_VIA_PANDAS)
+        df.do_work(self.db, cleanup=False, limit_rows=None)
 
     def clean_db(self):
         self.db.execute(
@@ -157,7 +162,7 @@ class Test_db_utils_postgres(unittest.TestCase):
                        table_schema,table_name,now(),TRUE
                        FROM information_schema.columns a
                        WHERE table_schema = '{}'""".format(self.DATA_SCHEMA))
-        self.db.commit()
+        
 
     def make_foi(self):
         # This is how we store the files we are looking for List of FileOfInterest

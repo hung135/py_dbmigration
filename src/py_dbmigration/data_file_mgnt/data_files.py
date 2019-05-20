@@ -11,11 +11,11 @@ import pandas as pd
 #import db_logging
 from py_dbmigration import db_table
 #mport db_table.db_table_func
-
- 
+import yaml
 import sys
 
 from py_dbmigration import migrate_utils
+import py_dbutils.parents as db_utils
 import logging as log
 
 logging = log.getLogger()
@@ -113,6 +113,7 @@ class RedactionRules:
 
     def __init__(self, rules_file_path, dataset_name, data_frame=None):
         print(rules_file_path)
+
         self.rules_file_path = rules_file_path
         self.df_rules = pd.read_excel(self.rules_file_path)
         self.dataset_name = dataset_name
@@ -137,7 +138,7 @@ class FilesOfInterest:
                  append_crc=False, limit_rows=None, header_row_location=0, count_via=COUNT_VIA_PANDAS,
                  new_delimiter=None, dataset_name=None, redaction_file=None,
                  upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
-                 post_action=None, pre_action=None, process_logic=None, project_name=None,
+                 post_action=None, pre_action=None, process_logic=None, project_name='Default',
                  table_name_extract=None, reprocess=True, yaml=None,mapping=None):
         self.yaml = yaml
         self.mapping = mapping
@@ -234,15 +235,19 @@ class DataFile:
     db = None
     file_pattern_list = None
     current_file_pattern = None
-    update_query = """Update meta_source_files
-                       set file_process_state='{0}',
-                           process_end_dtm = now()
-                       WHERE  file_name='{1}' and
-                       """
+    # update_query = """Update meta_source_files
+    #                    set file_process_state='{0}',
+    #                        process_end_dtm = now()
+    #                    WHERE  file_name='{1}' and
+    #                    """
+
     meta_source_file_id = 0
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
         assert isinstance(foi_list[0], FilesOfInterest)
+        curr_path=(os.path.dirname(__file__))
+        self.sql_yaml=yaml.load(open(curr_path+'/logic_sql.yml'))
+        #print(self.sql_yaml)
         self.load_status_msg = None
         self.parent_file_id = parent_file_id
         self.db = db
@@ -280,8 +285,7 @@ class DataFile:
         for files_of_interest in self.foi_list:
             if files_of_interest.file_path is not None:
                 assert isinstance(files_of_interest, FilesOfInterest)
-                file_path = files_of_interest.file_path[:5]
-                print(file_path,"xxxxx",files_of_interest.file_path)
+                file_path = files_of_interest.file_path[:5] 
                 if file_path=='s3://':
                     logging.info("Walking AWS s3")
                     self.FilesOfInterest = self.walk_s3(files_of_interest,  db=db)
@@ -340,6 +344,7 @@ class DataFile:
     def init_db(self):
         t = db_table.db_table_func.RecordKeeper(
             self.db, db_table.db_table_def.MetaSourceFiles)
+         
     def extract_file_name_data(self, db, files_of_interest):
          
         if files_of_interest.yaml is not None:
@@ -348,22 +353,12 @@ class DataFile:
             date_format = files_of_interest.yaml.get('format_extracted_date', None)
              
             if extract_file_name is not None and date_format is None:
-                sql_update_file_data_date = """update logging.meta_source_files 
-                        set file_name_data= substring(file_name,'{extract_regex}')  
-                        where parent_file_id=0 and (file_name_data is null or file_name_data='0') 
-                        and project_name='{project_name}'"""
-                sql_update_file_data_date_children = """update logging.meta_source_files a
-                        set a.file_name_data= substring(parent.file_name,'{extract_regex}')  
-                        from logging.meta_source_files parent 
-                        where a.parent_file_id=parent.id and a.parent_file_id>0 and (a.file_name_data is null or a.file_name_data='0') and a.project_name='{project_name}'"""
+                sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
+                sql_update_file_data_date_children =  self.sql_yaml['sql_update_file_data_date_children']
+              
             if extract_file_name is not None and date_format is not None:
-                sql_update_file_data_date = """update logging.meta_source_files set file_name_data=date(to_date(substring(file_name,'{extract_regex}') ,'{date_format_pattern}'))
-                        where parent_file_id=0 and (file_name_data is null or file_name_data='0') and project_name='{project_name}'"""
-                sql_update_file_data_date_children = """update logging.meta_source_files a
-                        set a.file_name_data=date(to_date(substring(parent.file_name,'{extract_regex}') ,'{date_format_pattern}'))
-                        from logging.meta_source_files parent 
-                        where a.parent_file_id=parent.id and a.parent_file_id>0 and (a.file_name_data is null or a.file_name_data='0') and a.project_name='{project_name}'"""
-
+                sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
+                sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children_regex']
             if extract_file_name is not None:
  
                 db.execute_permit_execption(sql_update_file_data_date.format(
@@ -503,59 +498,17 @@ class DataFile:
     @staticmethod
     def reset_meta_table(db, option='FAILED', where_clause='1=1'):
         if option.upper() == 'ALL':
-            db.update("""UPDATE logging.meta_source_files
-                SET process_start_dtm=null
-                ,process_end_dtm=null
-                ,current_worker_host=null
-                ,current_worker_host_pid=null
-                ,file_process_state='RAW'
-                ,reporcess = True
-                ,total_rows=0
-                ,duplicate_file=False
-                WHERE  1=1
-                AND {}
-                """.format(where_clause))
+            db.update(self.sql_yaml['sql_update_ALL_meta_source'].format(where_clause))
         if option.upper() == 'FAILED':
             logging.debug("RESET META DATA FAILED IMPORTS:")
-            db.update("""UPDATE logging.meta_source_files
-                set process_start_dtm=null
-                ,process_end_dtm=null
-                ,current_worker_host=null
-                ,current_worker_host_pid=null
-                ,last_error_msg=null
-                ,file_process_state='RAW'
-                ,duplicate_file=False
-                WHERE  upper(file_process_state)='FAILED'
-                AND reprocess = True
-                AND {}
-                """.format(where_clause))
+            db.update(self.sql_yaml['sql_update_FAILED_meta_source'].format(where_clause))
         if option.upper() == 'RAW':
             logging.debug("RESET META DATA RAW IMPORTS:")
-            db.update("""UPDATE logging.meta_source_files
-                SET process_start_dtm=null
-                ,process_end_dtm=null
-                ,current_worker_host=null
-                ,current_worker_host_pid=null
-                ,last_error_msg=null
-                ,file_process_state='RAW'
-                ,duplicate_file=False
-                WHERE  upper(file_process_state)='RAW'
-                AND file_type in ('CSV','DATA')
-                AND {}
-                """.format(where_clause))
+            db.update(self.sql_yaml['sql_update_RAW_meta_source'].format(where_clause))
         if option.upper() == 'DATA':
             logging.debug("RESET META DATA   IMPORTS:")
-            db.update("""UPDATE logging.meta_source_files
-                SET process_start_dtm=null
-                ,process_end_dtm=null
-                ,current_worker_host=null
-                ,current_worker_host_pid=null
-                ,last_error_msg=null
-                ,file_process_state='RAW'
-                ,duplicate_file=False
-                WHERE   file_type in ('CSV','DATA')
-                AND {}
-                """.format(where_clause))
+            db.update(self.sql_yaml['sql_update_RAW_meta_source'].format(where_clause))
+           
         db.commit()
     @staticmethod
     def walk_s3(foi,  db=None):
@@ -671,7 +624,7 @@ class DataFile:
             f.write(self.source_file_path)
 
     def list_current_work(db, host=None):
-        assert isinstance(db, db_utils.dbconn)
+        assert isinstance(db, db_utils.DB)
         if host is not None:
             logging.info(db.query("""SELECT file_name, current_worker_host FROM meta_source_files,id
                         WHERE  current_worker_host is not null and current_worker_host_pid is not null
@@ -688,7 +641,7 @@ class DataFile:
     def release_file_lock(self, db, file_id):
         update_sql = """UPDATE logging.meta_source_files set process_end_dtm='{}'
         where id={}""".format( datetime.datetime.now(), file_id )
-        assert isinstance(db, db_utils.dbconn.Connection)
+        assert isinstance(db, db_utils.DB)
         db.execute(update_sql)
         db.commit()
 
@@ -701,7 +654,7 @@ class DataFile:
         update_sql = """UPDATE logging.meta_source_files set file_process_state='{}'
         ,last_error_msg={}
         where id={}""".format( status, error_msg, file_id )
-        assert isinstance(db, db_utils.dbconn.Connection)
+        assert isinstance(db, db_utils.DB)
         db.execute(update_sql)
 
     def reset_stat(self):
@@ -714,40 +667,24 @@ class DataFile:
 
     # @migrate_utils.static_func.timer
     def get_work(self, db):
-        assert isinstance(db, db_utils.dbconn.Connection)
+        assert isinstance(db, db_utils.DB)
         assert isinstance(self.foi_list, list)
         self.reset_stat()
         x = set(self.project_list)
+         
         for foi in self.foi_list:
             self.extract_file_name_data(db, foi)
+         
         project_list = (','.join("'" + item + "'" for item in x))
 
         t = db_table.db_table_func.RecordKeeper(
             db, db_table.db_table_def.MetaSourceFiles)
 
         # to ensure we lock 1 row to avoid race conditions
-        sql = ("""UPDATE {0}.meta_source_files
-                    SET
-                    current_worker_host='{1}',
-                    current_worker_host_pid={2},
-                    process_start_dtm=now(),
-                    last_error_msg=NULL
-                    WHERE (file_path ||file_name) in
-                    (select file_path ||file_name
-                        FROM {0}.meta_source_files
-                        WHERE  file_process_state='RAW' and current_worker_host is null
-                        and reprocess=True
-                        and project_name in ({3})
-                        ORDER BY
-
-
-                        
-                        file_name_data asc,
-                        parent_file_id asc,
-                        file_path asc,
-                        file_name asc
-                        limit 1)
-                """).format(db_table.db_table_def.MetaSourceFiles.DbSchema, self.host, self.curr_pid, project_list)
+        
+        sql = self.sql_yaml['sql_get_work'].format(
+                db_table.db_table_def.MetaSourceFiles.DbSchema, 
+                self.host, self.curr_pid, project_list)
         t.engine.execute(sql)
 
         t.session.commit()
