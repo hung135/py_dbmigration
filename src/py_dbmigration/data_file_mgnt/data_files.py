@@ -9,13 +9,14 @@ import datetime
 import time
 import pandas as pd
 #import db_logging
-from py_dbmigration import db_table
+import db_table
 #mport db_table.db_table_func
 import yaml
 import sys
 
-from py_dbmigration import migrate_utils
+import migrate_utils 
 import py_dbutils.parents as db_utils
+import data_file_mgnt.utils as utils
 import logging as log
 
 logging = log.getLogger()
@@ -292,7 +293,9 @@ class DataFile:
                     self.FilesOfInterest = self.walk_s3(files_of_interest,  db=db)
                 else:
                     if os.path.isdir(files_of_interest.file_path):
+                        
                         self.FilesOfInterest = self.walk_dir(files_of_interest,  db=db)
+                        print(self.FilesOfInterest.file_list,"---------s--------",self.meta_source_file_id)
                     else:
                         logging.error("Directory from Yaml does not exists: {}".format(files_of_interest.file_path))
 
@@ -359,7 +362,7 @@ class DataFile:
     @migrate_utils.static_func.timer
     def put_foi_to_db(self, db, foi_list):
         tfr = []
-        assert isinstance(db, db_utils.dbconn.Connection)
+        assert isinstance(db, db_utils.DB)
         assert isinstance(foi_list, list)
         t = db_table.db_table_func.RecordKeeper(
             db, db_table.db_table_def.MetaSourceFiles)
@@ -402,13 +405,13 @@ class DataFile:
         t = db_table.db_table_func.RecordKeeper(
             db, db_table.db_table_def.MetaSourceFiles)
         id_regex = file_of_interest_obj.file_name_data_regex
-        
+        print("----------inserting working file")
 
         for walked_filed_name in file_of_interest_obj.file_list:
             p = None
             extracted_id = None
             file_id = '0'
-            print(file_of_interest_obj.file_path, walked_filed_name)
+            print("------>path, file_name-->",file_of_interest_obj.file_path, walked_filed_name)
             if 's3://' in file_of_interest_obj.file_path:
                 full_file_path=walked_filed_name
             else:
@@ -419,12 +422,12 @@ class DataFile:
 
             # If the file already exists in the database we don't need to
             # insert again
-            x = db.query(
+            x, = db.get_a_row(
                 "select count(*) from logging.meta_source_files where file_name='{}' and file_path='{}' and project_name='{}'".format(
                     file_name, file_path, file_of_interest_obj.project_name)
             )
-            file_found = x[0][0]
-
+            file_found = x
+            print("--------",x)
             if file_found == 0:
                 logging.debug("New file found: {}".format(full_file_path))
                 # if get_mapped_table(walked_filed_name,

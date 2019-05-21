@@ -39,14 +39,14 @@ logging.basicConfig(level='DEBUG')
 writable_path = os.environ['WORKINGPATH']
 
 
-src_db = db_utils.dbconn.Connection(host=os.environ['PGHOST_INTERNAL'],
+src_db = db_utils.DB(host=os.environ['PGHOST_INTERNAL'],
                                     port=os.environ['PGPORT_INTERNAL'],
                                     database=os.environ['PGDATABASE_INTERNAL'],
                                     dbschema=os.environ['PGDATABASE_INTERNAL'],
                                     userid=os.environ['PGUSER_INTERNAL'],
                                     password=os.environ['PGPASSWORD_INTERNAL'])
 
-trg_db = db_utils.dbconn.Connection(host=os.environ['PGHOST_EXTERNAL'],
+trg_db = db_utils.DB(host=os.environ['PGHOST_EXTERNAL'],
                                     port=os.environ['PGPORT_EXTERNAL'],
                                     database=os.environ['PGDATABASE_EXTERNAL'],
                                     dbschema=os.environ['PGDATABASE_EXTERNAL'],

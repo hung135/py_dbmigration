@@ -26,7 +26,7 @@ def import_file(db, foi):
     error_msg = None
     additional_msg = None
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
-    assert isinstance(db, db_utils.dbconn.Connection)
+    assert isinstance(db, db_utils.DB)
 
 
 

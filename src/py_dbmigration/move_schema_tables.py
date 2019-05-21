@@ -464,7 +464,7 @@ def get_src_trg_db(publish_item, proc_num=0):
     source_host = publish_item.get(
         'source_host', os.environ['PGHOST_INTERNAL'])
     source_db_type = publish_item.get('source_db_type', 'POSTGRES')
-    src_db = db_utils.dbconn.Connection(host=source_host,
+    src_db = db_utils.DB(host=source_host,
                                         port=os.environ['PGPORT_INTERNAL'],
                                         database=source_db,
                                         dbschema=source_schema,
@@ -479,7 +479,7 @@ def get_src_trg_db(publish_item, proc_num=0):
         'target_schema', os.environ['PGDATABASE_EXTERNAL'])
     target_host = publish_item.get(
         'target_host', os.environ['PGHOST_EXTERNAL'])
-    trg_db = db_utils.dbconn.Connection(host=target_host,
+    trg_db = db_utils.DB(host=target_host,
                                         port=os.environ['PGPORT_EXTERNAL'],
                                         database=target_db,
                                         dbschema=target_schema,

@@ -119,7 +119,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
     # if we have no header and a db connection pull column list from db
     if use_header is False and db is not None:
         import db_utils
-        assert isinstance(db, db_utils.dbconn.Connection)
+        assert isinstance(db, db_utils.DB)
 
         columns_from_db = db.get_columns(table_name, table_schema)
          
@@ -1548,7 +1548,7 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None, fil
 
 def generate_postgres_straight_upsert(db, table_name, source_schema, trg_schema=None,  src_table=None):
     import db_utils.dbconn
-    assert isinstance(db, db_utils.dbconn.Connection)
+    assert isinstance(db, db_utils.DB)
     if trg_schema is None:
         schema = db.schema
     else:

@@ -2,7 +2,7 @@
 import logging
 import os
 import sys
-import db_utils
+import py_dbutils.parents as db_utils
 import data_file_mgnt
 import migrate_utils
 logging.basicConfig(level='DEBUG')
@@ -48,6 +48,6 @@ def process(db, foi, df):
     additional_msg = None
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
-    assert isinstance(db, db_utils.dbconn.Connection)
+    assert isinstance(db, db_utils.DB)
 
     return custom_logic(db, foi, df)

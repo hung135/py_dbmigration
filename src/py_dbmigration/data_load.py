@@ -1,8 +1,8 @@
 import yaml
 import os
 import py_dbutils.rdbms.postgres as db_utils
-import py_dbmigration.data_file_mgnt as dfm
-from py_dbmigration.migrate_utils import *
+import data_file_mgnt as dfm
+from migrate_utils import *
 
 import pprint
 
@@ -164,10 +164,10 @@ def main():
  
     writable_path = os.getenv('WORKINGPATH',os.getcwd())
     PGDATASCHEMA = os.getenv('PGDATASCHEMA',os.getcwd())
- 
+    
     if len(datafiles) > 0:
         db = db_utils.DB(schema=PGDATASCHEMA)
-
+        print("---------")
         # db.truncate_table("logging", "meta_source_files")
 
         df = dfm.data_files.DataFile(writable_path, db, datafiles)

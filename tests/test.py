@@ -23,7 +23,7 @@ class Test_db_utils_postgres(unittest.TestCase):
     DBPORT = 5432
   
 
-    db = db_utils.dbconn.Connection(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA,
+    db = db_utils.DB(host=HOST, userid=USERID, database=DATABASE, dbschema=DATA_SCHEMA,
                                     password=DBPASSWORD,
                                     dbtype=DBTYPE, port=DBPORT)
 

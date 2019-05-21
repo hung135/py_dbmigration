@@ -514,7 +514,7 @@ def get_src_trg_db(publish_item, proc_num=0):
     yaml_db =publish_item.get('db', None)
     source_db = yaml_db['source_db']
 
-    src_db = db_utils.dbconn.Connection(host=source_db['host'],
+    src_db = db_utils.DB(host=source_db['host'],
                                         port=source_db['port'],
                                         database=source_db['db'],
                                         dbschema=source_db['schema'],
@@ -525,7 +525,7 @@ def get_src_trg_db(publish_item, proc_num=0):
     
     target_db = yaml_db['target_db']
     trg_db= None
-    trg_db = db_utils.dbconn.Connection(host=target_db['host'],
+    trg_db = db_utils.DB(host=target_db['host'],
                                         port=target_db['port'],
                                         database=target_db['db'],
                                         dbschema=target_db['schema'],

@@ -47,6 +47,6 @@ def process(db, foi, df):
     additional_msg = None
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
-    assert isinstance(db, db_utils.dbconn.Connection)
+    assert isinstance(db, db_utils.DB)
 
     return custom_logic(db, foi, df)
