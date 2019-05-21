@@ -64,7 +64,7 @@ def process(db, foi, df):
     else:
         # remove file_id in the case we got headers from db
         cols = ','.join(cols)
-    # print("---->", cols, type(cols), table_name, target_schema)
+     
     ImporLogger = db_logging.logger.ImportLogger(db)
     header = ''
     if foi.use_header or foi.header_added:

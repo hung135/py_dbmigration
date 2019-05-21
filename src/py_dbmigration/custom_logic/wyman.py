@@ -196,7 +196,7 @@ def process(db, foi, df):
             ee = ee[ee.stat_value != 'NULL']
             # ee = ee.replace(to_replace=r'^-$', value=np.nan, regex=True)
             ee.to_sql(table_name, sqlalchemy_conn, schema=target_dbschema, if_exists='append', index=False)
-            # print("---- length", len(ee))
+             
             total_rows += len(ee)
 
         t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)

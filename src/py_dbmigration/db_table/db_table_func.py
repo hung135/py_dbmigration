@@ -93,7 +93,7 @@ class RecordKeeper():
             print(i)
 
     def get_all_records(self):
-        # print(self.table.__tablename__,"zzzzzzzzz")
+         
         row = self.session.query(self.table).all()
 
         return row

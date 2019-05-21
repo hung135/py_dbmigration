@@ -16,8 +16,7 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
     returns list of file names and path
     """
     dir_exist = os.path.isdir(writeable_path)
-    #print("---------unzip into----------------", writeable_path)
-
+    
     if skip_ifexists and dir_exist:
         logging.warning("Extract Target Directory Exists and Skip=True:\nSkipping to Save Time")
     else:
@@ -32,7 +31,7 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
                 file.extractall(writeable_path)
                 file.close()
             else:
-                print("Skippppppping cause skip is True----------")
+                 
             namelist = list(file.namelist())
         # print(source_file)
         if zip_type == 'tar':

@@ -373,7 +373,7 @@ def create_data_table(trg_db, src_db, p_src_table, p_trg_table, partition_column
         v='COLLATE "SQL_Latin1_General_CP1_CI_AS"'
         v_create_sql=str(v_create_sql).replace(p_src_table,p_trg_table).replace(v,'')
         src_db.print_tables([p_src_table.split('.')[-1]])
-        trg_db.execute_permit_execption(v_create_sql)
+        trg_db.execute(v_create_sql,catch_exception=False)
         
         trg_db.execute(v_idx_sql)
         trg_db.commit()
@@ -592,7 +592,7 @@ def run_pre_sql_action(src_db, trg_db, publish_item):
     if trg_pre_action_sql is not None:
         for sql in trg_pre_action_sql:
             sql = recurse_replace_yaml(sql, publish_item)
-            trg_db.execute_permit_execption(sql)
+            trg_db.execute(sql,catch_exception=False)
             trg_db.commit()
 
 
@@ -668,10 +668,10 @@ def process_yaml(yaml_data, args):
                 v_trg_schema = yaml_target_db['schema']
                 if (yaml_target_db.get('create_target_schema', False) and not trg_db.schema_exists(v_trg_schema)):
                     trg_db.execute("create role operational_dba")
-                    trg_db.execute_permit_execption('Create schema {} authorization operational_dba'.format(v_trg_schema))
+                    trg_db.execute('Create schema {} authorization operational_dba'.format(v_trg_schema),catch_exception=False)
                     if trg_db._dbtype=='CITUS':
                         sql = "SELECT run_command_on_workers($cmd$ Create schema {} authorization operational_dba; $cmd$);".format(v_trg_schema)
-                        trg_db.execute_permit_execption(sql)
+                        trg_db.execute(sql,catch_exception=False)
 
                 run_pre_sql_action(src_db, trg_db, publish_item)
                 work_table = publish_item['db']['target_db']['work_table']

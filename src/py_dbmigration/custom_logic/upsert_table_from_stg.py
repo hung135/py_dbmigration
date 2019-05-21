@@ -47,10 +47,10 @@ def custom_logic(db, foi, df):
         logging.info("\t\tPrimary Found Loading via Upsert: {}".format(primary_key))
 
     logging.info("\t\tSetting file_id to: {}".format(df.meta_source_file_id))
-    cnt = db.execute_permit_execption("update stg.{} set file_id={}".format(table_name, df.meta_source_file_id))
+    cnt = db.execute("update stg.{} set file_id={}".format(table_name, df.meta_source_file_id),catch_exception=False)
     logging.info("\t\tLoading...could take a while: {} Records:".format(cnt))
     logging.debug(update_sql)
-    x = db.execute_permit_execption(update_sql)
+    x = db.execute(update_sql,catch_exception=False)
     logging.info("\t\tUpsert compleated: {}".format(x))
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
 

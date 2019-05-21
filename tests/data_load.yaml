@@ -1,0 +1,36 @@
+#This file is to configure mapping of files to database tables 
+- path: '/workspace/tests/sample_data/'
+  enabled: Tre # activates this configration tree
+  project_name: test_1
+  extract_file_name_data: '\d\d\d\d'
+  format_extracted_date: 'YYYY'
+  process_logic: # this will get executed for all files
+    - logic: 'custom_logic.generate_checksum'
+    - logic: 'custom_logic.log_file_size'
+    - logic: 'custom_logic.abort_if_duplicate'
+
+  reset_failed: False
+  mapping:
+    #look for zip files and extract them
+    - file_regex: '^.*.zip$'
+      file_type: 'ZIP'
+      process_logic:
+        - logic: 'custom_logic.abort_if_obsolete'
+        - logic: 'custom_logic.extract_compressed_file'
+    
+    #################################################################################################################################################################
+    #look for data files and import them
+    #Files from Master table is full re-load so we want to delete everything and load whatever is in this
+    - file_regex: '.*.csv$'
+      file_type: 'CSV'
+      schema_name: 'test'
+      reprocess: True
+      table_name: 'test1'
+      file_delimiter: ","
+      process_logic:
+        - logic: 'custom_logic.import_via_pandas'
+      file_encoding: 'ISO-8859-1'
+      limit_rows: None
+      post_action: 
+        - sql: "vacuum analyze {schema_name}.{table_name}"
+     

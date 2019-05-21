@@ -17,7 +17,7 @@ rx_sas = re.compile(r'.*sas7bdat')
 r = []
 for path, dnames, fnames in os.walk(file_dir):
     r.extend([os.path.join(path, x) for x in fnames if rx.search(x)])
-print r
+ 
 
 for file in r:
     print(file)
@@ -29,7 +29,7 @@ for file in r:
                 print("file_size", os.path.getsize(file) >> 20, "MB", os.path.getsize(file))
                 xfile = io.BytesIO(archive.read(f))
                 df = pd.read_sas(xfile, format='sas7bdat', encoding='iso-8859-1', chunksize=1, iterator=True)
-                # print(list(df),"xxxxxx")
+                 
 
                 for chunk in df:
                     print(chunk.columns.values, len(chunk.columns.values), "<<<Column Count")

@@ -541,7 +541,7 @@ def run_pre_sql_action(src_db, trg_db, publish_item):
     if trg_pre_action_sql is not None:
         for sql in trg_pre_action_sql:
             sql = inject_yaml_data(sql, publish_item)
-            trg_db.execute_permit_execption(sql)
+            trg_db.execute(sql,catch_exception=False)
             trg_db.commit()
 
 

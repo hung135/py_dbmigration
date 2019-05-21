@@ -53,18 +53,15 @@ def sed_file_delimiter(orgfile, newfile=None, delimiter=',', new_delimiter=','):
     cmd_string_end = "sed -i -e 's/\"\"$/\"/g' {}".format(orgfile)
     cmd_string = "sed -i -e 's/\"\"{0}\"\"/\"{1}\"/g' {2}".format(delimiter, new_delimiter, orgfile)
 
-    print("----SED---Delimiter", delimiter, new_delimiter, cmd_string_double_quote)
+    
     subprocess.call([cmd_string_double_quote], shell=True)
 
-    print("----SED---Delimiter", delimiter, new_delimiter, cmd_string_begin)
     subprocess.call([cmd_string_begin], shell=True)
 
-    print("----SED---Delimiter", delimiter, new_delimiter, cmd_string_end)
     subprocess.call([cmd_string_end], shell=True)
 
-    print("----SED---Delimiter", delimiter, new_delimiter, cmd_string)
     subprocess.call([cmd_string], shell=True)
-    print("----Done SED---Delimiter")
+    
 # function that will append data to a data file
 # @dump_params
 
@@ -125,7 +122,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
         assert isinstance(db, db_utils.dbconn.Connection)
 
         columns_from_db = db.get_columns(table_name, table_schema)
-        # print(columns_from_db, "-----------xxxxxx")
+         
         file_column_count = len(columns_from_db)
 
         # if column count in db is more than columns in files
@@ -150,15 +147,14 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
 
         if len(shrunk_list) > 0:
             column_list = shrunk_list
-    # print("--------",header_to_add,column_list)
+   
 
     with open(newfile, 'w') as outfile:
         # injecting a header because we are given a database connection and use_header is set to false
         # this will assure file_id and crc will always be at the front of the file
         if use_header is False and db is not None:
             column_list = delimiter.join(column_list)
-            # print("-------", "writing in header")
-            # print("-------", column_list + str(carriage_return))
+             
             outfile.write(column_list + str(carriage_return))
             header_list_to_return = column_list
 
@@ -225,7 +221,7 @@ def dd_lookup_uuid(db, schema, table_name_regex, col_regex, cols_to_retain=None,
         col_base = []
         col_pivot = []
         if t_compiled.match(t['table_name']):
-            # print("----",t)
+            
             # cols= db.get_columns(t,schema)
             cols = t['columns']
 
@@ -264,12 +260,11 @@ def dd_lookup(db, schema, table_name_regex, col_regex, cols_to_retain=None, keep
     p = re.compile(col_regex)
 
     for t in tables:
-        # print(type(t),t)
+         
         col_base = []
         col_pivot = []
         if t_compiled.match(t['table_name']):
-            # print("----",t)
-            # cols= db.get_columns(t,schema)
+           
             cols = t['columns']
 
             for col in cols:
@@ -344,7 +339,7 @@ def pivot_table(db, schema, table_name_regex, col_regex, cols_to_retain=None, ke
         col_base = []
         col_pivot = []
         if t_compiled.match(t['table_name']):
-            # print("----",t)
+             
             # cols= db.get_columns(t,schema)
             cols = t['columns']
 
@@ -414,8 +409,7 @@ def convert_str_snake_case(str_text):
         string_txt = string_txt.replace(x, "_")
     string_txt = string_txt.strip()
 
-    # print(str_text, "--------->", string_txt, "----inflection----", inflection.underscore(str_text))
-
+    
     return string_txt
 
 # pass in the string and a dict of key to value mapping
@@ -1302,10 +1296,10 @@ def gen_data(col):
 
     # print(col.type,col.type.python_type)
     if str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']:
-        # print("----", str(col[1]),"".join([random.choice(string.digits) for i in xrange(2)]))
+        
         data = random.randint(1, 2000)
     elif 'PRECISION' in str(col.type) or 'NUMERIC' in str(col.type):
-        # print("----", str(col[1]),"".join([random.choice(string.digits) for i in xrange(2)]))
+         
         data = random.randrange(1, 100)
 
     elif 'TIMESTAMP' in str(col.type):
@@ -1610,20 +1604,17 @@ def count_column_csv(full_file_path, header_row_location=0, sample_size=200, del
     try:
         chunksize = 1
         chunk = None
-        # print("----header row location-----", header_row_location,delimiter,full_file_path)
+        
         count_list = []
         delim = delimiter
         for i, chunk in enumerate(
                 pandas.read_table(full_file_path, chunksize=chunksize, sep=delim, header=header_row_location)):
 
             # just run through the file to get number of chucks
-
-            # print(full_file_path, chunksize, delimiter, header_row_location)
-
             count_list.append(len(chunk.columns))
             if i > sample_size:
                 break
-        # print("------max------",max(count_list))
+         
         column_count = statistics.median(count_list)
     except Exception as e:
         logging.error("Error Counting csv columns:{} \nReturning: 0".format(e))
@@ -1633,11 +1624,11 @@ def count_column_csv(full_file_path, header_row_location=0, sample_size=200, del
 
 def check_quoted_header(full_file_path, delimiter, header_row_location=0):
     infile = open(full_file_path, 'rb')
-    print("---finding quoted header", str('"' + delimiter + '"'))
+     
     for index, line in enumerate(infile.readlines()):
         if index == header_row_location:
             if str('"' + delimiter + '"') in line:
-                print("-----found quoted header-----",)
+                 
                 return True
     return False
 
@@ -1847,7 +1838,7 @@ def count_file_lines_wc(file):
     status_code, status_text = commands.getstatusoutput("wc -l '{}'".format(file))
     if status_code == 0:
         record_count, txt = status_text.split(split_by)
-    # print(file, record_count,"----FileCount linux-------",int(record_count))
+     
     logging.debug("FileName:{0} RowCount:{1}".format(txt, record_count))
     return int(record_count)
 
@@ -1887,6 +1878,80 @@ def get_primary_key(db, schema, table_name):
             cols.append(j)
 
     return cols
+
+
+def check_pii(db):
+    import datetime
+
+    now = datetime.datetime.now()
+
+    sql = """SELECT id,table_name,field_name,acceptable_values from compliance.health_check_rules m"""
+    sql_insert = """insert into compliance.health_check_violations(health_check_rule_id,data_record_id,active,created_dt,created_by) """
+    sql_on_conflict = """ ON CONFLICT (health_check_rule_id,data_record_id) DO UPDATE
+                            set active=True,
+                            updated_dt=now(),
+                            updated_by_id='{}'
+                        """.format(db.userid)
+
+    x = db.query(sql)
+    # iterate through the rules table
+    for id, table_name, field_name, acceptable_values in x:
+        print("Iterating through", table_name, field_name)
+        # try:
+        primay_key = get_primary_key(db, db.schema,
+                                     table_name)
+        # print(primay_key,type(primay_key))
+
+        if len(primay_key) > 1:
+            logging.error("More than 1 Primary Key not supported:{}".format(primay_key))
+
+        if len(primay_key) == 0:
+            logging.error("Need Primary Key:{}".format(table_name))
+
+        key_colums_to_sql = str(primay_key[0])
+        fqn_table_name = table_name
+        if '.' not in table_name:
+            fqn_table_name = db.schema + "." + table_name
+        jj = acceptable_values.split(';')
+
+        where_clause = None
+        where_null = None
+        in_clause = []
+        for i in jj:
+            if i == 'NULL':
+                where_null = field_name + ' is NULL '
+            else:
+                in_clause.append(i)
+
+        z_list = ','.join(("'{}'".format(x)) for x in in_clause)
+
+        if z_list == '':
+            if where_null is not None:
+                where_clause = where_null
+        else:
+            where_clause = "lower(cast({} as varchar)) not in ({})".format(field_name, z_list)
+            if where_null is not None:
+                where_clause = where_clause + ' AND\n NOT ({}) '.format(where_null)
+
+        # print(values, z_list)
+        # health_checkrule_id, data_record_id, active, created_dt, created_by
+        sql_none = """select 
+                    '{0}' as health_checkrule_id,
+                    {1} as data_record_id,  
+                    True as active,
+                    now() as dtm, 
+                    '{2}' as created_by
+                    from {3} m
+                    left outer join compliance.health_check_violations h on 
+                    cast(h.health_check_rule_id as integer)= {4} and h.data_record_id=cast(m.{1} as integer) and h.active=True
+                    where
+                    (h.id is null) AND\n (\n{5}\n) """
+
+        sql_to_exe = sql_insert + sql_none.format(str(id), key_colums_to_sql, db.userid, fqn_table_name, id,   where_clause)
+        print(sql_to_exe)
+        db.execute(sql_to_exe)
+        # except Exception as e:
+        # logging.error("Error processing table:{} \n{}".format(table_name,e))
 
 
 # stole from stack overflow

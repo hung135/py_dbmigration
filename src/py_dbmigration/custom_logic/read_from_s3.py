@@ -43,7 +43,7 @@ for obj in bucket.objects.all() :
 
             #body = obj.get()['Body'].read()
             #print(body)
-            print("xxx")
+             
             for f in archive.namelist():
                 if rx_sas.search(f):
 
@@ -53,11 +53,11 @@ for obj in bucket.objects.all() :
                     #with smart_open(fin, 'rb') as xfile:
                     with io.BufferedReader(archive.open(f,'r')) as xfile:
 
-                        print("yyy",type(xfile) )
+                         
                         x = io.BytesIO(xfile.read() )
                         df = pd.read_sas(x, format='sas7bdat', encoding='iso-8859-1', chunksize=1, iterator=True)
-                        # print(list(df),"xxxxxx")
-                        print("zzz")
+                         
+                        
                         for chunk in df:
                             #print((chunk.columns.values))
                             print("column_count",len(chunk.columns.values) )

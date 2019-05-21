@@ -113,22 +113,20 @@ for src_table, value in table_list.items():
       record_count = move_data(sql_string, trg_table)
       total_records += int(record_count)
       publish_status = 'Completed'
-      print("----Publish Completed:")
+       
       record_keeper.session.commit()
     except Exception as e:
       import time
 
       publish_status = 'Failed'
-      print("----Publish Failed: Sleeping: ", str(e.message))
-      # Logging to Publish loggint table
-      time.sleep(30)
+       
     row.publish_end_time = dt.datetime.now()
     row.row_counts = total_records
     row.publish_status = publish_status
     # query soource databse for file name
     sql_get_file_name = "SELECT file_name, file_path from logging.meta_source_files where id ={}"
     f = src_db.query(sql_get_file_name.format(id))
-    print(f[0], "---xxxxxxxxxx-----", f[0][0], f[0][1])
+     
     row.file_name = f[0][0]
     row.file_path = f[0][1]
     record_keeper.add_record(row, commit=True)

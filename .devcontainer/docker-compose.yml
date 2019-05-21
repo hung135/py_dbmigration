@@ -18,7 +18,7 @@ services:
       - mysqldb
       - mssqldb
     environment:
-      PGHOST: pgdb1
+      PGHOST: pgdb
       PGDATABASE: postgres
       PGUSER: docker
       PGPASSWORD: docker
@@ -27,11 +27,11 @@ services:
       MYSQL_DATABASE: test
       MYSQL_USER: docker
       MYSQL_PASSWORD: docker
-      MYSQL_HOST: mysqldb1
+      MYSQL_HOST: mysqldb
       MYSQL_PORT: 3306    
       MS_PASSWORD: Docker1234
       MS_PORT: 1433
-      MS_HOST: mssqldb1
+      MS_HOST: mssqldb
       MS_USER: sa
       MS_DATABASE: master
   pgdb:

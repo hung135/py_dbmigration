@@ -15,7 +15,7 @@ import_type = 'client_copy'
 
 
 def inject_frame_work_data(sql, foi, df):
-    #print("-----x-xxxx: ", type(sql), type("$$file_id$$"))
+     
     x = sql.replace("{file_id}", str(df.meta_source_file_id))
     x = x.replace("{schema_name}", foi.schema_name)
     x = x.replace("{table_name}", foi.table_name)
@@ -36,7 +36,7 @@ def execute_sql(db, sql_list, foi, df):
         logging.info("\tSQL Step #: {} {}".format(id, shorten_sql))
 
         t = time.time()
-        db.execute_permit_execption(modified_sql)
+        db.execute(modified_sql,catch_exception=False)
         time_delta = round(time.time() - t,3)
         logging.info("\t\tExecution Time: {}sec".format(time_delta))
 
@@ -55,7 +55,7 @@ def process_logic(foi, db, df):
 
         #print(foi.table_name)
     set_sql = "update logging.meta_source_files set reprocess={} where id={}".format(foi.reprocess, df.meta_source_file_id)
-    db.execute_permit_execption(set_sql)
+    db.execute(set_sql,catch_exception=False)
 
     process_logic = foi.process_logic
     if foi.pre_action is not None:
@@ -80,7 +80,7 @@ def process_logic(foi, db, df):
         # maybe create a history table instead but for now cram into 1 field
         sql_set_process_trail = "update logging.meta_source_files set process_msg_trail=concat('{};\n',process_msg_trail) where id={}".format(
             logic_name, df.meta_source_file_id)
-        db.execute_permit_execption(sql_set_process_trail)
+        db.execute(sql_set_process_trail,catch_exception=False)
         try:
             t = time.time()
             continue_next_process = imp.process(db, foi, df)

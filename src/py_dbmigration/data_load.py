@@ -1,8 +1,8 @@
 import yaml
 import os
-import db_utils
-import data_file_mgnt as dfm
-from migrate_utils import *
+import py_dbutils.rdbms.postgres as db_utils
+import py_dbmigration.data_file_mgnt as dfm
+from py_dbmigration.migrate_utils import *
 
 import pprint
 
@@ -139,8 +139,9 @@ def process_yaml(yaml_file=None):
         datafiles = []
     return datafiles
 
+def main():
 
-if __name__ == '__main__':
+
     import sys
     import argparse
 
@@ -165,7 +166,7 @@ if __name__ == '__main__':
     PGDATASCHEMA = os.getenv('PGDATASCHEMA',os.getcwd())
  
     if len(datafiles) > 0:
-        db = db_utils.dbconn.Connection(dbschema=PGDATASCHEMA, dbtype='POSTGRES')
+        db = db_utils.DB(schema=PGDATASCHEMA)
 
         # db.truncate_table("logging", "meta_source_files")
 
@@ -177,3 +178,6 @@ if __name__ == '__main__':
         db.execute('vacuum analyze logging.meta_source_files')
     else:
         logging.info("No configruation Items found...Exiting.")
+
+if __name__ == '__main__':
+    main()

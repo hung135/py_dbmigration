@@ -43,6 +43,7 @@ src/py_dbmigration/requirements.txt
 src/py_dbmigration.egg-info/PKG-INFO
 src/py_dbmigration.egg-info/SOURCES.txt
 src/py_dbmigration.egg-info/dependency_links.txt
+src/py_dbmigration.egg-info/entry_points.txt
 src/py_dbmigration.egg-info/not-zip-safe
 src/py_dbmigration.egg-info/requires.txt
 src/py_dbmigration.egg-info/top_level.txt
@@ -71,6 +72,7 @@ src/py_dbmigration/custom_logic/wyman.py
 src/py_dbmigration/data_file_mgnt/README.md
 src/py_dbmigration/data_file_mgnt/__init__.py
 src/py_dbmigration/data_file_mgnt/data_files.py
+src/py_dbmigration/data_file_mgnt/logic_sql.yml
 src/py_dbmigration/data_file_mgnt/utils.py
 src/py_dbmigration/db_logging/README.md
 src/py_dbmigration/db_logging/__init__.py
