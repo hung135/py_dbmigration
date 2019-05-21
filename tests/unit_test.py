@@ -1,9 +1,9 @@
 import sys
 import unittest
 
-import data_file_mgnt.data_files as data_files
-import migrate_utils.static_func as static_func
-import db_table 
+import py_dbmigration.data_file_mgnt.data_files as data_files
+import py_dbmigration.migrate_utils.static_func as static_func
+import py_dbmigration.db_table as db_table
 import logging as log
 import os
 from py_dbutils.rdbms import postgres as db_utils

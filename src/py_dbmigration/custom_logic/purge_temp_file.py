@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 from py_dbutils import parents as db_utils
-import data_file_mgnt
+from .. import data_file_mgnt
 import shutil
 import time
 logging.basicConfig(level='DEBUG')

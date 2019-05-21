@@ -1,9 +1,9 @@
 import sys
 import unittest
 
-from data_file_mgnt import *
-from data_file_mgnt.data_files import *
-from migrate_utils import *
+from py_dbmigration.data_file_mgnt import *
+from py_dbmigration.data_file_mgnt.data_files import *
+from py_dbmigration.migrate_utils import *
 import db_table
 import logging as log
 #import boto3

@@ -9,14 +9,14 @@ import datetime
 import time
 import pandas as pd
 #import db_logging
-import db_table
+from .. import db_table
 #mport db_table.db_table_func
 import yaml
 import sys
 
-import migrate_utils 
+from .. import migrate_utils 
 import py_dbutils.parents as db_utils
-import data_file_mgnt.utils as utils
+from . import utils 
 import logging as log
 
 logging = log.getLogger()
