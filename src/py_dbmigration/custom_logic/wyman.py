@@ -165,7 +165,7 @@ def process(db, foi, df):
         t = process_tbl_content(wb)
         t2 = derive_start_end_rows(t)
         # db = db_utils.DB(dbschema='autocount', dbtype='POSTGRES')
-        sqlalchemy_conn, meta = db.connect_sqlalchemy()
+        sqlalchemy_conn, meta = db.connect_SqlAlchemy()
         # pprint.pprint(t2)
         prev_sheet = None
         for sheet in t2:

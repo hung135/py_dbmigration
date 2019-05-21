@@ -2,9 +2,9 @@
 import logging
 import os
 import sys
-import db_utils
-import data_file_mgnt
-import migrate_utils
+from py_dbutils import parents as db_utils
+from .. import data_file_mgnt
+from .. import migrate_utils
 logging.basicConfig(level='DEBUG')
 
 '''
@@ -44,7 +44,7 @@ def custom_logic(db, foi, df):
 def process(db, foi, df):
     error_msg = None
     additional_msg = None
-
+    print("-------------- file szzzze")
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
 

@@ -1,10 +1,10 @@
 
  
-from .. import migrate_utils 
-import time
+import py_dbmigration.migrate_utils 
+import datetime
 import logging as log
 import re
-from ..custom_logic import purge_temp_file as purge
+from py_dbmigration.custom_logic import purge_temp_file as purge
 
 
 logging = log.getLogger()
@@ -34,9 +34,10 @@ def execute_sql(db, sql_list, foi, df):
         shorten_sql = (modified_sql[:50] + "...") if len(modified_sql) > 75 else modified_sql
         logging.info("\tSQL Step #: {} {}".format(id, shorten_sql))
 
-        t = time.time()
+        t = datetime.time()
         db.execute(modified_sql,catch_exception=False)
-        time_delta = round(time.time() - t,3)
+        
+        time_delta = round(datetime.time() - t,3)
         logging.info("\t\tExecution Time: {}sec".format(time_delta))
 
 # pull the list of modules configured in the yaml file under process_logic
@@ -70,12 +71,12 @@ def process_logic(foi, db, df):
         # dynmaically import the modeul specified in the yaml file
         # this could be faster if we imported this once but for now it stays here
         logging.debug('Importing Module: {}'.format(custom_logic))
-        print("-----fqn logic---->",fqn_logic)
+         
         module = __import__('py_dbmigration.custom_logic',fromlist=[logic_name])
         print(dir(module))
 
         imp = getattr(module, logic_name)
-        print("---dir",dir(imp))
+         
         logging.info('\t->Dynamic Module Start: {}'.format(custom_logic))
         df.set_work_file_status(db, df.meta_source_file_id, custom_logic)
 
@@ -84,11 +85,14 @@ def process_logic(foi, db, df):
             logic_name, df.meta_source_file_id)
         db.execute(sql_set_process_trail,catch_exception=False)
         try:
-            t = time.time()
+            
+            t = datetime.datetime.now()
+             
             continue_next_process = imp.process(db, foi, df)
-            time_delta = round(time.time() - t,3)
+            
+            time_delta = (datetime.datetime.now() - t)
             logging.info("\t\t\tExecution Time: {}sec".format(time_delta))
- 
+             
         except Exception as e:
             df.set_work_file_status(db, df.meta_source_file_id, custom_logic, '{}: {}'.format(custom_logic, e))
             

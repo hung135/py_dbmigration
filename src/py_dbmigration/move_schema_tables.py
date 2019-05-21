@@ -3,13 +3,13 @@ import multiprocessing as mp
 import argparse
 import os
 import shutil
-import db_utils
+from py_dbutils.parents import postgres as db_utils
 import socket
 import traceback
 import sys
 import pprint
 import logging as lg
-import time
+ 
 from datetime import datetime
 import copy
 import pprint
@@ -596,7 +596,7 @@ def process_yaml(yaml_file, args):
                 # divide_work(trg_db,publish_item)
                 if not trg_db.has_record('select 1 from {}'.format(work_table)):
                     plan_work(publish_item, src_db, trg_db)
-                import time
+                import datetime
 
                 manager = mp.Manager()
                 return_dict = manager.dict()

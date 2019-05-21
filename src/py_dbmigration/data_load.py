@@ -1,8 +1,8 @@
 import yaml
 import os
 import py_dbutils.rdbms.postgres as db_utils
-from . import data_file_mgnt as dfm
-from .migrate_utils import *
+import py_dbmigration.data_file_mgnt as dfm
+import py_dbmigration.migrate_utils.static_func as static_func
 
 import pprint
 

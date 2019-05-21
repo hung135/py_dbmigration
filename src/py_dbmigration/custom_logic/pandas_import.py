@@ -4,12 +4,11 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-import db_utils
-import db_table
-import migrate_utils
+ 
+import py_dbmigration.db_table as db_table
+import py_dbmigration.migrate_utils as migrate_utils
 import re
-
-import pprint
+ 
 
 logging.basicConfig(level='DEBUG')
 
@@ -41,10 +40,14 @@ def process(db, foi, df):
     delim = foi.new_delimiter or foi.file_delimiter
     append_file_id = foi.append_file_id
 
+
+    print("--------------------here")
     error_msg = None
     if db is not None:
-        sqlalchemy_conn, meta = db.connect_sqlalchemy()
+        print("-------------here alchemy1")
+        sqlalchemy_conn = db.connect_SqlAlchemy()
 
+        print("-------------here alchemy")
         if table_name is None:
             table_name = str(os.path.basename((file)))
 
@@ -71,9 +74,13 @@ def process(db, foi, df):
             if file_type == 'CSV':
                 for counter, dataframe in enumerate(
                         pd.read_csv(file, sep=delim, nrows=limit_rows,
-                                    quotechar='"', encoding=foi.encoding, chunksize=chunk_size, header=header, index_col=False,
+                                    quotechar='"', encoding=foi.encoding, chunksize=chunk_size, 
+                                    header=header, index_col=False,
                                     dtype=object)):
-
+                    
+                    if foi.column_list is None:
+                        foi.column_list=[]
+                    print("-------here6",foi.column_list)
                     if not foi.use_header and len(foi.column_list) > 0:
 
                         dataframe.columns = map(str,
@@ -81,7 +88,10 @@ def process(db, foi, df):
                                                 names
                                                 )  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
                     else:
+                        print("-------77777")
+                        print(dataframe)
                         col_list = dataframe.columns.tolist()
+                        print("------777777colist",col_list)
 
                 # cols_new = [i.split(' ', 1)[1].replace(" ", "_").lower() for i in col_list]
                         cols_new = [migrate_utils.static_func.convert_str_snake_case(i) for i in col_list]
@@ -96,6 +106,7 @@ def process(db, foi, df):
                                      index=False, index_label=names)
                     ####################################################################################################
                 if counter == 0:
+                    print("-------here4")
                     rows_inserted = (len(dataframe))
                 else:
                     rows_inserted = (counter) * chunk_size + (len(dataframe))
@@ -121,12 +132,14 @@ def process(db, foi, df):
                 dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
                                  index=False, index_label=names)
                 dataframe_columns = dataframe.columns.tolist()
-
+                print("-------here5")
                 rows_inserted = (len(dataframe))
             continue_processing = True
 
         except Exception as e:
             import_status = 'FAILED'
+            print("------------------here2")
+            print(e)
 
             try:
 
@@ -143,9 +156,9 @@ def process(db, foi, df):
             except Exception as ee:
 
                 # migrate_utils.static_func.profile_csv(file, ',', 0)
-                import time
+                import datetime
                 print("sleeping so you can read:", ee)
-                time.sleep(5)
+                datetime.time.sleep(5)
     logging.info("\t\tRows Inserted: {}".format(rows_inserted))
     t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
     row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)

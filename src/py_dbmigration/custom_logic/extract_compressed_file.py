@@ -65,9 +65,9 @@ def custom_logic(db, foi, df):
         # instantiate a new Datafile object that craw this new directory of extracted files
         data_file_mgnt.data_files.DataFile(new_src_dir, db, file_table_map, parent_file_id=file_id)
     except Exception as e:
-        # import time
+        # import datetime
         # print("---error occured--sleeping so you can read", e)
-        # time.sleep(30)
+         
         logging.error(e)
         status_dict['import_status'] = 'FAILED'
         status_dict['error_msg'] = 'Error During Unziping File'

@@ -1,20 +1,17 @@
 import re
 import os
-import time
 #import zip_utils
 import socket
- 
-
 import datetime
-import time
+ 
 import pandas as pd
 #import db_logging
-from .. import db_table
+import py_dbmigration.db_table as db_table
 #mport db_table.db_table_func
 import yaml
 import sys
 
-from .. import migrate_utils 
+mport py_dbmigration.migrate_utils 
 import py_dbutils.parents as db_utils
 from . import utils 
 import logging as log

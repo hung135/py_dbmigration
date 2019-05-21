@@ -2,10 +2,10 @@
 import logging
 import os
 import sys
-import db_utils
-import data_file_mgnt
-import migrate_utils
-import db_table
+import py_dbutils.parents as db_utils
+import py_dbmigration.data_file_mgnt as data_file_mgnt
+import py_dbmigration.migrate_utils as migrate_utils
+import py_dbmigration.db_table as db_table
 logging.basicConfig(level='DEBUG')
 
 ''' 
@@ -24,6 +24,7 @@ def custom_logic(db, foi, df):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
 
     continue_processing = True
+    
     already_processed = db.has_record(
         """select 1 from logging.meta_source_files a,logging.meta_source_files b
                     where a.file_process_state='Processed'
@@ -31,7 +32,7 @@ def custom_logic(db, foi, df):
                     and b.id={}
                     and a.project_name=b.project_name
                     """.format(df.meta_source_file_id))
-
+     
     if already_processed:
         # raise execption to continue with the next file
         # raise valuerror to abort process

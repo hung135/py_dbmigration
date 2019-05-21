@@ -116,7 +116,7 @@ for src_table, value in table_list.items():
        
       record_keeper.session.commit()
     except Exception as e:
-      import time
+      import datetime
 
       publish_status = 'Failed'
        

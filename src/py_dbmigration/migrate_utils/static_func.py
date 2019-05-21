@@ -12,7 +12,7 @@ def timer(f):
         x = f(*args, **kwargs)
         end_time = datetime.datetime.now()
         # print(f.func_name,"End Time: ", datetime.datetime.now())
-        logging.debug("{} :Ended, Duration Time: ".format(f.func_name, str(end_time - start_time)))
+        logging.debug("{} {}:Ended, Duration Time: ".format(f.func_name, str(end_time - start_time)))
 
         return x
 
@@ -118,7 +118,7 @@ def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True
 
     # if we have no header and a db connection pull column list from db
     if use_header is False and db is not None:
-        import db_utils
+        import py_dbutils.parents as db_utils
         assert isinstance(db, db_utils.DB)
 
         columns_from_db = db.get_columns(table_name, table_schema)
@@ -555,7 +555,7 @@ def print_postgres_table(db, folder=None, targetschema=None):
 
     import subprocess
 
-    con, meta = db.connect_sqlalchemy(db.schema, db._dbtype)
+    con, meta = db.connect_SqlAlchemy(db.schema, db._dbtype)
     # print dir(meta.tables)
     folder_table = folder + "/postgrestables/"
 
@@ -589,7 +589,7 @@ def print_postgres_table(db, folder=None, targetschema=None):
 def print_create_table_upsert(db, folder=None, targetschema=None):
     import os
 
-    con, meta = db.connect_sqlalchemy(db.schema, db._dbtype)
+    con, meta = db.connect_SqlAlchemy(db.schema)
     # print dir(meta.tables)
     folder_deploy = folder + "/deploy/functions/"
     folder_revert = folder + "/revert/functions/"
@@ -949,99 +949,99 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
     print("Errored Furnctions: \n{}".format(error_function))
 
 
-def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
-    import sqlalchemy
-    import os
-    from sqlalchemy.dialects import postgresql
+# def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
+#     import sqlalchemy
+#     import os
+#     from sqlalchemy.dialects import postgresql
 
-    con, meta = db.connect_sqlalchemy(db.schema, db._dbtype)
-    # print dir(meta.tables)
-    folder_deploy = folder + "/deploy/tables/"
-    folder_revert = folder + "/revert/tables/"
-    folder_verify = folder + "/verify/tables/"
-    try:
-        os.makedirs(folder_deploy)
-    except:
-        pass
-    try:
-        os.makedirs(folder_revert)
-    except:
-        pass
-    try:
-        os.makedirs(folder_verify)
-    except:
-        pass
-    table_count = 0
-    sqitch = []
-    tables = []
+#     con, meta = db.connect_SQLAlchemy(db.schema)
+#     # print dir(meta.tables)
+#     folder_deploy = folder + "/deploy/tables/"
+#     folder_revert = folder + "/revert/tables/"
+#     folder_verify = folder + "/verify/tables/"
+#     try:
+#         os.makedirs(folder_deploy)
+#     except:
+#         pass
+#     try:
+#         os.makedirs(folder_revert)
+#     except:
+#         pass
+#     try:
+#         os.makedirs(folder_verify)
+#     except:
+#         pass
+#     table_count = 0
+#     sqitch = []
+#     tables = []
 
-    if targetschema is None:
-        dbschema = db.schema
+#     if targetschema is None:
+#         dbschema = db.schema
 
-    else:
-        dbschema = targetschema
+#     else:
+#         dbschema = targetschema
 
-    # for n, t in meta.tables.iteritems():
-    for n, t in meta.tables.items():
-        table_count += 1
+#     # for n, t in meta.tables.iteritems():
+#     for n, t in meta.tables.items():
+#         table_count += 1
 
-        if file_prefix is not None:
-            filename = file_prefix + t.name.lower() + ".sql"
-            fqn = file_prefix
-        else:
-            filename = t.name.lower() + ".sql"
-            fqn = ""
-        basefilename = t.name.lower()
-        # print(type(n), n, t.name)
-        table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
-        stmt = sqlalchemy.schema.CreateTable(table).compile(dialect=postgresql.dialect())
-        column_list = [c.name for c in table.columns]
-        createsql = convert_sql_snake_case(str(stmt), column_list)
-        createsql = createsql.replace('"', '')
+#         if file_prefix is not None:
+#             filename = file_prefix + t.name.lower() + ".sql"
+#             fqn = file_prefix
+#         else:
+#             filename = t.name.lower() + ".sql"
+#             fqn = ""
+#         basefilename = t.name.lower()
+#         # print(type(n), n, t.name)
+#         table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
+#         stmt = sqlalchemy.schema.CreateTable(table).compile(dialect=postgresql.dialect())
+#         column_list = [c.name for c in table.columns]
+#         createsql = convert_sql_snake_case(str(stmt), column_list)
+#         createsql = createsql.replace('"', '')
 
-        logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
+#         logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
 
-        line = ("\nsqitch --plan-file tables.plan add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
+#         line = ("\nsqitch --plan-file tables.plan add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
 
-        sqitch.append(line)
-        if targetschema is not None:
-            createsql = createsql.replace(("table " + db.schema + ".").lower(), "table " + targetschema + ".")
-        m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
-        tables.append(m)
+#         sqitch.append(line)
+#         if targetschema is not None:
+#             createsql = createsql.replace(("table " + db.schema + ".").lower(), "table " + targetschema + ".")
+#         m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
+#         tables.append(m)
 
-    if folder is None:
-        for i in tables:
-            print(i)
-        for s in sqitch:
-            print(s)
-    else:
-        for i in tables:
-            # print("Writing:")
-            #print(folder_deploy + i["table"])
-            with open(folder_deploy + i["filename"], "wb") as f:
-                f.write(bytes(i["sql"]))
-                f.write("ALTER TABLE {}.{}\n\tOWNER TO operational_dba;".format(dbschema, i["table"]))
+#     if folder is None:
+#         for i in tables:
+#             print(i)
+#         for s in sqitch:
+#             print(s)
+#     else:
+#         for i in tables:
+#             # print("Writing:")
+#             #print(folder_deploy + i["table"])
+#             with open(folder_deploy + i["filename"], "wb") as f:
+#                 f.write(bytes(i["sql"]))
+#                 f.write("ALTER TABLE {}.{}\n\tOWNER TO operational_dba;".format(dbschema, i["table"]))
 
-            drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
+#             drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
 
-            v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
-                dbschema, i["table"])
-            verify = "BEGIN;\n" + v_str
+#             v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
+#                 dbschema, i["table"])
+#             verify = "BEGIN;\n" + v_str
 
-            with open(folder_revert + i["filename"], "wb") as f:
-                f.write(bytes(drop))
-                f.write(bytes("COMMIT;\n"))
-            with open(folder_verify + i["filename"], "wb") as f:
-                f.write(bytes(verify))
-                f.write(bytes("ROLLBACK;\n"))
+#             with open(folder_revert + i["filename"], "wb") as f:
+#                 f.write(bytes(drop))
+#                 f.write(bytes("COMMIT;\n"))
+#             with open(folder_verify + i["filename"], "wb") as f:
+#                 f.write(bytes(verify))
+#                 f.write(bytes("ROLLBACK;\n"))
 
-        with open(folder + "sqitchplanadd_table.bash", "wb") as f:
-            f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table()"))
-        for s in sqitch:
-            with open(folder + "sqitchplanadd_table.bash", "a") as f:
-                f.write(s)
+#         with open(folder + "sqitchplanadd_table.bash", "wb") as f:
+#             f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table()"))
+#         for s in sqitch:
+#             with open(folder + "sqitchplanadd_table.bash", "a") as f:
+#                 f.write(s)
 
-    print("Total Tables:{}".format(table_count))
+#     print("Total Tables:{}".format(table_count))
 
 
 def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
@@ -1156,298 +1156,298 @@ def reset_migration(db):
         """commit;""")  # var=raw_input("You are about to drop 5 schemas in DATABASE:>>>{}<<< Are you Sure? Y/N ".format(db._database_name))  # if var=="Y":  #     db.drop_schema("stg")  #     db.drop_schema(db.schema);  #     db.drop_schema("sqitch")  #     db.drop_schema("logging")  #     db.drop_schema("util")
 
 
-def make_html_meta_source_files(db, full_file_path, html_head):
-    col_header = """file_id,
-      file_name,
-      file_path,
-      file_type,
-      file_process_state,
-      database_table,
-      process_start_dtm,
-      process_end_dtm,
-      current_worker_host,
-      rows_inserted,
-      file_size,
-      total_rows,
-      total_files_processed,
-      last_error_msg """
+# def make_html_meta_source_files(db, full_file_path, html_head):
+#     col_header = """file_id,
+#       file_name,
+#       file_path,
+#       file_type,
+#       file_process_state,
+#       database_table,
+#       process_start_dtm,
+#       process_end_dtm,
+#       current_worker_host,
+#       rows_inserted,
+#       file_size,
+#       total_rows,
+#       total_files_processed,
+#       last_error_msg """
 
-    sql = """SELECT id,file_name,
-      replace(file_path,'/home/dtwork/dw/file_transfers',''),
-      file_type,
-      file_process_state,
-      database_table,
-      process_start_dtm,
-      process_end_dtm,
-      current_worker_host,
-      rows_inserted,
-      file_size,
-      total_rows,
-      total_files_processed,
-      last_error_msg  from logging.meta_source_files"""
+#     sql = """SELECT id,file_name,
+#       replace(file_path,'/home/dtwork/dw/file_transfers',''),
+#       file_type,
+#       file_process_state,
+#       database_table,
+#       process_start_dtm,
+#       process_end_dtm,
+#       current_worker_host,
+#       rows_inserted,
+#       file_size,
+#       total_rows,
+#       total_files_processed,
+#       last_error_msg  from logging.meta_source_files"""
 
-    title = " <h1>Rad Data File Log </h1>"
-    formatted_html = print_result_html_table(db, sql, col_header.split(','),
-                                             sortable_columns=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+#     title = " <h1>Rad Data File Log </h1>"
+#     formatted_html = print_result_html_table(db, sql, col_header.split(','),
+#                                              sortable_columns=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
-    html = html_head + (str(datetime.datetime.now()) + title + formatted_html + "\n</body></html>")
+#     html = html_head + (str(datetime.datetime.now()) + title + formatted_html + "\n</body></html>")
 
-    # gets all files that were attempted to be published that yield a failure
-    # or no records
+#     # gets all files that were attempted to be published that yield a failure
+#     # or no records
 
-    if not os.path.exists(os.path.dirname(full_file_path)):
-        import commands
-        try:
-            os.makedirs(os.path.dirname(full_file_path), 0o0776)
+#     if not os.path.exists(os.path.dirname(full_file_path)):
+#         import commands
+#         try:
+#             os.makedirs(os.path.dirname(full_file_path), 0o0776)
 
-        except OSError as exc:  # Guard against race condition
-            if exc.errno != exc.errno.EEXIST:
-                raise
-    os.chmod(os.path.dirname(full_file_path), 0o0776)
+#         except OSError as exc:  # Guard against race condition
+#             if exc.errno != exc.errno.EEXIST:
+#                 raise
+#     os.chmod(os.path.dirname(full_file_path), 0o0776)
 
-    with open(full_file_path, 'w') as f:
-        f.write(html)
-    os.chmod(full_file_path, 0o0776)
-
-
-def make_html_publish_error(db, full_file_path, html_head):
-    col_header = """
-    file_id,
-    file_name,
-    file_path """
-
-    sql = """SELECT distinct y.data_id as file_id,file_name,file_path
-                        from (SELECT data_id  from logging.publish_log group by data_id
-                        having count(*)>1 and max(row_counts)=0) x, logging.publish_log y
-                        where x.data_id=y.data_id"""
-    title = " <h1>Publish Error Log </h1>"
-    formatted_html = print_result_html_table(db, sql, col_header.split(','), sortable_columns=[1, 2, 3, 4, 5, 6])
-
-    html = html_head + (str(datetime.datetime.now()) + title + formatted_html + "\n</body></html>")
-
-    # gets all files that were attempted to be published that yield a failure
-    # or no records
-
-    if not os.path.exists(os.path.dirname(full_file_path)):
-        try:
-
-            os.makedirs(os.path.dirname(full_file_path), 0o0776)
-
-        except OSError as exc:  # Guard against race condition
-            if exc.errno != exc.errno.EEXIST:
-                raise
-    os.chmod(os.path.dirname(full_file_path), 0o0776)
-    with open(full_file_path, 'w') as f:
-        f.write(html)
-    os.chmod(full_file_path, 0o0776)
+#     with open(full_file_path, 'w') as f:
+#         f.write(html)
+#     os.chmod(full_file_path, 0o0776)
 
 
-def make_html_publish_log(db, full_file_path, html_head):
-    col_header = """
-        data_id  ,
-      publish_start_time  ,
-      publish_end_time  ,
-      table_name   ,
-      row_counts  ,
-      file_name  ,
-      file_path,
-       message     """
+# def make_html_publish_error(db, full_file_path, html_head):
+#     col_header = """
+#     file_id,
+#     file_name,
+#     file_path """
 
-    sql = """SELECT data_id  ,
-      publish_start_time  ,
-      publish_end_time  ,
-      table_name   ,
-      row_counts  ,
-      file_name  ,
-      file_path,
-       message  from logging.publish_log where row_counts>0"""
-    title = " <h1>Publish Log </h1>"
-    formatted_html = print_result_html_table(db, sql, col_header.split(','), sortable_columns=[1, 2, 3, 4, 5, 6])
+#     sql = """SELECT distinct y.data_id as file_id,file_name,file_path
+#                         from (SELECT data_id  from logging.publish_log group by data_id
+#                         having count(*)>1 and max(row_counts)=0) x, logging.publish_log y
+#                         where x.data_id=y.data_id"""
+#     title = " <h1>Publish Error Log </h1>"
+#     formatted_html = print_result_html_table(db, sql, col_header.split(','), sortable_columns=[1, 2, 3, 4, 5, 6])
 
-    html = html_head + (str(datetime.datetime.now()) + title + formatted_html + "\n</body></html>")
+#     html = html_head + (str(datetime.datetime.now()) + title + formatted_html + "\n</body></html>")
 
-    # gets all files that were attempted to be published that yield a failure
-    # or no records
+#     # gets all files that were attempted to be published that yield a failure
+#     # or no records
 
-    if not os.path.exists(os.path.dirname(full_file_path)):
-        try:
+#     if not os.path.exists(os.path.dirname(full_file_path)):
+#         try:
 
-            os.makedirs(os.path.dirname(full_file_path), 0o0776)
+#             os.makedirs(os.path.dirname(full_file_path), 0o0776)
 
-        except OSError as exc:  # Guard against race condition
-            if exc.errno != exc.errno.EEXIST:
-                raise
-    os.chmod(os.path.dirname(full_file_path), 0o0776)
-    with open(full_file_path, 'w') as f:
-        f.write(html)
-    os.chmod(full_file_path, 0o0776)
+#         except OSError as exc:  # Guard against race condition
+#             if exc.errno != exc.errno.EEXIST:
+#                 raise
+#     os.chmod(os.path.dirname(full_file_path), 0o0776)
+#     with open(full_file_path, 'w') as f:
+#         f.write(html)
+#     os.chmod(full_file_path, 0o0776)
 
 
-# given a columna_name,type tubple return a data word for that type
-def gen_data(col):
-    import random
+# def make_html_publish_log(db, full_file_path, html_head):
+#     col_header = """
+#         data_id  ,
+#       publish_start_time  ,
+#       publish_end_time  ,
+#       table_name   ,
+#       row_counts  ,
+#       file_name  ,
+#       file_path,
+#        message     """
 
-    import sqlalchemy
-    import datetime
+#     sql = """SELECT data_id  ,
+#       publish_start_time  ,
+#       publish_end_time  ,
+#       table_name   ,
+#       row_counts  ,
+#       file_name  ,
+#       file_path,
+#        message  from logging.publish_log where row_counts>0"""
+#     title = " <h1>Publish Log </h1>"
+#     formatted_html = print_result_html_table(db, sql, col_header.split(','), sortable_columns=[1, 2, 3, 4, 5, 6])
 
-    from random_words import RandomWords
-    import operator
-    assert isinstance(col, sqlalchemy.Column)
+#     html = html_head + (str(datetime.datetime.now()) + title + formatted_html + "\n</body></html>")
 
-    # print(col.type,col.type.python_type)
-    if str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']:
+#     # gets all files that were attempted to be published that yield a failure
+#     # or no records
+
+#     if not os.path.exists(os.path.dirname(full_file_path)):
+#         try:
+
+#             os.makedirs(os.path.dirname(full_file_path), 0o0776)
+
+#         except OSError as exc:  # Guard against race condition
+#             if exc.errno != exc.errno.EEXIST:
+#                 raise
+#     os.chmod(os.path.dirname(full_file_path), 0o0776)
+#     with open(full_file_path, 'w') as f:
+#         f.write(html)
+#     os.chmod(full_file_path, 0o0776)
+
+
+# # given a columna_name,type tubple return a data word for that type
+# def gen_data(col):
+#     import random
+
+#     import sqlalchemy
+#     import datetime
+
+#     from random_words import RandomWords
+#     import operator
+#     assert isinstance(col, sqlalchemy.Column)
+
+#     # print(col.type,col.type.python_type)
+#     if str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']:
         
-        data = random.randint(1, 2000)
-    elif 'PRECISION' in str(col.type) or 'NUMERIC' in str(col.type):
+#         data = random.randint(1, 2000)
+#     elif 'PRECISION' in str(col.type) or 'NUMERIC' in str(col.type):
          
-        data = random.randrange(1, 100)
+#         data = random.randrange(1, 100)
 
-    elif 'TIMESTAMP' in str(col.type):
-        data = str(datetime.datetime.now())
-    elif 'TEXT' in str(col.type):
-        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
-        limit = min([100])
-        if limit == 0:
-            limit = 1
-        word_count = random.randint(1, limit)
-        rw = RandomWords()
-        data = ' '.join(rw.random_words(count=word_count))
-        data = data.replace('p ', r'\"')
-        data = '"' + data.replace('r ', '\n') + '"'
+#     elif 'TIMESTAMP' in str(col.type):
+#         data = str(datetime.datetime.now())
+#     elif 'TEXT' in str(col.type):
+#         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+#         limit = min([100])
+#         if limit == 0:
+#             limit = 1
+#         word_count = random.randint(1, limit)
+#         rw = RandomWords()
+#         data = ' '.join(rw.random_words(count=word_count))
+#         data = data.replace('p ', r'\"')
+#         data = '"' + data.replace('r ', '\n') + '"'
 
-    elif 'CHAR' in str(col.type):
-        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
-        limit = min([5, operator.div(col.type.length, 5)])
-        if limit == 0:
-            limit = 1
-        word_count = random.randint(1, limit)
-        rw = RandomWords()
-        data = ' '.join(rw.random_words(count=word_count))
-    else:
-        print("New DataType", str(col.type))
-        data = random.randint(1, 32000)
+#     elif 'CHAR' in str(col.type):
+#         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+#         limit = min([5, operator.div(col.type.length, 5)])
+#         if limit == 0:
+#             limit = 1
+#         word_count = random.randint(1, limit)
+#         rw = RandomWords()
+#         data = ' '.join(rw.random_words(count=word_count))
+#     else:
+#         print("New DataType", str(col.type))
+#         data = random.randint(1, 32000)
 
-    return str(data)
+#     return str(data)
 
 
 # a function that takes in a column and look at its dataype and return a function to generate random data
 # that can be activated later to not have to iterate through this logic each time
-def get_func(col):
-    import random
-    import string
+# def get_func(col):
+#     import random
+#     import string
 
-    import datetime
+#     import datetime
 
-    from random_words import RandomWords
-    # assert isinstance(col, sqlalchemy.Column)
+#     from random_words import RandomWords
+#     # assert isinstance(col, sqlalchemy.Column)
 
-    if str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']:
-        def gen_data():
-            return random.randint(1, 2000)
+#     if str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']:
+#         def gen_data():
+#             return random.randint(1, 2000)
 
-        return gen_data
-    elif str(col.type) in ['BYTEA']:
-        def gen_data():
+#         return gen_data
+#     elif str(col.type) in ['BYTEA']:
+#         def gen_data():
 
-            return "'NULL'"
+#             return "'NULL'"
 
-        return gen_data
-    elif str(col.type) in ['UUID']:
+#         return gen_data
+#     elif str(col.type) in ['UUID']:
 
-        def gen_data():
-            import hashlib
-            return hashlib.md5(str(random.randint(1, 2000))).hexdigest()
+#         def gen_data():
+#             import hashlib
+#             return hashlib.md5(str(random.randint(1, 2000))).hexdigest()
 
-        return gen_data
-    elif ('PRECISION' in str(col.type)
-          or 'NUMERIC' in str(col.type)):
-        def gen_data():
-            x = random.randrange(1, 100)
-            return x
+#         return gen_data
+#     elif ('PRECISION' in str(col.type)
+#           or 'NUMERIC' in str(col.type)):
+#         def gen_data():
+#             x = random.randrange(1, 100)
+#             return x
 
-        return gen_data
+#         return gen_data
 
-    elif ('TIMESTAMP' in str(col.type)):
-        def gen_data():
-            return str(datetime.datetime.now())
+#     elif ('TIMESTAMP' in str(col.type)):
+#         def gen_data():
+#             return str(datetime.datetime.now())
 
-        return gen_data
-    elif ('TEXT' in str(col.type)):
-        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+#         return gen_data
+#     elif ('TEXT' in str(col.type)):
+#         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
 
-        def gen_data():
-            limit = min([100])
-            if limit == 0:
-                limit = 1
-            word_count = random.randint(1, limit)
-            rw = RandomWords()
-            data = ' '.join(rw.random_words(count=word_count))
-            data = data.replace('p ', r'\"')
-            data = '"' + data.replace('r ', '\n') + '"'
-            return data
+#         def gen_data():
+#             limit = min([100])
+#             if limit == 0:
+#                 limit = 1
+#             word_count = random.randint(1, limit)
+#             rw = RandomWords()
+#             data = ' '.join(rw.random_words(count=word_count))
+#             data = data.replace('p ', r'\"')
+#             data = '"' + data.replace('r ', '\n') + '"'
+#             return data
 
-        return gen_data
+#         return gen_data
 
-    elif ('CHAR' in str(col.type)):
-        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
-        import operator
+#     elif ('CHAR' in str(col.type)):
+#         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+#         import operator
 
-        def gen_data():
-            limit = min([3, operator.div(col.length, 5)])
-            if col.length < 35:
-                data = ''.join(random.choice(string.letters) for x in range(col.length))
+#         def gen_data():
+#             limit = min([3, operator.div(col.length, 5)])
+#             if col.length < 35:
+#                 data = ''.join(random.choice(string.letters) for x in range(col.length))
 
-            else:
-                word_count = random.randint(1, limit)
-                rw = RandomWords()
-                data = ' '.join(rw.random_words(count=word_count))
-                if (len(data) > col.length):
-                    print("get_func: Bad Data Generated", len(data), col.length, limit, data)
-            return data
+#             else:
+#                 word_count = random.randint(1, limit)
+#                 rw = RandomWords()
+#                 data = ' '.join(rw.random_words(count=word_count))
+#                 if (len(data) > col.length):
+#                     print("get_func: Bad Data Generated", len(data), col.length, limit, data)
+#             return data
 
-        return gen_data
-    else:
+#         return gen_data
+#     else:
 
-        def gen_data():
-            print("gen-fuc", str(col.type))
-            return random.randint(1, 32000)
+#         def gen_data():
+#             print("gen-fuc", str(col.type))
+#             return random.randint(1, 32000)
 
-        return gen_data
+#         return gen_data
 
-    return None
+#     return None
 
 
 # generate data base on columns in a given table
-def generate_data_sample(db, table_name, source_schema, file_name, line_count=10,
-                         ignore_auto_inc_column=True, include_header=True):
-    columns1 = db.get_all_columns_schema(source_schema, table_name)
-    func_list = []
-    column_names = []
-    column_names2 = []
-    for c in columns1:
-        if c.autoincrement == 'NO' and c.column_name not in ['file_id', 'crc']:
-            # setattr(c,'randfunc',get_func(c))
-            func_list.append(get_func(c))
-            column_names.append(c.column_name)
+# def generate_data_sample(db, table_name, source_schema, file_name, line_count=10,
+#                          ignore_auto_inc_column=True, include_header=True):
+#     columns1 = db.get_all_columns_schema(source_schema, table_name)
+#     func_list = []
+#     column_names = []
+#     column_names2 = []
+#     for c in columns1:
+#         if c.autoincrement == 'NO' and c.column_name not in ['file_id', 'crc']:
+#             # setattr(c,'randfunc',get_func(c))
+#             func_list.append(get_func(c))
+#             column_names.append(c.column_name)
 
-    if not os.path.exists(os.path.dirname(file_name)):
-        os.makedirs(os.path.dirname(file_name), mode=0o0777)
+#     if not os.path.exists(os.path.dirname(file_name)):
+#         os.makedirs(os.path.dirname(file_name), mode=0o0777)
 
-    with open(os.path.abspath(file_name), 'w') as f:
-        for x in range(line_count):
-            line = ''
-            if x == 0:
-                header = ','.join([c for c in column_names])
-                if include_header:
-                    f.write(header + '\n')
-            for i, func in enumerate(func_list):
-                if (i == 0):
-                    line += str(func())
-                else:
-                    line += "," + str(func())
+#     with open(os.path.abspath(file_name), 'w') as f:
+#         for x in range(line_count):
+#             line = ''
+#             if x == 0:
+#                 header = ','.join([c for c in column_names])
+#                 if include_header:
+#                     f.write(header + '\n')
+#             for i, func in enumerate(func_list):
+#                 if (i == 0):
+#                     line += str(func())
+#                 else:
+#                     line += "," + str(func())
 
-            # print(x, line)
-            f.write(line + '\n')
+#             # print(x, line)
+#             f.write(line + '\n')
 
 
 # zip up directory
@@ -1462,37 +1462,37 @@ def zipdir(directory, target_file_name):
     zf.close()
 
 
-# Now we can iterate through all tables in db and make sample data for each table
-def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', line_count=10,
-                                    ignore_auto_inc_column=True,
-                                    zip_file_name=None, num_tables=None, post_fix='.csv',
-                                    include_header=True
-                                    ):
-    from db_utils import dbconn
+# # Now we can iterate through all tables in db and make sample data for each table
+# def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', line_count=10,
+#                                     ignore_auto_inc_column=True,
+#                                     zip_file_name=None, num_tables=None, post_fix='.csv',
+#                                     include_header=True
+#                                     ):
+#     from db_utils import dbconn
 
-    assert isinstance(db, dbconn.Connection)
-    print("Dumping: {}".format(source_schema))
-    if source_schema is None:
-        source_schema = db.schema
-    # tbs = db.get_table_list(source_schema)
-    tbs = db.get_table_list_via_query(source_schema)
+#     assert isinstance(db, dbconn.Connection)
+#     print("Dumping: {}".format(source_schema))
+#     if source_schema is None:
+#         source_schema = db.schema
+#     # tbs = db.get_table_list(source_schema)
+#     tbs = db.get_table_list_via_query(source_schema)
 
-    if not os.path.exists(os.path.dirname(data_directory)):
-        os.makedirs(os.path.dirname(data_directory), mode=0o0777)
-    print("Dumping data for scheam: {}".format(source_schema))
+#     if not os.path.exists(os.path.dirname(data_directory)):
+#         os.makedirs(os.path.dirname(data_directory), mode=0o0777)
+#     print("Dumping data for scheam: {}".format(source_schema))
 
-    for i, table_name in enumerate(tbs):
-        if (num_tables is not None and i < num_tables):
-            print("Generating Sample Data for Table:", table_name)
-            file_name = os.path.join(data_directory, table_name + post_fix)
-            generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column,
-                                 include_header=include_header)
+#     for i, table_name in enumerate(tbs):
+#         if (num_tables is not None and i < num_tables):
+#             print("Generating Sample Data for Table:", table_name)
+#             file_name = os.path.join(data_directory, table_name + post_fix)
+#             generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column,
+#                                  include_header=include_header)
 
-    if zip_file_name is not None:
-        zip_directory = os.path.dirname(zip_file_name)
-        if not os.path.exists(zip_directory):
-            os.makedirs(zip_directory)
-        zipdir(data_directory, os.path.abspath(zip_file_name))
+#     if zip_file_name is not None:
+#         zip_directory = os.path.dirname(zip_file_name)
+#         if not os.path.exists(zip_directory):
+#             os.makedirs(zip_directory)
+#         zipdir(data_directory, os.path.abspath(zip_file_name))
 
 
 # this will return sql to do upsert based on the primary keys
@@ -1546,47 +1546,47 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None, fil
 # upsert syntax with no data checking
 
 
-def generate_postgres_straight_upsert(db, table_name, source_schema, trg_schema=None,  src_table=None):
-    import db_utils.dbconn
-    assert isinstance(db, db_utils.DB)
-    if trg_schema is None:
-        schema = db.schema
-    else:
-        schema = trg_schema
-    if src_table is None:
-        src_table = table_name
+# def generate_postgres_straight_upsert(db, table_name, source_schema, trg_schema=None,  src_table=None):
+#     import db_utils.dbconn
+#     assert isinstance(db, db_utils.DB)
+#     if trg_schema is None:
+#         schema = db.schema
+#     else:
+#         schema = trg_schema
+#     if src_table is None:
+#         src_table = table_name
 
-    columns = db.get_table_columns(table_name, schema)
-    z = ""
-    md5_src = ""
-    md5_trg = ""
-    first_col = -1
-    for i, col in enumerate(columns):
-        if i == 0:
-            z += col + ' = excluded.' + col + '\n\t\t'
+#     columns = db.get_table_columns(table_name, schema)
+#     z = ""
+#     md5_src = ""
+#     md5_trg = ""
+#     first_col = -1
+#     for i, col in enumerate(columns):
+#         if i == 0:
+#             z += col + ' = excluded.' + col + '\n\t\t'
 
-        else:
-            z += ',' + col + ' = excluded.' + col + '\n\t\t'
+#         else:
+#             z += ',' + col + ' = excluded.' + col + '\n\t\t'
 
-        if col not in ('file_id', 'cdo_last_update'):
-            first_col += 1
-            if first_col == 0:
-                md5_trg += 'trg.' + col + '\n\t\t'
-                md5_src += 'excluded.' + col + '\n\t\t'
-            else:
+#         if col not in ('file_id', 'cdo_last_update'):
+#             first_col += 1
+#             if first_col == 0:
+#                 md5_trg += 'trg.' + col + '\n\t\t'
+#                 md5_src += 'excluded.' + col + '\n\t\t'
+#             else:
 
-                md5_trg += ',trg.' + col + '\n\t\t'
-                md5_src += ',excluded.' + col + '\n\t\t'
+#                 md5_trg += ',trg.' + col + '\n\t\t'
+#                 md5_src += ',excluded.' + col + '\n\t\t'
 
-    primary_keys = db.get_primary_keys(schema + '.' + table_name)
+#     primary_keys = db.get_primary_keys(schema + '.' + table_name)
 
-    sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {}  ON CONFLICT ({}) 
-    DO UPDATE SET \n\t{}\n  
-                    """.format(
-        schema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
-        source_schema + '.' + src_table,   ','.join(primary_keys),  z)
+#     sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {}  ON CONFLICT ({}) 
+#     DO UPDATE SET \n\t{}\n  
+#                     """.format(
+#         schema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
+#         source_schema + '.' + src_table,   ','.join(primary_keys),  z)
 
-    return sql_template
+#     return sql_template
 
 # @timer
 
@@ -1677,13 +1677,13 @@ def profile_csv_directory(path, delimiter=',', file_pattern=None, header_row_loc
                 c = None
                 logging.info("Profiling file:{}".format(f))
                 c = profile_csv(f, delimiter)
-                for key, val in c.iteritems():
+                for key, val in c.iter():
                     if total_cols_profile.get(key, 0) < val:
                         total_cols_profile[key] = val
             except Exception as e:
                 logging.error("Error for file:{}".format(e))
     for key, value in sorted(total_cols_profile.items(), key=lambda x: x[1]):
-        logging.info("Total:", key, value)
+        logging.info("Total: {}:{}".format( key, value))
 
 
 def profile_csv(full_file_path, delimiter=',', header_row_location=0):
@@ -1801,32 +1801,71 @@ def count_csv(full_file_path):
     logging.debug("File Row Count:{0}".format(count_size))
     return count_size, column_count
 
+# this only supporst python 2.7
+# def md5_file(full_file_path):
+#     import commands
+#     import platform
+#     md5_string = None
+#     os_specific_cmd = 'md5sum'
 
-def md5_file(full_file_path):
-    import commands
+#     if platform.system() == 'Linux':
+#         os_specific_cmd = 'md5sum'
+#         status_code, msg = commands.getstatusoutput("{} '{}'".format(os_specific_cmd, full_file_path))
+#         if status_code !=0:
+#             logging.error(str(status_code) + " : "+ msg)
+#         x = msg.split(' ')
+#         md5_string = x[0]
+#     elif platform.system() == 'Darwin':
+#         os_specific_cmd = 'md5'
+#         status_code, msg = commands.getstatusoutput("{} '{}'".format(os_specific_cmd, full_file_path))
+#         x = msg.split(' = ')
+#         md5_string = x[1]
+#     logging.debug("File CheckSum: {}".format(md5_string))
+
+#     return md5_string
+# for python 3.6+
+# sorry windows not supported
+def md5_file_36(full_file_path):
+    import subprocess
     import platform
     md5_string = None
     os_specific_cmd = 'md5sum'
+    msg=None
 
     if platform.system() == 'Linux':
         os_specific_cmd = 'md5sum'
-        status_code, msg = commands.getstatusoutput("{} '{}'".format(os_specific_cmd, full_file_path))
-        if status_code !=0:
-            logging.error(str(status_code) + " : "+ msg)
-        x = msg.split(' ')
-        md5_string = x[0]
+        
     elif platform.system() == 'Darwin':
         os_specific_cmd = 'md5'
-        status_code, msg = commands.getstatusoutput("{} '{}'".format(os_specific_cmd, full_file_path))
-        x = msg.split(' = ')
-        md5_string = x[1]
-    logging.debug("File CheckSum: {}".format(md5_string))
 
+    cli_param=[os_specific_cmd,full_file_path]
+    msg = subprocess.check_output(cli_param) 
+      
+    md5_string = str(msg.decode("utf-8") ).split(' ')[0]
+    logging.debug("File CheckSum: {}".format(md5_string))
+    print(md5_string)
     return md5_string
 
+#python 2.7
+# def count_file_lines_wc(file):
+#     import commands
+#     import platform
+#     record_count = 0
+#     split_by = ' '
 
-def count_file_lines_wc(file):
-    import commands
+#     if platform.system() == 'Linux':
+#         split_by = ' '
+#     elif platform.system() == 'Darwin':
+#         split_by = ' /'
+#     status_code, status_text = commands.getstatusoutput("wc -l '{}'".format(file))
+#     if status_code == 0:
+#         record_count, txt = status_text.split(split_by)
+     
+#     logging.debug("FileName:{0} RowCount:{1}".format(txt, record_count))
+#     return int(record_count)
+    # for python 3.6+
+def count_file_lines_wc_36(file):
+    import subprocess
     import platform
     record_count = 0
     split_by = ' '
@@ -1835,11 +1874,12 @@ def count_file_lines_wc(file):
         split_by = ' '
     elif platform.system() == 'Darwin':
         split_by = ' /'
-    status_code, status_text = commands.getstatusoutput("wc -l '{}'".format(file))
-    if status_code == 0:
-        record_count, txt = status_text.split(split_by)
-     
-    logging.debug("FileName:{0} RowCount:{1}".format(txt, record_count))
+
+    cli_param=['wc','-l',file]
+    print("--------cli",cli_param)
+    msg = subprocess.check_output(cli_param)
+    record_count = str(msg.decode("utf-8") ).split(' ')[0]
+    #logging.debug("FileName:{0} RowCount:{1}".format(txt, record_count))
     return int(record_count)
 
 

@@ -1,10 +1,10 @@
 
 import logging
 import os
-import sys
-import db_utils
-import data_file_mgnt
-import migrate_utils
+ 
+from py_dbutils import parents as db_utils
+from .. import data_file_mgnt
+from .. import migrate_utils
 logging.basicConfig(level='DEBUG')
 
 '''
@@ -28,8 +28,8 @@ def custom_logic(db, foi, df):
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
     print(abs_file_path)
 
-    data_value = migrate_utils.static_func.count_file_lines_wc(abs_file_path)
-
+    data_value = migrate_utils.static_func.count_file_lines_wc_36(abs_file_path)
+    print("-------------asdfl;kasdjf",data_value)
     rows_updated = db.execute(update_sql.format(data_value, file_id))
 
     if rows_updated == 0:

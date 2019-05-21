@@ -6,7 +6,7 @@ import db_utils
 import data_file_mgnt
 import migrate_utils
 import subprocess
-import time
+import datetime
 logging.basicConfig(level='DEBUG')
 
 

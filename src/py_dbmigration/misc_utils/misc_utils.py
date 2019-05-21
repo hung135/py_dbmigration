@@ -1,15 +1,15 @@
 
 
 def timer_decorator(f):
-    import time
+     
     import datetime as dt
     import logging
 
     def timer(*args, **kwargs):
-        t = time.time()
+        t = dt.time()
         logging.debug("Timer Started for Function: {},{} :{}".format(__name__, f.__name__, datetime.datetime.now()))
         f(*args, **kwargs)
-        time_delta = time.time() - t
+        time_delta = dt.time() - t
         logging.debug('{} {} Took: {} Seconds'.format(__name__, f.__name__, time_delta))
         return f(*args, **kwargs)
     return timer

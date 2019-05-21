@@ -2,9 +2,11 @@
 - path: '/workspace/tests/sample_data/'
   enabled: Tre # activates this configration tree
   project_name: test_1
+  reprocess: True
   extract_file_name_data: '\d\d\d\d'
   format_extracted_date: 'YYYY'
   process_logic: # this will get executed for all files
+    - logic: 'custom_logic.count_file_linux_wc'
     - logic: 'custom_logic.generate_checksum'
     - logic: 'custom_logic.log_file_size'
     - logic: 'custom_logic.abort_if_duplicate'
@@ -28,9 +30,12 @@
       table_name: 'test1'
       file_delimiter: ","
       process_logic:
-        - logic: 'custom_logic.import_via_pandas'
+        - logic: 'custom_logic.pandas_import'
       file_encoding: 'ISO-8859-1'
       limit_rows: None
+      has_header: True
+      user_header: True
+      #header_row_location: 0
       post_action: 
         - sql: "vacuum analyze {schema_name}.{table_name}"
      
