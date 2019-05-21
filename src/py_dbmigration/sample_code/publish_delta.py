@@ -1,9 +1,9 @@
 # import csv, pandas,        sqlalchemy, os
 import os
-import py_dbmigration.db_utils as db_utils
-import py_dbmigration.data_file_mgnt as dfm
-import py_dbmigration.migrate_utils as migu
-from py_dbmigration import db_table
+import py_dbutils.rdbms.postgres as db_utils
+import data_file_mgnt as dfm
+import migrate_utils as migu
+import db_table
 import datetime as dt
 import pprint
 import sys

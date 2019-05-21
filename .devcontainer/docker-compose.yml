@@ -22,7 +22,7 @@ services:
       PGDATABASE: postgres
       PGUSER: docker
       PGPASSWORD: docker
-      PYTHONPATH: /workspace/src/py_dbmigration;/workspace/src
+      PYTHONPATH: /workspace/src/py_dbmigration
       PGPORT: 5432
       MYSQL_DATABASE: test
       MYSQL_USER: docker

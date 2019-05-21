@@ -107,5 +107,7 @@ src/py_dbmigration/zip_utils/__init__.py
 src/py_dbmigration/zip_utils/unzipper.py
 tests/.DS_Store
 tests/conftest.py
+tests/data_load.yaml
 tests/test.py
 tests/unit_test.py
+tests/sample_data/test_file.csv
