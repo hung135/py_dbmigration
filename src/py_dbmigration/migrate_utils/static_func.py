@@ -370,7 +370,7 @@ def change_table_owner(db, schema, owner_name):
 
     """.format(schema)
 
-    resultset = db.query(query)
+    resultset, dummy  = db.query(query)
     db.execute('GRANT ALL ON SCHEMA {} TO operational_dba;'.format(schema))
     for r in resultset:
         db.execute(r[0])
@@ -382,7 +382,7 @@ FROM information_schema.views WHERE  table_schema  IN ('{}')
 ORDER BY table_schema, table_name;
     """.format(schema)
 
-    resultset = db.query(query)
+    resultset, dummy = db.query(query)
     for r in resultset:
         db.execute(r[0])
 
@@ -522,12 +522,12 @@ def appdend_to_readme(db, folder=None, targetschema=None):
     header = ["table_schema", "table_name", "old_column_name", "column_name", "data_type", "length"]
     pad_size = 30
     table = [header]
-    with open(folder + "/README.md", "wb") as f:
+    with open(folder + "/README.md", "w") as f:
         for line in content:
             f.write(bytes(line))
             if line[:25] == dictionary[:25]:
                 # f.write(bytes(header,'UTF-8'))
-                rows = db.query(dict_query)
+                rows, dummy = db.query(dict_query)
                 for row in rows:
                     table_schema = ""
                     table_name = ""
@@ -547,7 +547,7 @@ def appdend_to_readme(db, folder=None, targetschema=None):
                     table.append([table_schema, table_name, column_name, column_name, data_type,
                                   length])  # line=table_schema+"|"+table_name+"|"+old_column_name+"|"+column_name+"|"+data_type+"|"+length+"\n"
 
-                f.write(bytes(make_markdown_table(table)))  # print(make_markdown_table(table))
+                f.write((make_markdown_table(table)))  # print(make_markdown_table(table))
 
 
 def print_postgres_table(db, folder=None, targetschema=None):
@@ -614,7 +614,7 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
         table_count += 1
         filename = t.name.lower() + "_upsert.sql"
         basefilename = t.name.lower()
-        rows = db.query(
+        rows , dummy = db.query(
             "call {}.generateUpsert_style_functions('{}','{}')".format(db._database_name, db.schema, t.name))
         logging.debug("Generating Upsert for Table: {}".format(t.name.lower()))
         line = ("\nsqitch --plan-file functions.plan add functions/{} -n \"Adding {}\" ".format(basefilename + "_upsert", filename))
@@ -646,7 +646,7 @@ def print_create_table_upsert(db, folder=None, targetschema=None):
 
 def print_result_json(db, query, column_header):
     import json
-    result = db.query(query)
+    result , dummy = db.query(query)
     html_header = ""
     html_data = ""
     for i, col in enumerate(column_header):
@@ -664,7 +664,7 @@ def print_result_json(db, query, column_header):
 
 
 def print_result_html_tr_th(db, query, column_header):
-    result = db.query(query)
+    result, dummy  = db.query(query)
     html_header = ""
     html_data = ""
     for i, col in enumerate(column_header):
@@ -830,10 +830,10 @@ def print_table_dict(db, folder='.', targetschema=None):
                 f.write(bytes(verify))
                 f.write(bytes("ROLLBACK;\n"))
 
-        with open(folder + "sqitchplanadd_table.bash", "wb") as f:
+        with open(folder + "/sqitchplanadd_table.bash", "wb") as f:
             f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table()"))
         for s in sqitch:
-            with open(folder + "sqitchplanadd_table.bash", "a") as f:
+            with open(folder + "/sqitchplanadd_table.bash", "a") as f:
                 f.write(s)
 
     print("Total Tables:{}".format(table_count))
@@ -843,16 +843,16 @@ def print_table_dict(db, folder='.', targetschema=None):
 def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
     import sqlalchemy
     import os
-    if db._dbtype != 'POSTGRES':
-        raise "Create Functions currnly only supports POSTGRES"
+     
     sql_list = """SELECT routine_name FROM information_schema.routines 
         WHERE routine_type='FUNCTION' AND specific_schema='{}'"""
 
     sql_def = """SELECT pg_get_functiondef('{schema_name}.{view_name}'::regproc);"""
     error_function = []
-    rs = db.query(sql_list.format(db.schema))
+    rs, dummy = db.query(sql_list.format(targetschema))
     func_list = []
     for row in rs:
+        print(row,'--------',targetschema)
         func_list.append(row[0])
     # print dir(meta.tables)
     folder_deploy = folder + "deploy/functions/"
@@ -888,7 +888,7 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
                 filename = t.lower() + ".sql"
                 fqn = ""
             basefilename = t.lower()
-            rs_def = db.query(sql_def.format(schema_name=dbschema, view_name=t))
+            rs_def, dummy= db.query(sql_def.format(schema_name=dbschema, view_name=t))
 
             createsql = ''
             for row in rs_def:
@@ -939,121 +939,121 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
                 f.write(bytes(verify))
                 f.write(bytes("ROLLBACK;\n"))
 
-        with open(folder + "sqitchplanadd_functions.bash", "wb") as f:
-            f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_functions()"))
+        with open(folder + "/sqitchplanadd_functions.bash", "w") as f:
+            f.write(("# This is Auto Generated from migrate_utils.py print_create_functions()"))
         for s in sqitch:
-            with open(folder + "sqitchplanadd_functions.bash", "a") as f:
+            with open(folder + "/sqitchplanadd_functions.bash", "a") as f:
                 f.write(s)
 
     print("Total Functions:{}".format(count))
     print("Errored Furnctions: \n{}".format(error_function))
 
 
-# def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
-#     import sqlalchemy
-#     import os
-#     from sqlalchemy.dialects import postgresql
+def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
+    import sqlalchemy
+    import os
+    from sqlalchemy.dialects import postgresql
+    print(folder)
+    con = db.connect_SqlAlchemy()
+    meta = sqlalchemy.MetaData(bind=con, reflect=True, schema=targetschema)
+    # print dir(meta.tables)
+    folder_deploy = folder + "/deploy/tables/"
+    folder_revert = folder + "/revert/tables/"
+    folder_verify = folder + "/verify/tables/"
+    try:
+        os.makedirs(folder_deploy)
+    except:
+        pass
+    try:
+        os.makedirs(folder_revert)
+    except:
+        pass
+    try:
+        os.makedirs(folder_verify)
+    except:
+        pass
+    table_count = 0
+    sqitch = []
+    tables = []
 
-#     con, meta = db.connect_SQLAlchemy(db.schema)
-#     # print dir(meta.tables)
-#     folder_deploy = folder + "/deploy/tables/"
-#     folder_revert = folder + "/revert/tables/"
-#     folder_verify = folder + "/verify/tables/"
-#     try:
-#         os.makedirs(folder_deploy)
-#     except:
-#         pass
-#     try:
-#         os.makedirs(folder_revert)
-#     except:
-#         pass
-#     try:
-#         os.makedirs(folder_verify)
-#     except:
-#         pass
-#     table_count = 0
-#     sqitch = []
-#     tables = []
+    if targetschema is None:
+        dbschema = db.schema
 
-#     if targetschema is None:
-#         dbschema = db.schema
+    else:
+        dbschema = targetschema
 
-#     else:
-#         dbschema = targetschema
+    # for n, t in meta.tables.iteritems():
+    for n, t in meta.tables.items():
+        table_count += 1
 
-#     # for n, t in meta.tables.iteritems():
-#     for n, t in meta.tables.items():
-#         table_count += 1
+        if file_prefix is not None:
+            filename = file_prefix + t.name.lower() + ".sql"
+            fqn = file_prefix
+        else:
+            filename = t.name.lower() + ".sql"
+            fqn = ""
+        basefilename = t.name.lower()
+        # print(type(n), n, t.name)
+        table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
+        stmt = sqlalchemy.schema.CreateTable(table).compile(dialect=postgresql.dialect())
+        column_list = [c.name for c in table.columns]
+        createsql = convert_sql_snake_case(str(stmt), column_list)
+        createsql = createsql.replace('"', '')
 
-#         if file_prefix is not None:
-#             filename = file_prefix + t.name.lower() + ".sql"
-#             fqn = file_prefix
-#         else:
-#             filename = t.name.lower() + ".sql"
-#             fqn = ""
-#         basefilename = t.name.lower()
-#         # print(type(n), n, t.name)
-#         table = sqlalchemy.Table(t.name, meta, autoload=True, autoload_with=con)
-#         stmt = sqlalchemy.schema.CreateTable(table).compile(dialect=postgresql.dialect())
-#         column_list = [c.name for c in table.columns]
-#         createsql = convert_sql_snake_case(str(stmt), column_list)
-#         createsql = createsql.replace('"', '')
+        logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
 
-#         logging.debug("Generating Create Statement for Table: {}".format(t.name.lower()))
+        line = ("\nsqitch --plan-file tables.plan add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
 
-#         line = ("\nsqitch --plan-file tables.plan add tables/{}{} -n \"Adding {}\" ".format(fqn, basefilename, filename))
+        sqitch.append(line)
+        if targetschema is not None:
+            createsql = createsql.replace(("table " + db.schema + ".").lower(), "table " + targetschema + ".")
+        m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
+        tables.append(m)
 
-#         sqitch.append(line)
-#         if targetschema is not None:
-#             createsql = createsql.replace(("table " + db.schema + ".").lower(), "table " + targetschema + ".")
-#         m = {"table": basefilename, "sql": createsql + ";\n", "filename": filename}
-#         tables.append(m)
+    if folder is None:
+        for i in tables:
+            print(i)
+        for s in sqitch:
+            print(s)
+    else:
+        for i in tables:
+            # print("Writing:")
+            #print(folder_deploy + i["table"])
+            with open(folder_deploy + i["filename"], "w") as f:
+                f.write((i["sql"]))
+                f.write("ALTER TABLE {}.{}\n\tOWNER TO operational_dba;".format(dbschema, i["table"]))
 
-#     if folder is None:
-#         for i in tables:
-#             print(i)
-#         for s in sqitch:
-#             print(s)
-#     else:
-#         for i in tables:
-#             # print("Writing:")
-#             #print(folder_deploy + i["table"])
-#             with open(folder_deploy + i["filename"], "wb") as f:
-#                 f.write(bytes(i["sql"]))
-#                 f.write("ALTER TABLE {}.{}\n\tOWNER TO operational_dba;".format(dbschema, i["table"]))
+            drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
 
-#             drop = "BEGIN;\nDROP TABLE IF EXISTS {}.{};\n".format(dbschema, i["table"])
+            v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
+                dbschema, i["table"])
+            verify = "BEGIN;\n" + v_str
 
-#             v_str = "select 1/count(*) from information_schema.tables where table_schema='{}' and table_name='{}';\n".format(
-#                 dbschema, i["table"])
-#             verify = "BEGIN;\n" + v_str
+            with open(folder_revert + i["filename"], "w") as f:
+                f.write((drop))
+                f.write(("COMMIT;\n"))
+            with open(folder_verify + i["filename"], "w") as f:
+                f.write((verify))
+                f.write(("ROLLBACK;\n"))
 
-#             with open(folder_revert + i["filename"], "wb") as f:
-#                 f.write(bytes(drop))
-#                 f.write(bytes("COMMIT;\n"))
-#             with open(folder_verify + i["filename"], "wb") as f:
-#                 f.write(bytes(verify))
-#                 f.write(bytes("ROLLBACK;\n"))
+        with open(folder + "/sqitchplanadd_table.bash", "w") as f:
+            f.write(("# This is Auto Generated from migrate_utils.py print_create_table()"))
+        for s in sqitch:
+            with open(folder + "/sqitchplanadd_table.bash", "a") as f:
+                f.write(s)
 
-#         with open(folder + "sqitchplanadd_table.bash", "wb") as f:
-#             f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_table()"))
-#         for s in sqitch:
-#             with open(folder + "sqitchplanadd_table.bash", "a") as f:
-#                 f.write(s)
-
-#     print("Total Tables:{}".format(table_count))
+    print("Total Tables:{}".format(table_count))
 
 
 def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
     import sqlalchemy
     import os
-    if db._dbtype != 'POSTGRES':
-        raise "Create view currnly only supports POSTGRES"
+ 
     sql_view_list = """select table_name from information_schema.tables 
                         where table_schema='{}' and table_type='VIEW'
                 """
     sql_view_def = """select pg_get_viewdef('{schema_name}.{view_name}',true);"""
-    rs_views = db.query(sql_view_list.format(db.schema))
+    rs_views, dummy = db.query(sql_view_list.format(db.schema))
     view_list = []
     for row in rs_views:
         view_list.append(row[0])
@@ -1091,7 +1091,7 @@ def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
             filename = t.lower() + ".sql"
             fqn = ""
         basefilename = t.lower()
-        rs_view_def = db.query(sql_view_def.format(schema_name=dbschema, view_name=t))
+        rs_view_def,dummy = db.query(sql_view_def.format(schema_name=dbschema, view_name=t))
 
         createsql = ''
         for row in rs_view_def:
@@ -1118,8 +1118,8 @@ def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
             # print("Writing:")
             # print(folder_deploy + i["table"])
             sql_grant = """GRANT ALL ON TABLE {schema_name}.{table_name} TO operational_dba;"""
-            with open(folder_deploy + i["filename"], "wb") as f:
-                f.write(bytes(i["sql"]))
+            with open(folder_deploy + i["filename"], "w") as f:
+                f.write((i["sql"]))
                 f.write(sql_grant.format(schema_name=dbschema, table_name=i["table"]))
 
             drop = "BEGIN;\nDROP VIEW IF EXISTS {schema_name}.{table_name};\n".format(
@@ -1129,17 +1129,17 @@ def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
                 dbschema, i["table"])
             verify = "BEGIN;\n" + v_str
 
-            with open(folder_revert + i["filename"], "wb") as f:
-                f.write(bytes(drop))
-                f.write(bytes("COMMIT;\n"))
-            with open(folder_verify + i["filename"], "wb") as f:
-                f.write(bytes(verify))
-                f.write(bytes("ROLLBACK;\n"))
+            with open(folder_revert + i["filename"], "w") as f:
+                f.write((drop))
+                f.write(("COMMIT;\n"))
+            with open(folder_verify + i["filename"], "w") as f:
+                f.write((verify))
+                f.write(("ROLLBACK;\n"))
 
-        with open(folder + "sqitchplanadd_view.bash", "wb") as f:
-            f.write(bytes("# This is Auto Generated from migrate_utils.py print_create_view()"))
+        with open(folder + "/sqitchplanadd_view.bash", "w") as f:
+            f.write(("# This is Auto Generated from migrate_utils.py print_create_view()"))
         for s in sqitch:
-            with open(folder + "sqitchplanadd_view.bash", "a") as f:
+            with open(folder + "/sqitchplanadd_view.bash", "a") as f:
                 f.write(s)
 
     print("Total views:{}".format(table_count))
@@ -1911,7 +1911,7 @@ def get_primary_key(db, schema, table_name):
                                  AND a.attnum = ANY(i.indkey)
             WHERE   i.indisprimary and
             i.indrelid='{}.{}'::regclass""".format(schema, table_name)
-    keys = db.query(sql)
+    keys , dummy = db.query(sql)
     cols = []
     for i in keys:
         for j in i:
@@ -1933,7 +1933,7 @@ def check_pii(db):
                             updated_by_id='{}'
                         """.format(db.userid)
 
-    x = db.query(sql)
+    x, dummy = db.query(sql)
     # iterate through the rules table
     for id, table_name, field_name, acceptable_values in x:
         print("Iterating through", table_name, field_name)
@@ -2021,7 +2021,7 @@ def sql_to_excel(db, sql_string, full_file_path, column_names):
     worksheet = workbook.add_worksheet()
     row = 0
     col = 0
-    rs = db.query(sql_string)
+    rs , dummy = db.query(sql_string)
     header = column_names.split(',')
     # Write the header
     print('Writing Excel File')

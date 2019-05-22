@@ -70,7 +70,7 @@ services:
     image: dpage/pgadmin4
     restart: always
     ports: 
-      - 8081:80
+      - 9090:80
     links:
       - pgdb
     volumes:
