@@ -46,12 +46,16 @@ class Test_db_utils_postgres(unittest.TestCase):
         'sample_data_dir': "./_sample_data/",
         'sample_working_dir': "./_sample_working_dir/",
         'sample_zip_data_dir': "./_sample_zip_data/"}
-
+    data=None
+    with open('/workspace/tests/sql/vw_finished_imports.sql','r') as file:
+        data = file.read().replace('\n', '')
+    
     def test_data_load(self):
+        self.db.execute(self.data)
         self.db.execute("truncate table logging.meta_source_files")
         print('# In function:', sys._getframe().f_code.co_name) 
         import py_dbmigration.data_load as data_load
         data_load.main(yamlfile='/workspace/tests/data_load.yaml')
- 
+        
 if __name__ == '__main__':
     unittest.main()
