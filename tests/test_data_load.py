@@ -47,9 +47,11 @@ class Test_db_utils_postgres(unittest.TestCase):
         'sample_working_dir': "./_sample_working_dir/",
         'sample_zip_data_dir': "./_sample_zip_data/"}
     data=None
-    with open('/workspace/tests/sql/vw_finished_imports.sql','r') as file:
-        data = file.read().replace('\n', '')
-    
+    vw_file='/workspace/tests/sql/logging_tables.sql'
+    #with open(vw_file,'r') as file:
+    #    data = file.read().replace('\n', '')
+    db.create_cur()
+    db.cursor.execute(open(vw_file, "r").read())
     def test_data_load(self):
         self.db.execute(self.data)
         self.db.execute("truncate table logging.meta_source_files")
