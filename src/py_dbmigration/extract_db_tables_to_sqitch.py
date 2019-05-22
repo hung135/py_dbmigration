@@ -2,9 +2,9 @@
 
 # import csv, pandas,        sqlalchemy, os
 import os
-import db_utils.dbconn as db_utils
+import py_dbutils.rdbms.postgres as db_utils
 
-import migrate_utils.static_func as migu
+import py_dbmigration.migrate_utils.static_func as migu
 
 import logging as lg
 lg.basicConfig()
@@ -20,8 +20,8 @@ pgdatabase = os.environ['PGDATABASE']
 
 
 # sqlserver = db_utils.Connection(dbschema='dbo', database='enforce', dbtype='MSSQL', host=host, commit=False)
-db_postgres = db_utils.Connection(dbschema=logging, database=pgdatabase,
-                                  dbtype='POSTGRES', host=pghost, commit=True)
+db_postgres = db_utils.DB(schema=logging, dbname=pgdatabase,
+                                    host=pghost, commit=True)
 
 schemas = get_schema_except(db_postgres, ['op_dba', 'public', 'pg_catalog', 'information_schema', 'citus', 'sys', 'sqitch'])
 for s in schemas:

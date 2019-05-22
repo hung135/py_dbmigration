@@ -3,13 +3,15 @@ py_dbmigration
 ==============
 
 
-Add a short description here!
+Project to move data driven by yaml file
 
 
 Description
 ===========
 
-A longer description of your project goes here...
+currently supports POSTGRES
+TODO:
+mssql, mysql, msaccess, sqlite, s3,excel, parquet
 
 
 Note

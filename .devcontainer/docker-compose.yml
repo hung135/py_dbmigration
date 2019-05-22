@@ -38,16 +38,16 @@ services:
   pgdb:
     image: postgres
     restart: always
-    ports: 
-      - 5432:5432
+    # ports: 
+    #   - 5432:5432
     environment:
       POSTGRES_PASSWORD: docker
       POSTGRES_USER: docker
   mysqldb:
     image: mariadb
     restart: always
-    ports: 
-      - 3306:3306
+    # ports: 
+    #   - 3306:3306
 
     environment:
         MYSQL_ROOT_PASSWORD: root
@@ -59,8 +59,8 @@ services:
   mssqldb:
     image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
     restart: always
-    ports: 
-      - 1433:1433
+    # ports: 
+    #   - 1433:1433
     environment:
         ACCEPT_EULA: 'Y'
         SA_PASSWORD: Docker1234
@@ -70,7 +70,7 @@ services:
     image: dpage/pgadmin4
     restart: always
     ports: 
-      - 8080:80
+      - 8081:80
     links:
       - pgdb
     volumes:
