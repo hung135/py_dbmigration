@@ -74,7 +74,7 @@ services:
     links:
       - pgdb
     volumes:
-      - ~/.pgadmin:/var/lib/pgadmin
+      - ~/.pgadmincompose:/var/lib/pgadmin
 
     environment:
         PGADMIN_DEFAULT_EMAIL: hung135@hotmail.com
