@@ -244,7 +244,7 @@ class DataFile:
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
         assert isinstance(foi_list[0], FilesOfInterest)
         curr_path=(os.path.dirname(__file__))
-        self.sql_yaml=yaml.load(open(curr_path+'/logic_sql.yml'))
+        self.sql_yaml=yaml.full_load(open(curr_path+'/logic_sql.yml'))
          
         self.load_status_msg = None
         self.parent_file_id = parent_file_id
@@ -462,7 +462,7 @@ class DataFile:
     @staticmethod
     def reset_meta_table(db, option='FAILED', where_clause='1=1'):
         curr_path=(os.path.dirname(__file__))
-        sql_yaml=yaml.load(open(curr_path+'/logic_sql.yml'))
+        sql_yaml=yaml.full_load(open(curr_path+'/logic_sql.yml'))
         if option.upper() == 'ALL':
             db.execute(sql_yaml['sql_update_ALL_meta_source'].format(where_clause))
         if option.upper() == 'FAILED':

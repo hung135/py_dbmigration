@@ -599,7 +599,7 @@ def run_pre_sql_action(src_db, trg_db, publish_item):
 # run through the yaml and replace embedded params
 def pre_process_yaml(yaml_file):
     # yaml_file = os.path.abspath(yaml_file)
-    yaml_data = yaml.load(open(yaml_file))
+    yaml_data = yaml.full_load(open(yaml_file))
     log_level = args.log_level
     mig_list = []
     for yaml_obj in yaml_data:
@@ -757,7 +757,7 @@ if __name__ == '__main__':
     # multi process here for now
     # process_yaml(args.yaml, args.log_level)
     yaml_file = os.path.abspath(args.yaml)
-    yaml_data = yaml.load(open(yaml_file))
+    yaml_data = yaml.full_load(open(yaml_file))
     logging.info('Read YAML file: \n\t\t{}'.format(yaml_file))
 
     yaml_dict = pre_process_yaml(yaml_file)

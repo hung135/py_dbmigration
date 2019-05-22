@@ -27,7 +27,7 @@ def process_yaml(yaml_file=None):
          
         yaml_file = os.path.join(os.getcwd(),"data_load.yaml")
     logging.debug("loaind yaml file: {}".format(yaml_file))
-    paths = yaml.load(open(yaml_file))
+    paths = yaml.full_load(open(yaml_file))
 
     datafiles = []
     mapping_counter = 0
