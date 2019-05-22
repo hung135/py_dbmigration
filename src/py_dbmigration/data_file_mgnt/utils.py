@@ -35,6 +35,7 @@ def execute_sql(db, sql_list, foi, df):
         logging.info("\tSQL Step #: {} {}".format(id, shorten_sql))
 
         t = datetime.datetime.now()
+         
         db.execute(modified_sql,catch_exception=False)
         
         time_delta = (datetime.datetime.now() - t)
@@ -73,7 +74,7 @@ def process_logic(foi, db, df):
         logging.debug('Importing Module: {}'.format(custom_logic))
          
         module = __import__('py_dbmigration.custom_logic',fromlist=[logic_name])
-        print(dir(module))
+        #print(dir(module))
 
         imp = getattr(module, logic_name)
          

@@ -1,5 +1,6 @@
 #This file is to configure mapping of files to database tables 
 - path: '/workspace/tests/sample_data/'
+  convert_table_name_snake_case: True
   enabled: Tre # activates this configration tree
   project_name: test_1
   reprocess: True
@@ -27,7 +28,8 @@
       file_type: 'CSV'
       schema_name: 'test'
       reprocess: True
-      table_name: 'test1'
+      #table_name: 'test1'
+      
       file_delimiter: ","
       process_logic:
         - logic: 'custom_logic.pandas_import'

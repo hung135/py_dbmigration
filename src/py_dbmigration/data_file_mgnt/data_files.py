@@ -280,7 +280,7 @@ class DataFile:
         # self.put_foi_to_db(db, foi_list)
 
         # take each pattern and walks the directory
-        print('looping thru ')
+         
         for files_of_interest in self.foi_list:
             if files_of_interest.file_path is not None:
                 assert isinstance(files_of_interest, FilesOfInterest)
@@ -292,7 +292,7 @@ class DataFile:
                     if os.path.isdir(files_of_interest.file_path):
                         
                         self.FilesOfInterest = self.walk_dir(files_of_interest,  db=db)
-                        print(self.FilesOfInterest.file_list,"---------s--------",self.meta_source_file_id)
+                        #print(self.FilesOfInterest.file_list,"---------s--------",self.meta_source_file_id)
                     else:
                         logging.error("Directory from Yaml does not exists: {}".format(files_of_interest.file_path))
 
@@ -402,13 +402,13 @@ class DataFile:
         t = db_table.db_table_func.RecordKeeper(
             db, db_table.db_table_def.MetaSourceFiles)
         id_regex = file_of_interest_obj.file_name_data_regex
-        print("----------inserting working file")
+        #print("----------inserting working file")
 
         for walked_filed_name in file_of_interest_obj.file_list:
             p = None
             extracted_id = None
             file_id = '0'
-            print("------>path, file_name-->",file_of_interest_obj.file_path, walked_filed_name)
+            #print("------>path, file_name-->",file_of_interest_obj.file_path, walked_filed_name)
             if 's3://' in file_of_interest_obj.file_path:
                 full_file_path=walked_filed_name
             else:
@@ -424,7 +424,7 @@ class DataFile:
                     file_name, file_path, file_of_interest_obj.project_name)
             )
             file_found = x
-            print("--------",x)
+            #print("--------",x)
             if file_found == 0:
                 logging.debug("New file found: {}".format(full_file_path))
                 # if get_mapped_table(walked_filed_name,

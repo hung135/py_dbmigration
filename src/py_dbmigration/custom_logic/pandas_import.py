@@ -29,6 +29,7 @@ def process(db, foi, df):
     dataframe_columns = ''
     file = os.path.join(df.source_file_path, df.curr_src_working_file)
     limit_rows = foi.limit_rows
+     
     table_name = foi.table_name
     target_schema = foi.schema_name
     table_name_extract = foi.table_name_extract
@@ -50,7 +51,10 @@ def process(db, foi, df):
          
         if table_name is None:
             table_name = str(os.path.basename((file)))
-
+         
+        make_snake_case=foi.yaml.get('convert_table_name_snake_case',False)
+        if make_snake_case:
+            table_name=migrate_utils.static_func.convert_str_snake_case(table_name)
         counter = 0
         # if table_name_extract is not None:
         #     table_name_regex = re.compile(table_name_extract)
