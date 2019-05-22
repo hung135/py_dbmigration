@@ -41,13 +41,13 @@ def process(db, foi, df):
     append_file_id = foi.append_file_id
 
 
-    print("--------------------here")
+     
     error_msg = None
     if db is not None:
-        print("-------------here alchemy1")
+         
         sqlalchemy_conn = db.connect_SqlAlchemy()
 
-        print("-------------here alchemy")
+         
         if table_name is None:
             table_name = str(os.path.basename((file)))
 
@@ -80,7 +80,7 @@ def process(db, foi, df):
                     
                     if foi.column_list is None:
                         foi.column_list=[]
-                    print("-------here6",foi.column_list)
+                     
                     if not foi.use_header and len(foi.column_list) > 0:
 
                         dataframe.columns = map(str,
@@ -88,10 +88,10 @@ def process(db, foi, df):
                                                 names
                                                 )  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
                     else:
-                        print("-------77777")
-                        print(dataframe)
+                         
+                         
                         col_list = dataframe.columns.tolist()
-                        print("------777777colist",col_list)
+                         
 
                 # cols_new = [i.split(' ', 1)[1].replace(" ", "_").lower() for i in col_list]
                         cols_new = [migrate_utils.static_func.convert_str_snake_case(i) for i in col_list]
@@ -106,7 +106,7 @@ def process(db, foi, df):
                                      index=False, index_label=names)
                     ####################################################################################################
                 if counter == 0:
-                    print("-------here4")
+                     
                     rows_inserted = (len(dataframe))
                 else:
                     rows_inserted = (counter) * chunk_size + (len(dataframe))
@@ -132,15 +132,14 @@ def process(db, foi, df):
                 dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
                                  index=False, index_label=names)
                 dataframe_columns = dataframe.columns.tolist()
-                print("-------here5")
+                 
                 rows_inserted = (len(dataframe))
             continue_processing = True
 
         except Exception as e:
             import_status = 'FAILED'
-            print("------------------here2")
-            print(e)
-
+             
+        
             try:
 
                 # cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
