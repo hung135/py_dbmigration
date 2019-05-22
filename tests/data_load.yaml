@@ -16,9 +16,14 @@
   mapping:
     #look for zip files and extract them
     - file_regex: '^.*.zip$'
-      file_type: 'ZIP'
+      file_type: 'zip'
       process_logic:
-        - logic: 'custom_logic.abort_if_obsolete'
+        #- logic: 'custom_logic.abort_if_obsolete'
+        - logic: 'custom_logic.extract_compressed_file'
+    - file_regex: '^.*.gz$'
+      file_type: 'gzip'
+      process_logic:
+        #- logic: 'custom_logic.abort_if_obsolete'
         - logic: 'custom_logic.extract_compressed_file'
     
     #################################################################################################################################################################
@@ -26,6 +31,20 @@
     #Files from Master table is full re-load so we want to delete everything and load whatever is in this
     - file_regex: '.*.csv$'
       file_type: 'CSV'
+      schema_name: 'test'
+      reprocess: True
+      #table_name: 'test1'
+      file_delimiter: ","
+      process_logic:
+        - logic: 'custom_logic.pandas_import'
+      file_encoding: 'ISO-8859-1'
+      limit_rows: None
+      has_header: False
+      user_header: False
+      post_action: 
+        - sql: "vacuum analyze {schema_name}.{table_name}"
+    - file_regex: '.*.xlsx$'
+      file_type: 'XLS'
       schema_name: 'test'
       reprocess: True
       #table_name: 'test1'
@@ -37,7 +56,6 @@
       limit_rows: None
       has_header: True
       user_header: True
-      header_row_location: 0
+       
       post_action: 
         - sql: "vacuum analyze {schema_name}.{table_name}"
-     

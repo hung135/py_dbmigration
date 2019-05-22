@@ -176,7 +176,7 @@ class FilesOfInterest:
         self.header_list_returned = None
         self.header_added = None
         # self.start_row = start_row
-        self.header_row = header_row_location
+        self.header_row = header_row_location or 0
         self.count_via = count_via
         self.new_delimiter = new_delimiter
         self.dataset_name = dataset_name

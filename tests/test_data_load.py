@@ -40,6 +40,7 @@ class Test_db_utils_postgres(unittest.TestCase):
     db = db_utils.DB(host=HOST, userid=USERID, dbname=DATABASE, schema=DATA_SCHEMA,
                                     pwd=DBPASSWORD,  port=DBPORT)
     db.execute("create schema {}".format(LOGGING_SCHEMA))
+    db.execute("drop schema {} cascade".format(TEST_SCHEMA))
     db.execute("create schema {}".format(TEST_SCHEMA))
     db.execute("create schema {}".format(DATA_SCHEMA))
     dirs = {

@@ -2,12 +2,10 @@
 import logging
 import os
 import sys
-import db_utils
-import data_file_mgnt
-import db_table
-import zip_utils
-logging.basicConfig(level='DEBUG')
-
+import py_dbutils.parents as db_utils
+import py_dbmigration.data_file_mgnt as data_file_mgnt
+import py_dbmigration.db_table as db_table
+import py_dbmigration.zip_utils as zip_utils
 
 '''
     File name: generate_checksum.py
