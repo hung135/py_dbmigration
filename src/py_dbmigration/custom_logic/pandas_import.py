@@ -152,7 +152,7 @@ def process(db, foi, df):
                 error_msg = str(e)[:256]
 
                 # additional_info = (','.join(cols) + str(e))[:2000]
-                db.commit()
+                
             except Exception as ee:
 
                 # migrate_utils.static_func.profile_csv(file, ',', 0)
@@ -167,5 +167,5 @@ def process(db, foi, df):
     row.database_table = target_schema + '.' + table_name
     t.session.commit()
     t.session.close()
-    db.commit()
+    
     return continue_processing

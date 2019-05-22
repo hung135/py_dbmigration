@@ -35,7 +35,7 @@
       limit_rows: None
       has_header: True
       user_header: True
-      #header_row_location: 0
+      header_row_location: 0
       post_action: 
         - sql: "vacuum analyze {schema_name}.{table_name}"
      

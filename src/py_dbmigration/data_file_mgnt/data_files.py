@@ -11,7 +11,7 @@ import py_dbmigration.db_table as db_table
 import yaml
 import sys
 
-mport py_dbmigration.migrate_utils 
+import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
 from . import utils 
 import logging as log
@@ -609,7 +609,7 @@ class DataFile:
         where id={}""".format( datetime.datetime.now(), file_id )
         assert isinstance(db, db_utils.DB)
         db.execute(update_sql)
-        db.commit()
+         
 
     def set_work_file_status(self, db, file_id, status, error_msg=None):
         if error_msg is None:

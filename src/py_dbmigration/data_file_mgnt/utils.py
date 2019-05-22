@@ -34,10 +34,10 @@ def execute_sql(db, sql_list, foi, df):
         shorten_sql = (modified_sql[:50] + "...") if len(modified_sql) > 75 else modified_sql
         logging.info("\tSQL Step #: {} {}".format(id, shorten_sql))
 
-        t = datetime.time()
+        t = datetime.datetime.now()
         db.execute(modified_sql,catch_exception=False)
         
-        time_delta = round(datetime.time() - t,3)
+        time_delta = (datetime.datetime.now() - t)
         logging.info("\t\tExecution Time: {}sec".format(time_delta))
 
 # pull the list of modules configured in the yaml file under process_logic

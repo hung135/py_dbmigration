@@ -1876,7 +1876,7 @@ def count_file_lines_wc_36(file):
         split_by = ' /'
 
     cli_param=['wc','-l',file]
-    print("--------cli",cli_param)
+     
     msg = subprocess.check_output(cli_param)
     record_count = str(msg.decode("utf-8") ).split(' ')[0]
     #logging.debug("FileName:{0} RowCount:{1}".format(txt, record_count))

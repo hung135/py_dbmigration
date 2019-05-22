@@ -29,7 +29,7 @@ def custom_logic(db, foi, df):
     print(abs_file_path)
 
     data_value = migrate_utils.static_func.count_file_lines_wc_36(abs_file_path)
-    print("-------------asdfl;kasdjf",data_value)
+     
     rows_updated = db.execute(update_sql.format(data_value, file_id))
 
     if rows_updated == 0:

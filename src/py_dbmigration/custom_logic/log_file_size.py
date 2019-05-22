@@ -44,7 +44,7 @@ def custom_logic(db, foi, df):
 def process(db, foi, df):
     error_msg = None
     additional_msg = None
-    print("-------------- file szzzze")
+     
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
 
