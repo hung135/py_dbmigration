@@ -44,9 +44,9 @@ class Test_db_utils_postgres(unittest.TestCase):
     db.execute("create schema {}".format(TEST_SCHEMA))
     db.execute("create schema {}".format(DATA_SCHEMA))
     dirs = {
-        'sample_data_dir': "./_sample_data/",
-        'sample_working_dir': "./_sample_working_dir/",
-        'sample_zip_data_dir': "./_sample_zip_data/"}
+        'sample_data_dir': "/workspace/_sample_data/",
+        'sample_working_dir': "/workspace/_sample_working_dir/",
+        'sample_zip_data_dir': "/workspace/_sample_zip_data/"}
     data=None
     vw_file='/workspace/tests/sql/logging_tables.sql'
     #with open(vw_file,'r') as file:

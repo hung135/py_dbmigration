@@ -30,12 +30,7 @@ def custom_logic(db, foi, df):
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
     abs_writable_path = os.path.join(df.working_path, df.curr_src_working_file)
     import py_dbutils.rdbms.msaccess as msaccess
-    print("-------abspath",abs_file_path) 
-    print("-------writepath",abs_writable_path)
-         
-    
-
-
+     
 # def extract_file(self, db, abs_file_path, abs_writable_path, skip_ifexists=False):
     status_dict = {}
     try:
@@ -46,25 +41,25 @@ def custom_logic(db, foi, df):
         folder_name = os.path.basename(path)
         try:
             md5 = row.crc
-            print(md5,"----------------")
+            
         except:
             logging.warning("CRC column does not exist in meta_source_file table. Please make sure you create it")
         modified_write_path = os.path.join(abs_writable_path, folder_name, str(md5))
-        print(modified_write_path,"----------------")
+         
         files = []    
         accessdb=msaccess.DB(abs_file_path)
     
         for table_name in accessdb.get_all_tables():
-            print("------tbl name",table_name)
+             
             os.makedirs(modified_write_path,exist_ok=True)
             extracted_file_name="{}.csv".format(table_name)
             extracted_file_fqn=os.path.join(modified_write_path,extracted_file_name)
-            print("-------extracting",extracted_file_fqn,table_name)
+             
             accessdb.query_to_file(sql="select * from {}".format(table_name),file_path=extracted_file_fqn, file_format='CSV', 
                         header=None)
             #accessdb.query_to_file(file_path=csv_file_path, sql='select * from tblEmployees', file_format='CSV', header=y)
             files.append(extracted_file_name)
-            print("-------extracted",extracted_file_fqn)
+             
         total_files = len(files)
 
         row.total_files = total_files
