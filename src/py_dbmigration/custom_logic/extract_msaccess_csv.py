@@ -56,11 +56,14 @@ def custom_logic(db, foi, df):
     
         for table_name in accessdb.get_all_tables():
             print("------tbl name",table_name)
-            extracted_file_fqn="{}/{}.csv".format(abs_writable_path,table_name)
+            os.makedirs(modified_write_path,exist_ok=True)
+            extracted_file_name="{}.csv".format(table_name)
+            extracted_file_fqn=os.path.join(modified_write_path,extracted_file_name)
             print("-------extracting",extracted_file_fqn,table_name)
-            accessdb.query_to_file(sql="select * from {}".format(table_name),file_path=extracted_file_fqn, file_format='CSV', header=y)
+            accessdb.query_to_file(sql="select * from {}".format(table_name),file_path=extracted_file_fqn, file_format='CSV', 
+                        header=None)
             #accessdb.query_to_file(file_path=csv_file_path, sql='select * from tblEmployees', file_format='CSV', header=y)
-            files.append(extracted_file_fqn)
+            files.append(extracted_file_name)
             print("-------extracted",extracted_file_fqn)
         total_files = len(files)
 

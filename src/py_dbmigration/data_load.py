@@ -139,7 +139,7 @@ def process_yaml(yaml_file=None):
         datafiles = []
     return datafiles
 
-def main(yamlfile=None):
+def main(yamlfile=None,write_path=None,schema=None):
 
 
     import sys
@@ -162,8 +162,8 @@ def main(yamlfile=None):
     else:
         datafiles = process_yaml(yamlfile)
  
-    writable_path = os.getenv('WORKINGPATH',os.getcwd())
-    PGDATASCHEMA = os.getenv('PGDATASCHEMA',os.getcwd())
+    writable_path = os.getenv('WORKINGPATH',write_path) or os.getcwd()
+    PGDATASCHEMA = os.getenv('PGDATASCHEMA',schema)
     
     if len(datafiles) > 0:
         db = db_utils.DB(schema=PGDATASCHEMA)
