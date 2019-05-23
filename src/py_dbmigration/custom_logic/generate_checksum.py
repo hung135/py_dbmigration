@@ -3,8 +3,8 @@ import logging
 import os
  
 import py_dbutils.parents as db_utils
-from .. import data_file_mgnt
-from .. import migrate_utils
+from py_dbmigration import data_file_mgnt
+from py_dbmigration import migrate_utils
 logging.basicConfig(level='DEBUG')
 
 ''' 
