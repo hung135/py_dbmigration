@@ -139,7 +139,7 @@ def process_yaml(yaml_file=None):
         datafiles = []
     return datafiles
 
-def main(yamlfile=None,write_path=None,schema=None):
+def main(yamlfile=None,write_path=None,schema=None,logging_mode=None):
 
 
     import sys
@@ -149,7 +149,8 @@ def main(yamlfile=None,write_path=None,schema=None):
     parser.add_argument('--yaml')
     parser.add_argument('--logging')
     args = parser.parse_args()
-    if args.logging is 'debug':
+    logging_set=args.logging or logging_mode
+    if logging_set is 'debug':
  
         logging.setLevel(log.DEBUG)
     else:

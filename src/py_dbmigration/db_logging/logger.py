@@ -1,7 +1,7 @@
 import os
 # import logging
 # import datetime
-import db_utils
+from py_dbutils.rdbms import postgres as db_utils
 import datetime
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
@@ -41,11 +41,11 @@ class ImportLogger:
 
     def __init__(self, db):
         self.Base = automap_base()
-        self.engine = create_engine(db.get_conn_url())
+        self.engine = create_engine(db.connected_uri)
         self.Base.prepare(self.engine, reflect=True, schema='logging')
         self.LoadStatus = self.Base.classes.load_status
         self.ErrorLog = self.Base.classes.error_log
-        self.created_by = db._userid
+        self.created_by = db.userid
         self.session = Session(self.engine)
 
     def insert_LoadStatus(self, **Kwargs):

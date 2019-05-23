@@ -30,10 +30,8 @@ def custom_logic(db, foi, df):
  
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
     sql = "select 1 from logging.meta_source_files where id = {} and crc is not null limit 1".format(df.meta_source_file_id)
-    print("------------------------",sql)
-   
-    print(db.has_record(sql))
-    print("------------------------")
+    
+ 
     if db.has_record(sql):
         logging.info("\t\tChecksum already Exists, skipping:")
     else:
@@ -44,7 +42,7 @@ def custom_logic(db, foi, df):
        
         if rows_updated == 0:
             raise ValueError('Unexpected thing happend no rows updated')
-    print("------------------------")
+  
     continue_processing=True
     return continue_processing
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any

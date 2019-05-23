@@ -1608,7 +1608,7 @@ def count_column_csv(full_file_path, header_row_location=0, sample_size=200, del
         count_list = []
         delim = delimiter
         for i, chunk in enumerate(
-                pandas.read_table(full_file_path, chunksize=chunksize, sep=delim, header=header_row_location)):
+                pandas.read_csv(full_file_path, chunksize=chunksize, sep=delim, header=header_row_location)):
 
             # just run through the file to get number of chucks
             count_list.append(len(chunk.columns))
