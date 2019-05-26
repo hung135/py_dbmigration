@@ -1,0 +1,33 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pytest = "*"
+pytest-cov = "*"
+
+[packages]
+twine = "*"
+psycopg2-binary = "*"
+pandas = "*"
+xlrd = "*"
+pymssql = "*"
+openpyxl = "*"
+requests = "*"
+beautifulsoup4 = "*"
+inflection = "*"
+reflection = "*"
+lorem = "*"
+nose-parameterized = "*"
+statistics = "*"
+boto3 = "*"
+py-dbutils = "*"
+SQLAlchemy = "*"
+PyMySQL = "*"
+XlsxWriter = "*"
+RandomWords = "*"
+PyYAML = "*"
+
+[requires]
+python_version = "3.7"
