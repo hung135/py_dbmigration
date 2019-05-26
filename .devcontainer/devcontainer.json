@@ -1,0 +1,10 @@
+// See https://aka.ms/vscode-remote/devcontainer.json for format details.
+{
+	"name": "Py_dbmigration",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspace",
+	"extensions": [
+		"ms-python.python"
+	]
+}

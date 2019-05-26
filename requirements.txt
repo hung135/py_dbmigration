@@ -14,4 +14,23 @@
 # Example:
 # numpy==1.13.3
 # scipy==1.0
-
+twine
+psycopg2-binary
+pandas
+sqlalchemy
+xlrd
+pymssql
+pymysql
+openpyxl
+xlsxwriter
+requests
+BeautifulSoup4
+inflection
+reflection
+lorem
+RandomWords
+nose_parameterized
+statistics
+pyyaml
+boto3
+py-dbutils

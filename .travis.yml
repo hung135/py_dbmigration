@@ -1,28 +1,30 @@
 language: python
-python: "2.7"
-install:
-  - pip install -r requirements.txt
-script:  python test.py
+sudo: false
+python:
+  - "3.6"
+  #- "2.7"
+script: 'pipenv run pytest tests'
+env:
+  PGDATABASE: postgres
+  PGUSER: postgres
+  PGPASSWORD: docker
+  PGPORT: 55432
+  MYSQL_DATABASE: mysql
+  MYSQL_USER: root
+  MYSQL_PASSWORD: docker
+  MYSQL_PORT: 33306    
+  
+#script: 'pipenv run pytest --cov=pyblizzard tests --cov-report=xml'
 services:
-  - postgresql
-  - mysql
-
-addons:
-  postgresql: "9.6"
-before_script:
-  - psql -c 'drop database if exists travis_ci_test;' -U postgres
-  - psql -c 'drop schema if exists logging;' -U postgres
-  - psql -c 'create database travis_ci_test;' -U postgres
-  - psql -c 'create schema logging;' -U postgres
-  - psql -c "CREATE USER tester WITH PASSWORD 'test';" -U postgres
-  - psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA logging TO tester;" -U postgres
-
-
-  - echo "USE mysql;\nUPDATE user SET password=PASSWORD('test') WHERE user='root';\nFLUSH PRIVILEGES;\n" | mysql -u root
+  - docker
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install python-requests -y
+  #- docker run -d --name mssql-express -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=Docker1234' -e 'MSSQL_PID=Express' -p 11433:1433 mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+  - docker pull postgres
+  - docker pull mariadb
+  - docker run -d -p 55432:5432 -e POSTGRES_PASSWORD=docker -d postgres
+  - docker run -d -p 33306:3306 -e MYSQL_ROOT_PASSWORD=docker -d mariadb
 
-after_script:
-  - psql -c 'drop schema logging cascade;' -U postgres
-  - psql -c 'drop database travis_ci_test cascade;' -U postgres
+install:
+  - pip install pipenv
+  - export PIPENV_IGNORE_VIRTUALENVS=1
+  - pipenv install --dev

@@ -1,0 +1,44 @@
+#This file is to configure mapping of files to database tables 
+- path: '/workspace/tests/sample_data/'
+  convert_table_name_snake_case: True
+  enabled: True # activates this configration tree
+  project_name: test_1
+  reprocess: True
+  extract_file_name_data: '\d\d\d\d'
+  format_extracted_date: 'YYYY'
+  process_logic: # this will get executed for all files
+    - logic: 'custom_logic.count_file_linux_wc'
+    - logic: 'custom_logic.generate_checksum'
+    - logic: 'custom_logic.log_file_size'
+    - logic: 'custom_logic.abort_if_duplicate'
+  reset_failed: False
+  mapping: 
+    - file_regex: '^.*Contacts_Demo.zip$'
+      file_type: 'zip'
+      process_logic:
+        #- logic: 'custom_logic.abort_if_obsolete'
+        - logic: 'custom_logic.extract_compressed_file' 
+    - file_regex: '^.*.mdb$'
+      file_type: 'mdb'
+      process_logic:
+        #- logic: 'custom_logic.abort_if_obsolete'
+        - logic: 'custom_logic.extract_msaccess_csv' 
+    
+    #################################################################################################################################################################
+    #look for data files and import them
+    #Files from Master table is full re-load so we want to delete everything and load whatever is in this
+    - file_regex: '.*.csv$'
+      file_type: 'CSV'
+      schema_name: 'test'
+      reprocess: True
+      #table_name: 'test1'
+      file_delimiter: ","
+      process_logic:
+        - logic: 'custom_logic.pandas_import'
+      file_encoding: 'ISO-8859-1'
+      limit_rows: None
+      has_header: False
+      user_header: False
+      post_action: 
+        - sql: "vacuum analyze {schema_name}.{table_name}"
+    
