@@ -56,7 +56,7 @@ def custom_logic(db, foi, df):
             extracted_file_fqn=os.path.join(modified_write_path,extracted_file_name)
              
             accessdb.query_to_file(sql="select * from {}".format(table_name),file_path=extracted_file_fqn, file_format='CSV', 
-                        header=None)
+                        header=True)
             #accessdb.query_to_file(file_path=csv_file_path, sql='select * from tblEmployees', file_format='CSV', header=y)
             files.append(extracted_file_name)
              

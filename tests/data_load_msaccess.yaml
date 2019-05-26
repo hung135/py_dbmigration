@@ -13,6 +13,11 @@
     - logic: 'custom_logic.abort_if_duplicate'
   reset_failed: False
   mapping: 
+    - file_regex: '^.*Contacts_Demo.zip$'
+      file_type: 'zip'
+      process_logic:
+        #- logic: 'custom_logic.abort_if_obsolete'
+        - logic: 'custom_logic.extract_compressed_file' 
     - file_regex: '^.*.mdb$'
       file_type: 'mdb'
       process_logic:
