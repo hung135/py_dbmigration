@@ -20,7 +20,7 @@ class Test_db_utils_postgres(unittest.TestCase):
     HOST = os.environ['PGHOST']
     DATABASE = os.environ['PGDATABASE']
     USERID = 'docker'
-    DBTYPE = 'POSTGRES'
+     
     DATA_SCHEMA = 'prey'
     
     DBPASSWORD = 'docker'
@@ -59,8 +59,10 @@ class Test_db_utils_postgres(unittest.TestCase):
         self.db.execute("truncate table logging.meta_source_files")
         print('# In function:', sys._getframe().f_code.co_name) 
         import py_dbmigration.data_load as data_load
-        data_load.main(yamlfile='/workspace/tests/data_load_msaccess.yaml',write_path=self.dirs['sample_working_dir'],schema=TEST_SCHEMA)
-        rs,meta=self.db.query("""select database_table from logging.meta_source_files
+        data_load.main(yamlfile='/workspace/tests/data_load_msaccess.yaml',
+                    write_path=self.dirs['sample_working_dir'],
+                    schema=TEST_SCHEMA)
+        rs,_=self.db.query("""select database_table from logging.meta_source_files
                                 where database_table is not NULL""")
         for row in rs:
             print("Table Name: ",row[0])
