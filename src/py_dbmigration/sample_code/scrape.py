@@ -1,11 +1,11 @@
 # import csv, pandas,        sqlalchemy, os
 import os
-import scrape_utils
-import db_utils
+import py_dbmigration.scrape_utils
+from py_dbutils.rdbms import postgres as  db_utils
 import requests
 import re
 import pandas as pd
-import db_logging as lg
+import py_dbmigration.db_logging as lg
 import datetime as dt
 from bs4 import BeautifulSoup
 from pprint import pprint
@@ -20,7 +20,7 @@ class getUrl:
 
 
 
-db = db_utils.Connection(dbschema='compliance',database='compliance', dbtype='POSTGRES')
+db = db_utils.DB(dbschema='compliance',dbname='compliance' )
 logger=lg.logger.ImportLogger(db)
 session = requests.session()
 file_list=[]

@@ -16,10 +16,9 @@ TEST_SCHEMA = 'test'
 LOGGING_SCHEMA = 'logging'
 PROJECT_NAME= 'test_project'
 class Test_db_utils_postgres(unittest.TestCase):
-    HOST = 'pgdb'
-    DATABASE = 'postgres'
+    HOST = os.environ['PGHOST']
+    DATABASE = os.environ['PGDATABASE']
     USERID = 'docker'
-    DBTYPE = 'POSTGRES'
     DATA_SCHEMA = 'prey'
     
     DBPASSWORD = 'docker'

@@ -24,9 +24,9 @@ def custom_logic(db, foi, df):
     
     continue_processing = True
     table_name = foi.table_name
-    target_schema = foi.schema_name
+    #target_schema = foi.schema_name
     file_id = df.meta_source_file_id
-    skip_ifexists = (not foi.unzip_again)
+    #skip_ifexists = (not foi.unzip_again)
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
     abs_writable_path = os.path.join(df.working_path, df.curr_src_working_file)
     import py_dbutils.rdbms.msaccess as msaccess
@@ -44,7 +44,7 @@ def custom_logic(db, foi, df):
             
         except:
             logging.warning("CRC column does not exist in meta_source_file table. Please make sure you create it")
-        modified_write_path = os.path.join(abs_writable_path, folder_name, str(md5))
+        modified_write_path = os.path.join(abs_writable_path, df.curr_src_working_file,str(file_id), str(md5))
          
         files = []    
         accessdb=msaccess.DB(abs_file_path)
