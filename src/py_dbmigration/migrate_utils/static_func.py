@@ -1284,109 +1284,109 @@ def reset_migration(db):
 
 
 # # given a columna_name,type tubple return a data word for that type
-# def gen_data(col):
-#     import random
+def gen_data(col):
+    import random
 
-#     import sqlalchemy
-#     import datetime
+    import sqlalchemy
+    import datetime
 
-#     from random_words import RandomWords
-#     import operator
-#     assert isinstance(col, sqlalchemy.Column)
+    from random_words import RandomWords
+    import operator
+    assert isinstance(col, sqlalchemy.Column)
 
-#     # print(col.type,col.type.python_type)
-#     if str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']:
+    # print(col.type,col.type.python_type)
+    if str(col.type) in ['INTEGER', 'BIGINT', 'UUID', 'SMALLINT']:
         
-#         data = random.randint(1, 2000)
-#     elif 'PRECISION' in str(col.type) or 'NUMERIC' in str(col.type):
+        data = random.randint(1, 2000)
+    elif 'PRECISION' in str(col.type) or 'NUMERIC' in str(col.type):
          
-#         data = random.randrange(1, 100)
+        data = random.randrange(1, 100)
 
-#     elif 'TIMESTAMP' in str(col.type):
-#         data = str(datetime.datetime.now())
-#     elif 'TEXT' in str(col.type):
-#         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
-#         limit = min([100])
-#         if limit == 0:
-#             limit = 1
-#         word_count = random.randint(1, limit)
-#         rw = RandomWords()
-#         data = ' '.join(rw.random_words(count=word_count))
-#         data = data.replace('p ', r'\"')
-#         data = '"' + data.replace('r ', '\n') + '"'
+    elif 'TIMESTAMP' in str(col.type):
+        data = str(datetime.datetime.now())
+    elif 'TEXT' in str(col.type):
+        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+        limit = min([100])
+        if limit == 0:
+            limit = 1
+        word_count = random.randint(1, limit)
+        rw = RandomWords()
+        data = ' '.join(rw.random_words(count=word_count))
+        data = data.replace('p ', r'\"')
+        data = '"' + data.replace('r ', '\n') + '"'
 
-#     elif 'CHAR' in str(col.type):
-#         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
-#         limit = min([5, operator.div(col.type.length, 5)])
-#         if limit == 0:
-#             limit = 1
-#         word_count = random.randint(1, limit)
-#         rw = RandomWords()
-#         data = ' '.join(rw.random_words(count=word_count))
-#     else:
-#         print("New DataType", str(col.type))
-#         data = random.randint(1, 32000)
+    elif 'CHAR' in str(col.type):
+        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+        limit = min([5, operator.div(col.type.length, 5)])
+        if limit == 0:
+            limit = 1
+        word_count = random.randint(1, limit)
+        rw = RandomWords()
+        data = ' '.join(rw.random_words(count=word_count))
+    else:
+        print("New DataType", str(col.type))
+        data = random.randint(1, 32000)
 
-#     return str(data)
+    return str(data)
 
 
 # a function that takes in a column and look at its dataype and return a function to generate random data
 # that can be activated later to not have to iterate through this logic each time
-# def get_func(col):
-#     import random
-#     import string
+def get_func(col):
+    import random
+    import string
 
-#     import datetime
+    import datetime
 
-#     from random_words import RandomWords
-#     # assert isinstance(col, sqlalchemy.Column)
+    from random_words import RandomWords
+    # assert isinstance(col, sqlalchemy.Column)
 
-#     if str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']:
-#         def gen_data():
-#             return random.randint(1, 2000)
+    if str(col.type) in ['INTEGER', 'BIGINT', 'SMALLINT']:
+        def gen_data():
+            return random.randint(1, 2000)
 
-#         return gen_data
-#     elif str(col.type) in ['BYTEA']:
-#         def gen_data():
+        return gen_data
+    elif str(col.type) in ['BYTEA']:
+        def gen_data():
 
-#             return "'NULL'"
+            return "'NULL'"
 
-#         return gen_data
-#     elif str(col.type) in ['UUID']:
+        return gen_data
+    elif str(col.type) in ['UUID']:
 
-#         def gen_data():
-#             import hashlib
-#             return hashlib.md5(str(random.randint(1, 2000))).hexdigest()
+        def gen_data():
+            import hashlib
+            return hashlib.md5(str(random.randint(1, 2000))).hexdigest()
 
-#         return gen_data
-#     elif ('PRECISION' in str(col.type)
-#           or 'NUMERIC' in str(col.type)):
-#         def gen_data():
-#             x = random.randrange(1, 100)
-#             return x
+        return gen_data
+    elif ('PRECISION' in str(col.type)
+          or 'NUMERIC' in str(col.type)):
+        def gen_data():
+            x = random.randrange(1, 100)
+            return x
 
-#         return gen_data
+        return gen_data
 
-#     elif ('TIMESTAMP' in str(col.type)):
-#         def gen_data():
-#             return str(datetime.datetime.now())
+    elif ('TIMESTAMP' in str(col.type)):
+        def gen_data():
+            return str(datetime.datetime.now())
 
-#         return gen_data
-#     elif ('TEXT' in str(col.type)):
-#         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
+        return gen_data
+    elif ('TEXT' in str(col.type)):
+        # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
 
-#         def gen_data():
-#             limit = min([100])
-#             if limit == 0:
-#                 limit = 1
-#             word_count = random.randint(1, limit)
-#             rw = RandomWords()
-#             data = ' '.join(rw.random_words(count=word_count))
-#             data = data.replace('p ', r'\"')
-#             data = '"' + data.replace('r ', '\n') + '"'
-#             return data
+        def gen_data():
+            limit = min([100])
+            if limit == 0:
+                limit = 1
+            word_count = random.randint(1, limit)
+            rw = RandomWords()
+            data = ' '.join(rw.random_words(count=word_count))
+            data = data.replace('p ', r'\"')
+            data = '"' + data.replace('r ', '\n') + '"'
+            return data
 
-#         return gen_data
+        return gen_data
 
 #     elif ('CHAR' in str(col.type)):
 #         # data = "".join([random.choice(string.letters[5:26]) for i in xrange(5)])
@@ -1418,36 +1418,36 @@ def reset_migration(db):
 
 
 # generate data base on columns in a given table
-# def generate_data_sample(db, table_name, source_schema, file_name, line_count=10,
-#                          ignore_auto_inc_column=True, include_header=True):
-#     columns1 = db.get_all_columns_schema(source_schema, table_name)
-#     func_list = []
-#     column_names = []
-#     column_names2 = []
-#     for c in columns1:
-#         if c.autoincrement == 'NO' and c.column_name not in ['file_id', 'crc']:
-#             # setattr(c,'randfunc',get_func(c))
-#             func_list.append(get_func(c))
-#             column_names.append(c.column_name)
+def generate_data_sample(db, table_name, source_schema, file_name, line_count=10,
+                         ignore_auto_inc_column=True, include_header=True):
+    columns1 = db.get_all_columns_schema(source_schema, table_name)
+    func_list = []
+    column_names = []
+    column_names2 = []
+    for c in columns1:
+        if c.autoincrement == 'NO' and c.column_name not in ['file_id', 'crc']:
+            # setattr(c,'randfunc',get_func(c))
+            func_list.append(get_func(c))
+            column_names.append(c.column_name)
 
-#     if not os.path.exists(os.path.dirname(file_name)):
-#         os.makedirs(os.path.dirname(file_name), mode=0o0777)
+    if not os.path.exists(os.path.dirname(file_name)):
+        os.makedirs(os.path.dirname(file_name), mode=0o0777)
 
-#     with open(os.path.abspath(file_name), 'w') as f:
-#         for x in range(line_count):
-#             line = ''
-#             if x == 0:
-#                 header = ','.join([c for c in column_names])
-#                 if include_header:
-#                     f.write(header + '\n')
-#             for i, func in enumerate(func_list):
-#                 if (i == 0):
-#                     line += str(func())
-#                 else:
-#                     line += "," + str(func())
+    with open(os.path.abspath(file_name), 'w') as f:
+        for x in range(line_count):
+            line = ''
+            if x == 0:
+                header = ','.join([c for c in column_names])
+                if include_header:
+                    f.write(header + '\n')
+            for i, func in enumerate(func_list):
+                if (i == 0):
+                    line += str(func())
+                else:
+                    line += "," + str(func())
 
-#             # print(x, line)
-#             f.write(line + '\n')
+            # print(x, line)
+            f.write(line + '\n')
 
 
 # zip up directory
@@ -1463,36 +1463,34 @@ def zipdir(directory, target_file_name):
 
 
 # # Now we can iterate through all tables in db and make sample data for each table
-# def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', line_count=10,
-#                                     ignore_auto_inc_column=True,
-#                                     zip_file_name=None, num_tables=None, post_fix='.csv',
-#                                     include_header=True
-#                                     ):
-#     from db_utils import dbconn
+def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', line_count=10,
+                                    ignore_auto_inc_column=True,
+                                    zip_file_name=None, num_tables=None, post_fix='.csv',
+                                    include_header=True
+                                    ):
+     
+    print("Dumping: {}".format(source_schema))
+    if source_schema is None:
+        source_schema = db.schema
+    # tbs = db.get_table_list(source_schema)
+    tbs = db.get_table_list_via_query(source_schema)
 
-#     assert isinstance(db, dbconn.Connection)
-#     print("Dumping: {}".format(source_schema))
-#     if source_schema is None:
-#         source_schema = db.schema
-#     # tbs = db.get_table_list(source_schema)
-#     tbs = db.get_table_list_via_query(source_schema)
+    if not os.path.exists(os.path.dirname(data_directory)):
+        os.makedirs(os.path.dirname(data_directory), mode=0o0777)
+    print("Dumping data for scheam: {}".format(source_schema))
 
-#     if not os.path.exists(os.path.dirname(data_directory)):
-#         os.makedirs(os.path.dirname(data_directory), mode=0o0777)
-#     print("Dumping data for scheam: {}".format(source_schema))
+    for i, table_name in enumerate(tbs):
+        if (num_tables is not None and i < num_tables):
+            print("Generating Sample Data for Table:", table_name)
+            file_name = os.path.join(data_directory, table_name + post_fix)
+            generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column,
+                                 include_header=include_header)
 
-#     for i, table_name in enumerate(tbs):
-#         if (num_tables is not None and i < num_tables):
-#             print("Generating Sample Data for Table:", table_name)
-#             file_name = os.path.join(data_directory, table_name + post_fix)
-#             generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column,
-#                                  include_header=include_header)
-
-#     if zip_file_name is not None:
-#         zip_directory = os.path.dirname(zip_file_name)
-#         if not os.path.exists(zip_directory):
-#             os.makedirs(zip_directory)
-#         zipdir(data_directory, os.path.abspath(zip_file_name))
+    if zip_file_name is not None:
+        zip_directory = os.path.dirname(zip_file_name)
+        if not os.path.exists(zip_directory):
+            os.makedirs(zip_directory)
+        zipdir(data_directory, os.path.abspath(zip_file_name))
 
 
 # this will return sql to do upsert based on the primary keys
@@ -1527,7 +1525,7 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None, fil
                 md5_trg += ',trg.' + col + '\n\t\t'
                 md5_src += ',excluded.' + col + '\n\t\t'
 
-    primary_keys = db.get_primary_keys(schema + '.' + table_name)
+    primary_keys = get_pg_primary_key(db,schema + '.' + table_name)
 
     sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {}  ON CONFLICT ({}) 
     DO UPDATE SET \n\t{}\n WHERE \n\tmd5(ROW({})::Text)\n!= md5(ROW({})::Text)
@@ -1542,6 +1540,15 @@ def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None, fil
 						        md5_trg)
 
     return sql_template
+def get_pg_primary_key(db,table_name_fqn):
+    sql="""SELECT a.attname
+FROM   pg_index i
+JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                     AND a.attnum = ANY(i.indkey)
+WHERE  i.indrelid = '{}'::regclass
+AND    i.indisprimary; """.format(table_name_fqn)
+    rs,_=db.query(sql) 
+    return [col[0] for col in rs]
 
 # upsert syntax with no data checking
 
