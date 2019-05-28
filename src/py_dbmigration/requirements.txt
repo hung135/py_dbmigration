@@ -10,7 +10,6 @@ xlsxwriter
 requests
 BeautifulSoup4
 inflection
-reflection
 lorem
 RandomWords
 nose_parameterized

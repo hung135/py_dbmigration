@@ -41,9 +41,11 @@ class Test_api_fetch(unittest.TestCase,Config):
             os.makedirs( self.dirs['working_dir'],exist_ok=True)
             pay_load={self.user_id_field:os.environ["FPDS_USERID"],self.pwd_field:os.environ["FPDS_PWD"]}
             with requests.Session() as session:
-                _ = session.post(self.login_url,data=pay_load)
+                post_response = session.post(self.login_url,data=pay_load)
                 r = session.get(self.search_pg1)  
             #print(self.test_session_data)
+                print(post_response)
+                self.assertTrue(str(post_response)=='<Response [200]>')
                 with open(os.path.join(self.dirs['working_dir'],'page_1'),"w") as f:
                     f.write(r.text)
                     
@@ -59,6 +61,7 @@ class Test_api_fetch(unittest.TestCase,Config):
             for a in soup.find_all('a', href=True):
                 if ('/common/jsp/DocumentSearch.jsp?advancedResultsPage') in a['href']:
                     next_search= a['href']
+        print(next_search)
         self.assertTrue(next_search is not None)
          
            
