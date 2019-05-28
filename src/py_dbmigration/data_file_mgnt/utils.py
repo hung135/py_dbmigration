@@ -1,11 +1,11 @@
 
  
-import py_dbmigration.migrate_utils as migrate_utils
+from py_dbmigration import migrate_utils 
 import datetime
 import logging as log
 import re
 from py_dbmigration.custom_logic import purge_temp_file as purge
-import py_dbmigration.data_file_mgnt  as data_file_mgnt
+from  py_dbmigration import data_file_mgnt
 
 
 logging = log.getLogger()

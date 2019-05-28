@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 from py_dbutils import parents as db_utils
-import py_dbmigration.data_file_mgnt as data_file_mgnt
+from py_dbmigration import data_file_mgnt 
 import shutil
 import datetime
 logging.basicConfig(level='DEBUG')
