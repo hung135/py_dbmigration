@@ -54,7 +54,7 @@ def custom_logic(db, foi, df):
         accessdb=msaccess.DB(abs_file_path)
     
         for table_name in accessdb.get_all_tables():
-             
+            logging.info("\t\tExtracting MSACCESS Table: {}".format(table_name))
             os.makedirs(modified_write_path,exist_ok=True)
             extracted_file_name="{}.csv".format(table_name)
             extracted_file_fqn=os.path.join(modified_write_path,extracted_file_name)
