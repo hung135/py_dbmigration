@@ -8,29 +8,19 @@ import py_dbmigration.db_table
 from  py_dbutils.rdbms import postgres as db_utils
 import logging as log
 import boto3
+from config_parent import Config
 #import boto3
 
 logging = log.getLogger()
 logging.setLevel(log.DEBUG)
 
 
-class Test_db_utils_postgres(unittest.TestCase):
-    HOST = os.environ['PGHOST']
-    DATABASE = os.environ['PGDATABASE']
-    USERID = 'docker'
-     
-    DATA_SCHEMA = 'public'
-    DBPASSWORD = 'docker'
-    DBPORT = 5432
+class Test_db_utils_postgres(unittest.TestCase,Config):
   
-
-    db = db_utils.DB(host=HOST, userid=USERID, dbname=DATABASE, dbschema=DATA_SCHEMA,
-                                    pwd=DBPASSWORD,
-                                      port=DBPORT)
-
-  
+   
  
     def test_01(self):
+        self.db=self.get_pg_database()
         print("test function",self)
         rs=self.db.query("select * from information_schema.tables")
         for row in rs:

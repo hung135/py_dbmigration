@@ -1463,36 +1463,34 @@ def zipdir(directory, target_file_name):
 
 
 # # Now we can iterate through all tables in db and make sample data for each table
-# def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', line_count=10,
-#                                     ignore_auto_inc_column=True,
-#                                     zip_file_name=None, num_tables=None, post_fix='.csv',
-#                                     include_header=True
-#                                     ):
-#     from db_utils import dbconn
+def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', line_count=10,
+                                    ignore_auto_inc_column=True,
+                                    zip_file_name=None, num_tables=None, post_fix='.csv',
+                                    include_header=True
+                                    ):
+     
+    print("Dumping: {}".format(source_schema))
+    if source_schema is None:
+        source_schema = db.schema
+    # tbs = db.get_table_list(source_schema)
+    tbs = db.get_table_list_via_query(source_schema)
 
-#     assert isinstance(db, dbconn.Connection)
-#     print("Dumping: {}".format(source_schema))
-#     if source_schema is None:
-#         source_schema = db.schema
-#     # tbs = db.get_table_list(source_schema)
-#     tbs = db.get_table_list_via_query(source_schema)
+    if not os.path.exists(os.path.dirname(data_directory)):
+        os.makedirs(os.path.dirname(data_directory), mode=0o0777)
+    print("Dumping data for scheam: {}".format(source_schema))
 
-#     if not os.path.exists(os.path.dirname(data_directory)):
-#         os.makedirs(os.path.dirname(data_directory), mode=0o0777)
-#     print("Dumping data for scheam: {}".format(source_schema))
+    for i, table_name in enumerate(tbs):
+        if (num_tables is not None and i < num_tables):
+            print("Generating Sample Data for Table:", table_name)
+            file_name = os.path.join(data_directory, table_name + post_fix)
+            generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column,
+                                 include_header=include_header)
 
-#     for i, table_name in enumerate(tbs):
-#         if (num_tables is not None and i < num_tables):
-#             print("Generating Sample Data for Table:", table_name)
-#             file_name = os.path.join(data_directory, table_name + post_fix)
-#             generate_data_sample(db, table_name, source_schema, file_name, line_count, ignore_auto_inc_column,
-#                                  include_header=include_header)
-
-#     if zip_file_name is not None:
-#         zip_directory = os.path.dirname(zip_file_name)
-#         if not os.path.exists(zip_directory):
-#             os.makedirs(zip_directory)
-#         zipdir(data_directory, os.path.abspath(zip_file_name))
+    if zip_file_name is not None:
+        zip_directory = os.path.dirname(zip_file_name)
+        if not os.path.exists(zip_directory):
+            os.makedirs(zip_directory)
+        zipdir(data_directory, os.path.abspath(zip_file_name))
 
 
 # this will return sql to do upsert based on the primary keys
