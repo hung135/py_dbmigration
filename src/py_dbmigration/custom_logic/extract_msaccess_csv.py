@@ -4,6 +4,7 @@ import os
 import sys
 import py_dbutils.parents as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
+ 
 import py_dbmigration.db_table as db_table
 import py_dbmigration.zip_utils as zip_utils
 
@@ -21,8 +22,9 @@ import py_dbmigration.zip_utils as zip_utils
 
 
 def custom_logic(db, foi, df):
+    logic_status=data_file_mgnt.data_files.Status(status='Begin Custom Logic {}'.format(__file__))
+    logic_status.continue_processing = True
     
-    continue_processing = True
     table_name = foi.table_name
     #target_schema = foi.schema_name
     file_id = df.meta_source_file_id
@@ -32,7 +34,7 @@ def custom_logic(db, foi, df):
     import py_dbutils.rdbms.msaccess as msaccess
      
 # def extract_file(self, db, abs_file_path, abs_writable_path, skip_ifexists=False):
-    status_dict = {}
+     
     try:
         t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
@@ -43,7 +45,9 @@ def custom_logic(db, foi, df):
             md5 = row.crc
             
         except:
-            logging.warning("CRC column does not exist in meta_source_file table. Please make sure you create it")
+            warning_msg = "CRC column does not exist in meta_source_file table. Please make sure you create it"
+            logging.warning(warning_msg)
+            logic_status.additional_info=warning_msg
         modified_write_path = os.path.join(abs_writable_path, "file_id_"+str(file_id), str(md5))
          
         files = []    
@@ -80,17 +84,18 @@ def custom_logic(db, foi, df):
         # print("---error occured--sleeping so you can read", e)
          
         logging.error(e)
-        status_dict['import_status'] = 'FAILED'
-        status_dict['error_msg'] = 'Error During Extracting Files to CSV'
-        continue_processing = False
+        logic_status.import_status = 'FAILED'
+        logic_status.error_msg = 'Error During Extracting Files to CSV: {}'.format(e)
+        logic_status.continue_processing = False
+        return logic_status
 
-    return continue_processing
+    return logic_status 
 
 
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 def process(db, foi, df):
-    error_msg = None
-    additional_msg = None
+    
+    
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)

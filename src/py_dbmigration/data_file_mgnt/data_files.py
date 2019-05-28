@@ -22,20 +22,20 @@ logging.setLevel(log.DEBUG)
 
 # given 2 data frame this will find all the records do not exist in the
 # right data frame
-def dataframe_diff_left(df1, df2, column_name):
-    result = pd.merge(df1, df2, on=column_name, how='left', indicator=True)
-    return result.query("_merge =='left_only'")
+# def dataframe_diff_left(df1, df2, column_name):
+#     result = pd.merge(df1, df2, on=column_name, how='left', indicator=True)
+#     return result.query("_merge =='left_only'")
 
 
-def diff_list(list1, list2):
-    delta = []
-    l1 = set(list1)
-    l2 = set(list2)
+# def diff_list(list1, list2):
+#     delta = []
+#     l1 = set(list1)
+#     l2 = set(list2)
 
-    for i in list1:
-        if i not in list2:
-            delta.append(i)
-    return l1 - l2
+#     for i in list1:
+#         if i not in list2:
+#             delta.append(i)
+#     return l1 - l2
 
 
 # object to carry status info for prossing and import
@@ -43,12 +43,22 @@ def diff_list(list1, list2):
 
 class Status:
     # object to carry status info for prossing and import
-
-    def __init__(self, status, error_msg='', additional_info=''):
+    status = None
+    rows_inserted = 0
+    error_msg = None
+    additional_info = None
+    import_status = 'Unk'
+    rows_inserted = 0
+    continue_processing=False
+    def __init__(self, status):
         self.status = status
         self.rows_inserted = 0
-        self.error_msg = error_msg
-        self.additional_info = additional_info
+        self.error_msg = None
+        self.additional_info = None
+        self.import_status = 'Unk'
+        self.rows_inserted = 0
+        self.file_size =0
+
 
 
 # object to run through series of rule to change the data
@@ -226,8 +236,8 @@ def convert_to_sql(instring):
 #           Client side CopyCommand All or Nothing
 
 class DataFile:
-    COMPRESSED_FILE_TYPES = ['ZIP', 'GZ', 'TAR']
-    SUPPORTED_DATAFILE_TYPES = ['DATA', 'CSV', 'DAT', 'XLSX', 'TXT', 'XLS']
+    #COMPRESSED_FILE_TYPES = ['ZIP', 'GZ', 'TAR']
+#    SUPPORTED_DATAFILE_TYPES = ['DATA', 'CSV', 'DAT', 'XLSX', 'TXT', 'XLS', 'MDB']
 
     working_path = None
     db = None

@@ -1,14 +1,15 @@
 
  
-import py_dbmigration.migrate_utils 
+import py_dbmigration.migrate_utils as migrate_utils
 import datetime
 import logging as log
 import re
 from py_dbmigration.custom_logic import purge_temp_file as purge
+import py_dbmigration.data_file_mgnt.data_files as data_files
 
 
 logging = log.getLogger()
-import_type = 'client_copy'
+ 
 
 # list of key values to replace in sql with runtime data values
 
@@ -89,13 +90,21 @@ def process_logic(foi, db, df):
             
             t = datetime.datetime.now()
              
-            continue_next_process = imp.process(db, foi, df)
+            logic_status = imp.process(db, foi, df)
+            try: 
+                
+                assert isinstance(logic_status,data_files.Status)
+                continue_next_process=logic_status.continue_processing
+            except Exception as e:
+                logging.warning("Please implement Status Object for this custom logic")
+                continue_next_process=logic_status
             
             time_delta = (datetime.datetime.now() - t)
             logging.info("\t\t\tExecution Time: {}sec".format(time_delta))
              
         except Exception as e:
             df.set_work_file_status(db, df.meta_source_file_id, custom_logic, '{}: {}'.format(custom_logic, e))
+            logging.error("Unexpected Error occured running Custom logic: {}".format(e))
             
         logging.debug('\t->Dynamic Module Ended: {}'.format(custom_logic))
 
