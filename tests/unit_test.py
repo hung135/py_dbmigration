@@ -87,7 +87,7 @@ class Test_db_utils_postgres(unittest.TestCase):
         x=self.db.query('select 1 from logging.meta_source_files limit 1;')
         print(x)
         self.assertTrue(x)
-    @unittest.skip("Not yet")
+    #@unittest.skip("Not yet")
     def test_05_upsert(self):
         sql = """insert into table_b (pk_b, b)
                 select pk_a,a from table_a
@@ -173,76 +173,6 @@ class Test_db_utils_postgres(unittest.TestCase):
             data_files.FilesOfInterest('ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
                                        parent_file_id=0))
         return foi_list
-
-    @unittest.skip("skipping")
-    def test_07_import_data(self):
-        print('# In function:', sys._getframe().f_code.co_name)
-
-        import itertools
-        logging.setLevel(log.WARN)
-
-        #SAMPLE_DATA_HAS_HEADER = [True, False]
-        CLEAN_PREV = [True, False]
-        GENERATE_SAMPLE_DATA = [True, False]
-        GENERATE_SAMPLE_DATA_W_HEADER = [True]
-        GENERATE_CRC = [ False, True]
-        GENERATE_FILE_ID = [  False, True]
-        LIMIT_ROWS = [None, 10]
-        START_ROW = [0]
-        TRUNCATE_TABLE = [True, False]
-        IMPORT_METHOD = [data_files.DataFile.IMPORT_VIA_PANDAS] #,data_files.DataFile.IMPORT_VIA_CLIENT_CLI]
-
-        x = itertools.product(
-            #SAMPLE_DATA_HAS_HEADER,
-
-            GENERATE_CRC,
-            GENERATE_FILE_ID,
-            LIMIT_ROWS,
-            START_ROW,
-            TRUNCATE_TABLE,
-            IMPORT_METHOD)
-        for params in x:
-            #_SAMPLE_DATA_HAS_HEADER,\
-            _GENERATE_CRC,\
-            _GENERATE_FILE_ID,\
-            _LIMIT_ROWS,\
-            _START_ROW,\
-            _TRUNCATE_TABLE,\
-            _IMPORT_METHOD= params
-            print('# In function:', sys._getframe().f_code.co_name)
-
-            static_func.print_padded(20,
-                  '_GENERATE_CRC', \
-                  '_GENERATE_FILE_ID', \
-                  '_LIMIT_ROWS', \
-                  '_START_ROW', \
-                  '_TRUNCATE_TABLE', \
-                  '_IMPORT_METHOD')
-            static_func.print_padded(20,
-            _GENERATE_CRC,\
-            _GENERATE_FILE_ID,\
-            _LIMIT_ROWS,\
-            _START_ROW,\
-            _TRUNCATE_TABLE,\
-            _IMPORT_METHOD)
-            self.clean_db()
-            foi_list=self.make_foi()
-            df = data_files.DataFile(working_path=self.dirs["sample_working_dir"], db=self.db, foi_list=foi_list,
-                                     parent_file_id=0)
-            assert isinstance(df, data_files.DataFile)
-            t = db_table.db_table_func.RecordKeeper(self.db, table_def=db_table.db_table_def.TableFilesRegex)
-            records = t.get_all_records()
-            t.session.close()
-            for r in records:
-                assert isinstance(r, db_table.db_table_def.TableFilesRegex)
-                foi_list.append(data_files.FilesOfInterest(
-                    file_type='CSV', table_name=str(r.table_name), file_regex=str(r.regex),
-                    file_delimiter=str(r.delimiter), column_list=None, schema_name=str(r.db_schema),
-                    has_header=self.GENERATE_SAMPLE_DATA_W_HEADER, append_file_id=_GENERATE_FILE_ID,
-                    append_crc=_GENERATE_CRC,
-                    limit_rows=_LIMIT_ROWS, start_row=_START_ROW, insert_option=_TRUNCATE_TABLE))
-            df.do_work(self.db, cleanup=False, limit_rows=None, import_type=_IMPORT_METHOD)
-
 
 
     def test_profile_csv(self):
