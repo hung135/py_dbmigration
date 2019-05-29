@@ -159,7 +159,7 @@ class FilesOfInterest:
             self.column_list = column_list.replace(' ', '').replace('\n', '').split(',')
         else:
             self.column_list = None
-
+        
         self.file_delimiter = file_delimiter
         self.use_header = use_header
         self.has_header = has_header
@@ -259,11 +259,14 @@ class DataFile:
         self.load_status_msg = None
         self.parent_file_id = parent_file_id
         self.db = db
-        self.working_path = os.path.abspath(working_path)
+        
         self.project_list = []
         for p in foi_list:
             self.project_list.append(p.project_name)
-
+             
+            self.working_path = self.working_path or p.yaml['write_path']
+        self.working_path=working_path or self.working_path or os.getcwd()
+        self.working_path = os.path.abspath(self.working_path) 
         self.compressed_file_type = compressed_file_type
         # self.file_pattern_list = file_pattern_list
         self.source_file_path = None
