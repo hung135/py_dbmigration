@@ -27,10 +27,14 @@ class Config(object):
         db.execute("drop schema {} cascade".format(self.TEST_SCHEMA))
         db.execute("create schema {}".format(self.TEST_SCHEMA))
         db.execute("create schema {}".format(self.TEST_SCHEMA))
-
-        vw_file='/workspace/tests/sql/logging_tables.sql'
+        sql_files=[]
+        sql_files.append('/workspace/tests/sql/create_schema.sql')
+        sql_files.append('/workspace/tests/sql/test_function.sql')
+        sql_files.append('/workspace/tests/sql/test_view.sql')
+        sql_files.append('/workspace/tests/sql/logging_tables.sql')
         #with open(vw_file,'r') as file:
         #    data = file.read().replace('\n', '')
         db.create_cur()
-        db.cursor.execute(open(vw_file, "r").read())
+        for f in sql_files:
+            db.cursor.execute(open(f, "r").read())
         return db

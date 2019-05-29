@@ -36,7 +36,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         import py_dbmigration.data_load as data_load
         data_load.main(yamlfile='/workspace/tests/data_load.yaml',
         write_path=self.dirs['sample_working_dir'],
-                    schema=self.TEST_SCHEMA)
+                    schema=self.TEST_SCHEMA, logging_mode='ERROR')
         
 if __name__ == '__main__':
     unittest.main()
