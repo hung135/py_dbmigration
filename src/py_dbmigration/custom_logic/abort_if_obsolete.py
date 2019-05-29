@@ -5,7 +5,8 @@ import sys
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
-import py_dbmigration.db_table as db_table
+ 
+
 logging.basicConfig(level='DEBUG')
 
 ''' 
@@ -23,8 +24,9 @@ logging.basicConfig(level='DEBUG')
 
 def custom_logic(db, foi, df):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
-
-    continue_processing = True
+    logic_status=data_file_mgnt.data_files.Status(status='Begin Custom Logic {}'.format(__file__))
+    logic_status.continue_processing = True
+     
     file_exists = db.has_record(
         """select 1
                 from logging.meta_source_files  cur,logging.meta_source_files  newer
@@ -44,8 +46,9 @@ def custom_logic(db, foi, df):
         # raise valuerror to abort process
         logging.error("\t\tObsolete Data File: Newer File Found")
         df.load_status_msg = 'Obsolete Data File: Newer File Found'
-        continue_processing = False
-    return continue_processing
+        logic_status.continue_processing = False
+        logic_status.additional_msg='Obsolete Data File: Newer File Found'
+    return logic_status
 
 
 def process(db, foi, df):

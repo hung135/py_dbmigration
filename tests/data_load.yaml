@@ -1,11 +1,12 @@
 #This file is to configure mapping of files to database tables 
 - path: '/workspace/tests/sample_data/'
+  write_path: '/workspace/tmp/'
   convert_table_name_snake_case: True
   enabled: True # activates this configration tree
   project_name: test_1
   reprocess: True
-  extract_file_name_data: '\d\d\d\d'
-  format_extracted_date: 'YYYY'
+  extract_file_name_data: '\d\d\d\d\d\d'
+  format_extracted_date: 'YYYYMM'
   process_logic: # this will get executed for all files
     - logic: 'custom_logic.count_file_linux_wc'
     - logic: 'custom_logic.generate_checksum'
