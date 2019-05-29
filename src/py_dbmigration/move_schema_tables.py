@@ -547,7 +547,9 @@ def run_pre_sql_action(src_db, trg_db, publish_item):
 
 def process_yaml(yaml_file, args):
     # yaml_file = os.path.abspath(yaml_file)
-    yaml_data = yaml.full_load(open(yaml_file))
+    yaml_data=None
+    with open(yaml_file,'r') as f:
+        yaml_data = yaml.full_load(f)
 
     log_level = args.log_level
     mapping_counter = 0
@@ -673,7 +675,9 @@ if __name__ == '__main__':
     # multi process here for now
     # process_yaml(args.yaml, args.log_level)
     yaml_file = os.path.abspath(args.yaml)
-    yaml_data = yaml.full_load(open(yaml_file))
+    yaml_data=None
+    with open(yaml_file,'r') as f:
+        yaml_data = yaml.full_load(f)
     logging.info('Read YAML file: \n\t\t{}'.format(yaml_file))
 
     process_yaml(yaml_file, args)
