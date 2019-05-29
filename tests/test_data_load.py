@@ -9,26 +9,17 @@ import os
 from py_dbutils.rdbms import postgres as db_utils
 from config_parent import Config
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+import shutil
 
 logging = log.getLogger()
 logging.setLevel(log.ERROR)
  
 class Test_db_utils_postgres(unittest.TestCase,Config):
      
-    SAMPLE_DATA_LINE_COUNT = 1500
-    SAMPLE_DATA_TOTAL_TABLES = 8  # None will get all tables
-    CLEAN_PREV = False
-    GENERATE_SAMPLE_DATA = False
-    GENERATE_SAMPLE_DATA_W_HEADER = True
-
-    SAMPLE_DATA_HAS_HEADER = False
-    GENERATE_CRC = False
-    GENERATE_FILE_ID = False
-    LIMIT_ROWS = None
-    START_ROW = 2
-    TRUNCATE_TABLE = True
+   
   
     def test_data_load(self):
+        shutil.copyfile("/workspace/tests/sample_data/Contacts_Demo_200101.zip","/workspace/tests/sample_data/Contacts_Demo_200102.zip")
         db=self.get_pg_database()
          
         db.execute("truncate table logging.meta_source_files")
