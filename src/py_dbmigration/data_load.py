@@ -24,10 +24,13 @@ def merge_two_dicts(x, y):
 
 def process_yaml(yaml_file=None):
     if yaml_file is None:
-         
         yaml_file = os.path.join(os.getcwd(),"data_load.yaml")
     logging.debug("loaind yaml file: {}".format(yaml_file))
-    paths = yaml.full_load(open(yaml_file))
+    paths = None
+     
+    with open(yaml_file,'r') as f:
+        from yaml import Loader
+        paths= yaml.load(f,Loader=Loader)
 
     datafiles = []
     mapping_counter = 0

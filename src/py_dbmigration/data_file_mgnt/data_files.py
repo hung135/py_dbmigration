@@ -3,7 +3,7 @@ import os
 #import zip_utils
 import socket
 import datetime
- 
+import copy
 import pandas as pd
 #import db_logging
 import py_dbmigration.db_table as db_table
@@ -253,8 +253,13 @@ class DataFile:
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
         assert isinstance(foi_list[0], FilesOfInterest)
+        
         curr_path=(os.path.dirname(__file__))
-        self.sql_yaml=yaml.full_load(open(curr_path+'/logic_sql.yml'))
+        
+        with open(os.path.join(curr_path,'logic_sql.yml'),'r') as f:
+            from yaml import Loader
+            self.sql_yaml= yaml.load(f,Loader=Loader)
+            
          
         self.load_status_msg = None
         self.parent_file_id = parent_file_id
@@ -263,14 +268,15 @@ class DataFile:
         self.project_list = []
         for p in foi_list:
             self.project_list.append(p.project_name)
-             
-            self.working_path = self.working_path or p.yaml['write_path']
+            if p.yaml is not None:
+                self.working_path = self.working_path or p.yaml.get('write_path',None)
+        
         self.working_path=working_path or self.working_path or os.getcwd()
         self.working_path = os.path.abspath(self.working_path) 
         self.compressed_file_type = compressed_file_type
         # self.file_pattern_list = file_pattern_list
         self.source_file_path = None
-
+        
         self.curr_src_working_file = None
         self.curr_pid = None
         self.host = None
@@ -293,7 +299,7 @@ class DataFile:
         # self.put_foi_to_db(db, foi_list)
 
         # take each pattern and walks the directory
-         
+        
         for files_of_interest in self.foi_list:
             if files_of_interest.file_path is not None:
                 assert isinstance(files_of_interest, FilesOfInterest)
@@ -475,7 +481,12 @@ class DataFile:
     @staticmethod
     def reset_meta_table(db, option='FAILED', where_clause='1=1'):
         curr_path=(os.path.dirname(__file__))
-        sql_yaml=yaml.full_load(open(curr_path+'/logic_sql.yml'))
+        sql_yaml=None
+        with open(os.path.join(curr_path,'logic_sql.yml'),'r') as f:
+            from yaml import Loader
+            sql_yaml= yaml.load(f,Loader=Loader)
+
+         
         if option.upper() == 'ALL':
             db.execute(sql_yaml['sql_update_ALL_meta_source'].format(where_clause))
         if option.upper() == 'FAILED':

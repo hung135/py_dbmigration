@@ -35,9 +35,9 @@ def custom_logic(db, foi, df):
     if db.has_record(sql):
         logging.info("\t\tChecksum already Exists, skipping:")
     else:
-        logging.info("\t\tCheck Not Exists, generating:")
+        logging.info("\t\tCheck Not Exists, generating MD%:")
         crc = migrate_utils.static_func.md5_file_36(abs_file_path)
-  
+        logging.info("\t\t\tMDB: {}".format(crc))
         rows_updated = db.execute(update_sql.format(crc, file_id))
        
         if rows_updated == 0:

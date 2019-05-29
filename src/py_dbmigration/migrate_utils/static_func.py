@@ -1853,7 +1853,7 @@ def md5_file_36(full_file_path):
       
     md5_string = str(msg.decode("utf-8") ).split(' ')[0]
     logging.debug("File CheckSum: {}".format(md5_string))
-    print(md5_string)
+     
     return md5_string
 
 #python 2.7

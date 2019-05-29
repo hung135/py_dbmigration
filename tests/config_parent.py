@@ -36,5 +36,6 @@ class Config(object):
         #    data = file.read().replace('\n', '')
         db.create_cur()
         for f in sql_files:
-            db.cursor.execute(open(f, "r").read())
+            with open(f,'r') as sql_file:
+                db.cursor.execute(sql_file.read())
         return db

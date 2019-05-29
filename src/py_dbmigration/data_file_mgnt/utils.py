@@ -47,6 +47,7 @@ def execute_sql(db, sql_list, foi, df):
 
 
 def process_logic(foi, db, df):
+ 
     #store result of action you do in this variable
     df.load_status_msg = None
     if foi.table_name_extract is not None:
@@ -56,6 +57,7 @@ def process_logic(foi, db, df):
         foi.table_name = migrate_utils.static_func.convert_str_snake_case(re.search(foi.table_name_extract, df.curr_src_working_file).group(1))
 
         #print(foi.table_name)
+    
     set_sql = "update logging.meta_source_files set reprocess={} where id={}".format(foi.reprocess, df.meta_source_file_id)
     db.execute(set_sql,catch_exception=False)
 
@@ -95,6 +97,7 @@ def process_logic(foi, db, df):
                 
                 assert isinstance(logic_status,data_file_mgnt.data_files.Status)
                 continue_next_process=logic_status.continue_processing
+              
             except Exception as e:
                 logging.warning("Please implement Status Object for this custom logic")
                 continue_next_process=logic_status
