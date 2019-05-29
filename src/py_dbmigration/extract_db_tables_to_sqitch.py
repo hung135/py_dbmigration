@@ -47,7 +47,7 @@ def main(o=None,s=None):
 
     #schemas = get_schema_except(db_postgres, ['op_dba', 'public', 'pg_catalog', 'information_schema', 'citus', 'sys', 'sqitch'])
     for s in schemas:
-        print(s,"------------")
+         
         db_postgres = db_utils.DB(schema=s, dbname=pgdatabase, host=pghost)
         #migu.change_table_owner(db_postgres, s, 'operational_dba')
         #migu.change_view_owner(db_postgres, s, 'operational_dba')
