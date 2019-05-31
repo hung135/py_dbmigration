@@ -202,7 +202,17 @@ class FilesOfInterest:
         self.table_name_extract = table_name_extract
         self.reprocess = reprocess
 
-    # def __str__(self):
+    
+    def __str__(self):
+        string_result={
+            'project_name':self.project_name,
+            'regex_pattern': self.regex,
+            'file_path':self.file_path,
+            'current_file':self.current_working_abs_file_name
+
+        }
+         
+        return str(string_result)
 
 
 def get_mapped_table(file_name, foi_list):
@@ -314,7 +324,7 @@ class DataFile:
                         #print(self.FilesOfInterest.file_list,"---------s--------",self.meta_source_file_id)
                     else:
                         logging.error("Directory from Yaml does not exists: {}".format(files_of_interest.file_path))
-
+                        sys.exit(1)
                 self.FilesOfInterest.parent_file_id = self.meta_source_file_id
 
                 # logging.debug(self.FilesOfInterest.file_list)
