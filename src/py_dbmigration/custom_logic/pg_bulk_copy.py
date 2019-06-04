@@ -92,7 +92,7 @@ def process(db, foi, df):
         # remove file_id in the case we got headers from db
         cols = ','.join(cols)
     
-    ImporLogger = db_logging.logger.ImportLogger(db)
+     
     header = ''
     if foi.use_header or foi.header_added:
         header = 'HEADER,'
