@@ -115,6 +115,7 @@ def process(db, foi, df):
             db.cursor.copy_expert(cmd_string, f)
             rows_inserted=db.cursor.rowcount
         db.commit()
+        continue_processing=True
         ###############THERE EXEC COMMAND LOGIC HERE########################################################
 
         
