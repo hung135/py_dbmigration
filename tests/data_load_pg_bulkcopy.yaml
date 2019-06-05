@@ -22,6 +22,9 @@
       schema_name: 'test'
       reprocess: True
       #table_name: 'test1'
+       
+      has_header: True
+      use_header: True
       file_delimiter: ","
       process_logic:
         - logic: 'custom_logic.pg_bulk_copy'

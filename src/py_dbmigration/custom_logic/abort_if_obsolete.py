@@ -26,6 +26,7 @@ def custom_logic(db, foi, df):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     logic_status=data_file_mgnt.data_files.Status(status='Begin Custom Logic {}'.format(__file__))
     logic_status.continue_processing = True
+    file_id=df.meta_source_file_id
      
     file_exists = db.has_record(
         """select 1
@@ -46,6 +47,7 @@ def custom_logic(db, foi, df):
         # raise valuerror to abort process
         logging.error("\t\tObsolete Data File: Newer File Found")
         df.load_status_msg = 'Obsolete Data File: Newer File Found'
+        db.execute("""update logging.meta_source_files set file_process_state='OBSOLETE' where id={} """.format(file_id))
         logic_status.continue_processing = False
         logic_status.additional_msg='Obsolete Data File: Newer File Found'
     return logic_status

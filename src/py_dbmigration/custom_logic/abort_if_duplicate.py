@@ -39,6 +39,7 @@ def custom_logic(db, foi, df):
         logging.error("\t\tDuplicate File Found")
         t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == df.meta_source_file_id)
+        row.file_process_state='DUPLICATE'
         row.duplicate_file = True
         t.session.commit()
         t.session.close()

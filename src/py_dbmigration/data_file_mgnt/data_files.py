@@ -653,7 +653,7 @@ class DataFile:
 
         update_sql = """UPDATE logging.meta_source_files set file_process_state='{}'
         ,last_error_msg={}
-        where id={}""".format( status, error_msg, file_id )
+        where id={} and file_process_state not in ('OBSOLETE','DUPLICATE')""".format( status, error_msg, file_id )
         assert isinstance(db, db_utils.DB)
         db.execute(update_sql)
 

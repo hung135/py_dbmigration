@@ -20,6 +20,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
   
     def test_data_load(self):
         shutil.copyfile("/workspace/tests/sample_data/Contacts_Demo_200101.zip","/workspace/tests/sample_data/Contacts_Demo_200102.zip")
+        shutil.copyfile("/workspace/tests/sample_data/Contacts_Demo_200101.zip","/workspace/tests/sample_data/Contacts_Demo_duplicate.zip")
         db=self.get_pg_database()
          
         db.execute("truncate table logging.meta_source_files")
@@ -28,6 +29,13 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         data_load.main(yamlfile='/workspace/tests/data_load.yaml',
         write_path=self.dirs['sample_working_dir'],
                     schema=self.TEST_SCHEMA, logging_mode='ERROR')
+        
+        sql="""select count(*) from logging.meta_source_files where file_process_state='OBSOLETE'"""
+        count,=db.get_a_row(sql)
+        self.assertTrue(int(count)>0)
+        sql="""select count(*) from logging.meta_source_files where file_process_state='DUPLICATE'"""
+        count,=db.get_a_row(sql)
+        self.assertTrue(int(count)>0)
         
 if __name__ == '__main__':
     unittest.main()

@@ -94,8 +94,14 @@ def process(db, foi, df):
     
      
     header = ''
-    if foi.use_header or foi.header_added:
+    if foi.use_header or foi.has_header:
         header = 'HEADER,'
+    #header only works for csv
+    if foi.use_header:
+        with open(data_file,'r') as f:
+            for row in f:
+                cols=row.replace(delim,',')
+                break
     delim = foi.file_delimiter
     if foi.new_delimiter is not None:
         delim = foi.new_delimiter
@@ -107,8 +113,8 @@ def process(db, foi, df):
         ###############THERE EXEC COMMAND LOGIC HERE########################################################
         
         logging.info("\t\tCopy Command STARTED: {0}".format(table_name_fqn))
-        cmd_string = """COPY {table} ({columns}) FROM STDIN WITH (FORMAT CSV)""".format(table=table_name_fqn,
-                                                                                                columns=cols)
+        cmd_string = """COPY {table} ({columns}) FROM STDIN WITH ({header} FORMAT CSV)""".format(table=table_name_fqn,
+                                                                                                columns=cols,header=header)
         db.create_cur()
          
         with open(data_file,'r') as f:
