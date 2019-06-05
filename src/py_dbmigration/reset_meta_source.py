@@ -12,7 +12,7 @@ logging = log.getLogger()
 logging.setLevel(log.INFO) 
 
  
-def main(yamlfile=None,write_path=None,schema=None,logging_mode=None):
+def main():
 
 
     import sys
