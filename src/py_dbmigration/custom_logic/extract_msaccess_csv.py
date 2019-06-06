@@ -48,7 +48,7 @@ def custom_logic(db, foi, df):
             warning_msg = "CRC column does not exist in meta_source_file table. Please make sure you create it"
             logging.warning(warning_msg)
             logic_status.additional_info=warning_msg
-        modified_write_path = os.path.join(abs_writable_path, "file_id_"+str(file_id), str(md5))
+        modified_write_path = os.path.join(abs_writable_path,  str(md5))
          
         files = []    
         accessdb=msaccess.DB(abs_file_path)

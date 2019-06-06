@@ -43,7 +43,7 @@ def custom_logic(db, foi, df):
         except:
             logging.warning("CRC column does not exist in meta_source_file table. Please make sure you create it")
         #modified_write_path = os.path.join(abs_writable_path, folder_name, str(md5))
-        modified_write_path = os.path.join(abs_writable_path,"file_id_"+str(file_id), str(md5))
+        modified_write_path = os.path.join(abs_writable_path, str(md5))
         
         files = zip_utils.unzipper.extract_file(abs_file_path, modified_write_path,
                                                 False, df.work_file_type, skip_ifexists=skip_ifexists)
