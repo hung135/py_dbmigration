@@ -2,8 +2,10 @@
 import logging
 import os
 import sys
-from py_dbutils import parents as db_utils
-from py_dbmigration import data_file_mgnt 
+import py_dbutils.rdbms.postgres as db_utils
+import py_dbmigration.data_file_mgnt as data_file_mgnt
+import py_dbmigration.migrate_utils as migrate_utils
+from py_dbmigration.data_file_mgnt.structs import Status, import_status
 import shutil
 import datetime
 logging.basicConfig(level='DEBUG')
@@ -21,7 +23,7 @@ check_finish_sql ="select p.id,p.file_name,c.file_path from logging.meta_source_
  
 
 
-def custom_logic(db, foi, df):
+def custom_logic(db, foi, df,logic_status):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     continue_processing = True
     try:
@@ -56,5 +58,5 @@ def process(db, foi, df):
     
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-
-    return custom_logic(db, foi, df)
+    logic_status=Status(file=__file__)
+    return custom_logic(db, foi, df,logic_status)

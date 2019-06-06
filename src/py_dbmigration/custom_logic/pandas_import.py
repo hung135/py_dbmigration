@@ -5,8 +5,11 @@ import sys
 import pandas as pd
 import numpy as np
  
-import py_dbmigration.db_table as db_table
+import py_dbutils.rdbms.postgres as db_utils
+import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
+from py_dbmigration.data_file_mgnt.structs import Status, import_status
+
 import re
  
 
@@ -19,8 +22,9 @@ logging.basicConfig(level='DEBUG')
 
 
 # def import_file(db, foi, lowercase=True,  chunk_size=10000):
-def process(db, foi, df):
-    continue_processing = False
+def custom_logic(db, foi, df,logic_status):
+ 
+ 
     chunk_size = 50000
     lowercase = True
     rows_inserted = 0
@@ -171,4 +175,15 @@ def process(db, foi, df):
     t.session.commit()
     t.session.close()
     
-    return continue_processing
+    return logic_status
+
+def process(db, foi, df):
+    # variables expected to be populated
+
+    error_msg = None
+    additional_msg = None
+
+    assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
+    assert isinstance(db, db_utils.DB)
+    logic_status=Status(file=__file__)
+    return custom_logic(db, foi, df,logic_status)

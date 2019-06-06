@@ -4,7 +4,7 @@ import os
 import sys
 import py_dbutils.parents as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
-from py_dbmigration.data_file_mgnt.data_files import import_status
+from py_dbmigration.data_file_mgnt.structs import Status, import_status
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbmigration.db_table as db_table
 logging.basicConfig(level='DEBUG')
@@ -21,11 +21,11 @@ logging.basicConfig(level='DEBUG')
 # sql used to update logging....faster than any framework wrapper
 
 
-def custom_logic(db, foi, df):
+def custom_logic(db, foi, df,logic_status):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
-     
+ 
 
-    continue_processing = True
+ 
     
     already_processed = db.has_record(
         """select 1 from logging.meta_source_files a,logging.meta_source_files b
@@ -39,24 +39,19 @@ def custom_logic(db, foi, df):
         # raise execption to continue with the next file
         # raise valuerror to abort process
         logging.error("\t\tDuplicate File Found")
-        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
-        row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == df.meta_source_file_id)
-        row.file_process_state=import_status.DUPLICATE
-        row.duplicate_file = True
-        t.session.commit()
-        t.session.close()
-        df.load_status_msg = 'Duplicate File Found'
-        continue_processing = False
-    return continue_processing
+        logic_status.status='Duplicate File Found'
+        logic_status.continue_processing=False
+         
+        logic_status.import_status=import_status.DUPLICATE
+    return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 
 
 def process(db, foi, df):
     # variables expected to be populated
 
-    error_msg = None
-    additional_msg = None
+ 
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
-    assert isinstance(db, db_utils.DB)
-    return custom_logic(db, foi, df)
+    logic_status=Status(file=__file__)
+    return custom_logic(db, foi, df,logic_status)

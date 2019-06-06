@@ -5,6 +5,7 @@ import sys
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
+from py_dbmigration.data_file_mgnt.structs import Status, import_status
  
 
 logging.basicConfig(level='DEBUG')
@@ -22,10 +23,10 @@ logging.basicConfig(level='DEBUG')
 # sql used to update logging....faster than any framework wrapper
 
 
-def custom_logic(db, foi, df):
+def custom_logic(db, foi, df,logic_status):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
-    logic_status=data_file_mgnt.data_files.Status(status='Begin Custom Logic {}'.format(__file__))
-    logic_status.continue_processing = True
+    
+
     file_id=df.meta_source_file_id
      
     file_exists = db.has_record(
@@ -46,9 +47,10 @@ def custom_logic(db, foi, df):
         # raise execption to continue with the next file
         # raise valuerror to abort process
         logging.error("\t\tObsolete Data File: Newer File Found")
-        df.load_status_msg = 'Obsolete Data File: Newer File Found'
-        db.execute("""update logging.meta_source_files set file_process_state='OBSOLETE' where id={} """.format(file_id))
+    
         logic_status.continue_processing = False
+        logic_status.import_status.import.OBSOLETE
+        logic_status.status='Obsolete Data File: Newer File Found'
         logic_status.additional_msg='Obsolete Data File: Newer File Found'
     return logic_status
 
@@ -61,4 +63,5 @@ def process(db, foi, df):
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-    return custom_logic(db, foi, df)
+    logic_status=Status(file=__file__)
+    return custom_logic(db, foi, df,logic_status)

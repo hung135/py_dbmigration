@@ -2,9 +2,10 @@
 import logging
 import os
 import sys
-import db_utils
-import data_file_mgnt
-import migrate_utils
+import py_dbutils.rdbms.postgres as db_utils
+import py_dbmigration.data_file_mgnt as data_file_mgnt
+import py_dbmigration.migrate_utils as migrate_utils
+from py_dbmigration.data_file_mgnt.structs import Status, import_status
 import subprocess
 logging.basicConfig(level='DEBUG')
 
@@ -29,7 +30,7 @@ def append_file_id(orgfile, newfile,   delimiter,  file_id, has_header=False):
     subprocess.call([cmd_sed], shell=True)
 
 
-def custom_logic(db, foi, df):
+def custom_logic(db, foi, df,logic_status):
 
     continue_processing = False
     file_id = df.meta_source_file_id
@@ -51,5 +52,5 @@ def process(db, foi, df):
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-
-    return custom_logic(db, foi, df)
+    logic_status=Status(file=__file__)
+    return custom_logic(db, foi, df,logic_status)

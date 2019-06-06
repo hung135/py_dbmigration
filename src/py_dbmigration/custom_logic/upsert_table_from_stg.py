@@ -2,9 +2,11 @@
 import logging
 import os
 import sys
-import db_utils
-import data_file_mgnt
-import migrate_utils
+import py_dbutils.rdbms.postgres as db_utils
+import py_dbmigration.data_file_mgnt as data_file_mgnt
+import py_dbmigration.migrate_utils as migrate_utils
+from py_dbmigration.data_file_mgnt.structs import Status, import_status
+ 
 logging.basicConfig(level='DEBUG')
 
 '''
@@ -24,7 +26,7 @@ logging.basicConfig(level='DEBUG')
 # update_sql = """UPDATE logging.meta_source_files set  crc='{}'  where id = {}"""
 
 
-def custom_logic(db, foi, df):
+def custom_logic(db, foi, df,logic_status):
     continue_processing = True
     table_name = foi.table_name
     data_schema = db.dbschema
@@ -64,5 +66,5 @@ def process(db, foi, df):
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-
-    return custom_logic(db, foi, df)
+    logic_status=Status(file=__file__)
+    return custom_logic(db, foi, df,logic_status)

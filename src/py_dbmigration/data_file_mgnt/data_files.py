@@ -39,38 +39,8 @@ logging.setLevel(log.DEBUG)
 
 
 # object to carry status info for prossing and import
-from enum import Enum
-class import_status(Enum):
-    RAW = 'raw'
-    FAILED = 'FAILED'
-    PROCESSED = 'PROCESSED'
-    OBSOLETE = 'OBSOLETE'
-    DUPLICATE = 'DUPLICATE'
-    UNK = 'UNKNOWN'
 
 
-class Status:
-    # object to carry status info for prossing and import
-    status = None
-    name = None
-    rows_inserted = 0
-    error_msg = None
-    additional_info = None
-    import_status = import_status.UNK
-    rows_inserted = 0
-    continue_processing=False
-    def __init__(self, status):
-        self.import_status=import_status.RAW
-        self.status = status
-        self.rows_inserted = 0
-        self.error_msg = None
-        self.additional_info = None
-        self.rows_inserted = 0
-        self.file_size =0
-        self.name= None
-    def __str__(self):
-        return_string="""LogicFile: {}\nStatus: {}\nError_msg: {}\nAdditiona_info: {}\n """
-        return return_string.format(self.name,self.status,self.error_msg,self.additional_info)
 
 
 
@@ -398,27 +368,27 @@ class DataFile:
         # return fullpath to new file
         return newfile, header_added, header_list_returned
 
-    @migrate_utils.static_func.timer
-    def put_foi_to_db(self, db, foi_list):
-        tfr = []
-        assert isinstance(db, db_utils.DB)
-        assert isinstance(foi_list, list)
-        t = db_table.db_table_func.RecordKeeper(
-            db, db_table.db_table_def.MetaSourceFiles)
-        for foi in foi_list:
-            if foi.regex is not None and foi.table_name is not None:
-                row = db_table.db_table_def.TableFilesRegex(
-                    regex=foi.regex,
-                    db_schema=db.dbschema,
-                    table_name=foi.table_name,
-                    last_update_time=datetime.datetime.now(),
-                    active=True,
-                    project_name=foi.project_name
-                )
+    # @migrate_utils.static_func.timer
+    # def put_foi_to_db(self, db, foi_list):
+    #     tfr = []
+    #     assert isinstance(db, db_utils.DB)
+    #     assert isinstance(foi_list, list)
+    #     t = db_table.db_table_func.RecordKeeper(
+    #         db, db_table.db_table_def.MetaSourceFiles)
+    #     for foi in foi_list:
+    #         if foi.regex is not None and foi.table_name is not None:
+    #             row = db_table.db_table_def.TableFilesRegex(
+    #                 regex=foi.regex,
+    #                 db_schema=db.dbschema,
+    #                 table_name=foi.table_name,
+    #                 last_update_time=datetime.datetime.now(),
+    #                 active=True,
+    #                 project_name=foi.project_name
+    #             )
 
-                t.add_record(row, commit=True)
-        t.session.commit
-        t.session.close
+    #             t.add_record(row, commit=True)
+    #     t.session.commit
+    #     t.session.close
 
     # compiles a given regext and will returned a compiled regex
     # will logg and error and returnx None if regext can not be compiled

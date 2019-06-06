@@ -4,7 +4,7 @@ import os
 import sys
 from py_dbutils.rdbms import postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
-from py_dbmigration.data_file_mgnt.data_files import import_status
+from py_dbmigration.data_file_mgnt.structs import Status , import_status
 import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
 import py_dbmigration.migrate_utils.static_func as static_func
@@ -25,15 +25,12 @@ logging.basicConfig(level='DEBUG')
 # standard return will be sucesscode, rows_inserted,description
 
 # def process(db, file, file_id, dbschema):
-def process(db, foi, df):
-    continue_processing = False
-    error_msg = None
+def custom_logic(db, foi, df,logic_status):
+ 
      
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-    logic_status=data_file_mgnt.data_files.Status(status='Begin Custom Logic {}'.format(__file__))
-    logic_status.name=__file__
-    logic_status.continue_processing = True
+ 
 
     
 
@@ -141,3 +138,13 @@ def process(db, foi, df):
     
  
     return logic_status
+def process(db, foi, df):
+    # variables expected to be populated
+
+    error_msg = None
+    additional_msg = None
+
+    assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
+    assert isinstance(db, db_utils.DB)
+    logic_status=Status(file=__file__)
+    return custom_logic(db, foi, df,logic_status)

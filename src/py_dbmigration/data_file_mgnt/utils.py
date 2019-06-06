@@ -1,11 +1,15 @@
 
  
-from py_dbmigration import migrate_utils 
+import py_dbutils.rdbms.postgres as db_utils
+import py_dbmigration.data_file_mgnt as data_file_mgnt
+import py_dbmigration.migrate_utils as migrate_utils
+from py_dbmigration.data_file_mgnt.structs import Status, import_status
+
 import datetime
 import logging as log
 import re
 from py_dbmigration.custom_logic import purge_temp_file as purge
-from  py_dbmigration import data_file_mgnt
+ 
 
 import py_dbmigration.db_table as db_table
 
@@ -98,12 +102,17 @@ def process_logic(foi, db, df):
              
             try: 
                 
-                assert isinstance(logic_status,data_file_mgnt.data_files.Status)
+                assert isinstance(logic_status,data_file_mgnt.structs.Status)
                 continue_next_process=logic_status.continue_processing
                 
                 t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
                 row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == df.meta_source_file_id)
                 row.file_process_state=logic_status.import_status.value
+                if logic_status.import_status is not None:
+                    print("----------------------",logic_status.import_status)
+                    row.file_process_state=logic_status.import_status
+                else: 
+                    print("------------",logic_status.import_status)
                 if logic_status.error_msg is not None:
                     row.last_error_msg=logic_status.error_msg
                 if logic_status.rows_inserted>0:
@@ -113,7 +122,7 @@ def process_logic(foi, db, df):
                 t.session.close()
               
             except Exception as e:
-                logging.warning("Please implement Status Object for this custom logic: {}".format(e))
+                logging.warning("Please implement Status Object for this custom logic: --->{}".format(str(e)))
                 
                 continue_next_process=logic_status # logic_status is bool in this case
              

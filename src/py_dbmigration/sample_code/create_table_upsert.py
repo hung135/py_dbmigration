@@ -1,8 +1,11 @@
 # import csv, pandas,        sqlalchemy, os
 import os
-import db_utils
-import data_file_mgnt as dfm
-import migrate_utils as migu
+import py_dbutils.rdbms.postgres as db_utils
+import py_dbmigration.data_file_mgnt as data_file_mgnt
+import py_dbmigration.migrate_utils as migrate_utils
+from py_dbmigration.data_file_mgnt.structs import Status, import_status
+import py_dbmigration.db_logging as db_logging
+import py_dbmigration.db_table as db_table
  
 
 
@@ -16,8 +19,8 @@ pghost = os.environ['PGHOST']
 """
     Creating a Database connection object
 """
-dbmssql = db_utils.Connection(dbschema='dbo',database='ComplianceToolkit', dbtype='MSSQL',host="wdcsqlaw02",commit=False)
-dbPOSTGRES = db_utils.Connection(dbschema='stg', database='compliance', dbtype='POSTGRES', host=pghost, commit=False)
+dbmssql = db_utils.DB(schema='dbo',database='ComplianceToolkit', dbtype='MSSQL',host="wdcsqlaw02",commit=False)
+dbPOSTGRES = db_utils.DB(schema='stg', database='compliance', dbtype='POSTGRES', host=pghost, commit=False)
 
 #migu.print_create_table(db, folder="/home/cfpb/nguyenhu/compliancemssql/", targetschema="enforce")
 migu.print_create_table(dbPOSTGRES, folder="/home/cfpb/nguyenhu/compliancestgsql/", targetschema="stg")

@@ -20,7 +20,7 @@ import py_dbmigration.zip_utils as zip_utils
 '''
 
 
-def custom_logic(db, foi, df):
+def custom_logic(db, foi, df,logic_status):
     continue_processing = True
     table_name = foi.table_name
     target_schema = foi.schema_name
@@ -82,5 +82,5 @@ def process(db, foi, df):
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-
-    return custom_logic(db, foi, df)
+    logic_status=Status(file=__file__)
+    return custom_logic(db, foi, df,logic_status)

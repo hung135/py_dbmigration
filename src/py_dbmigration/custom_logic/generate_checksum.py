@@ -21,7 +21,7 @@ logging.basicConfig(level='DEBUG')
 update_sql = """UPDATE logging.meta_source_files set  crc='{}'  where id = {}"""
 
 
-def custom_logic(db, foi, df):
+def custom_logic(db, foi, df,logic_status):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     continue_processing = False
     table_name = foi.table_name
@@ -54,5 +54,5 @@ def process(db, foi, df):
      
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-     
-    return custom_logic(db, foi, df)
+    logic_status=Status(file=__file__)
+    return custom_logic(db, foi, df,logic_status)

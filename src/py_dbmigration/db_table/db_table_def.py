@@ -3,11 +3,7 @@ import sqlalchemy.types as c
 
 from sqlalchemy.ext.declarative import declarative_base
 
-
-class ProcessStateEnum(c.Enum):
-    raw = 1
-    processed = 2
-    failed = 3
+ 
 
 
 MetaBase = declarative_base()

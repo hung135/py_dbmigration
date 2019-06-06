@@ -2,12 +2,14 @@
 import logging
 import os
 import sys
-import db_utils
-import data_file_mgnt
-import db_logging
-import db_table
-import migrate_utils
-import commands
+import py_dbutils.rdbms.postgres as db_utils
+import py_dbmigration.data_file_mgnt as data_file_mgnt
+import py_dbmigration.migrate_utils as migrate_utils
+from py_dbmigration.data_file_mgnt.structs import Status, import_status
+import py_dbmigration.db_logging as db_logging
+import py_dbmigration.db_table as db_table
+ 
+ 
 
 
 import pprint

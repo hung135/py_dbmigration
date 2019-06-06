@@ -1,7 +1,11 @@
 # import csv, pandas,        sqlalchemy, os
 import os
-import db_utils
-import data_file_mgnt as dfm
+import py_dbutils.rdbms.postgres as db_utils
+import py_dbmigration.data_file_mgnt as data_file_mgnt
+import py_dbmigration.migrate_utils as migrate_utils
+from py_dbmigration.data_file_mgnt.structs import Status, import_status
+import py_dbmigration.db_logging as db_logging
+import py_dbmigration.db_table as db_table
 import pprint
 
 import logging
@@ -12,7 +16,7 @@ writable_path = os.environ['WORKINGPATH']
 """
     Creating a Database connection object
 """
-db = db_utils.Connection(dbschema='stg', dbtype='POSTGRES')
+db = db_utils.DB(schema='stg')
 db.truncate_table("logging.error_log")
 db.truncate_table("logging.load_status")
 # db.truncate_table("compliance.meta_source_files")
