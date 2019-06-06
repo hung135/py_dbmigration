@@ -7,6 +7,8 @@ import re
 from py_dbmigration.custom_logic import purge_temp_file as purge
 from  py_dbmigration import data_file_mgnt
 
+import py_dbmigration.db_table as db_table
+
 
 logging = log.getLogger()
  
@@ -90,19 +92,33 @@ def process_logic(foi, db, df):
         db.execute(sql_set_process_trail,catch_exception=False)
         try:
             
-            t = datetime.datetime.now()
+            time_started = datetime.datetime.now()
              
             logic_status = imp.process(db, foi, df)
+             
             try: 
                 
                 assert isinstance(logic_status,data_file_mgnt.data_files.Status)
                 continue_next_process=logic_status.continue_processing
+                
+                t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+                row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == df.meta_source_file_id)
+                row.file_process_state=logic_status.import_status.value
+                if logic_status.error_msg is not None:
+                    row.last_error_msg=logic_status.error_msg
+                if logic_status.rows_inserted>0:
+                    row.rows_inserted=logic_status.rows_inserted
+                 
+                t.session.commit()
+                t.session.close()
               
             except Exception as e:
-                logging.warning("Please implement Status Object for this custom logic")
-                continue_next_process=logic_status
+                logging.warning("Please implement Status Object for this custom logic: {}".format(e))
+                
+                continue_next_process=logic_status # logic_status is bool in this case
+             
+            time_delta = (datetime.datetime.now() - time_started)
             
-            time_delta = (datetime.datetime.now() - t)
             logging.info("\t\t\tExecution Time: {}sec".format(time_delta))
              
         except Exception as e:
@@ -122,5 +138,5 @@ def process_logic(foi, db, df):
             logging.info("Executing Post Load SQL")
             execute_sql(db, foi.post_action, foi, df)
 
-        df.set_work_file_status(db, df.meta_source_file_id, 'Processed')
+        df.set_work_file_status(db, df.meta_source_file_id, 'PROCESSED')
     purge.process(db, foi, df)

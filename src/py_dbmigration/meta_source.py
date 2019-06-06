@@ -13,7 +13,7 @@ logging.setLevel(log.INFO)
 
 def print_table_state(db):
         proj , _=(db.query("""select distinct project_name,file_process_state,count(*) as files 
-                        from logging.meta_source_files group by project_name,file_process_state"""))
+                        from logging.meta_source_files group by project_name,file_process_state order by 1,2"""))
         t = PrettyTable(['Project', 'Status','File Count'])
         for r in proj:
             t.add_row(r)
@@ -26,7 +26,7 @@ def print_table_file_state(db,project,state):
         if state!='ALL':
             where_state="upper(file_process_state)=upper('{}') and ".format(state)
         proj , meta=(db.query("""select distinct project_name,file_process_state,file_name ,rows_inserted,last_error_msg
-                        from logging.meta_source_files where {} {}""".format(where_state,where_project)))
+                        from logging.meta_source_files where {} {} order by 3,2""".format(where_state,where_project)))
         cols=[]
         for col in meta:
             cols.append(col.name)
@@ -84,7 +84,7 @@ def main():
                             current_worker_host=NULL,
                             current_worker_host_pid=NULL,
                             reprocess=TRUE
-                            where {} (file_process_state not in ('FAILED', 'Processed','OBSOLETE','DUPLICATE'))
+                            where {} (file_process_state not in ('FAILED', 'PROCESSED','OBSOLETE','DUPLICATE'))
                     """.format(where_clause_project))
         if args.r=='CLEAN':
             if args.p=='ALL':

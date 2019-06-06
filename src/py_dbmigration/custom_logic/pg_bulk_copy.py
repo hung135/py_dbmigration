@@ -4,6 +4,7 @@ import os
 import sys
 from py_dbutils.rdbms import postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
+from py_dbmigration.data_file_mgnt.data_files import import_status
 import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
 import py_dbmigration.migrate_utils.static_func as static_func
@@ -27,20 +28,19 @@ logging.basicConfig(level='DEBUG')
 def process(db, foi, df):
     continue_processing = False
     error_msg = None
-    additional_msg = None
+     
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
-    
     assert isinstance(db, db_utils.DB)
-
+    logic_status=data_file_mgnt.data_files.Status(status='Begin Custom Logic {}'.format(__file__))
+    logic_status.name=__file__
+    logic_status.continue_processing = True
 
     
 
     rows_inserted = 0
-    import_status = None
-    additional_info = None
-    dataframe_columns = ''
+  
     data_file = os.path.join(df.source_file_path, df.curr_src_working_file)
-    limit_rows = foi.limit_rows
+  
     table_name = foi.table_name or static_func.convert_str_snake_case(df.curr_src_working_file)
     target_schema = foi.schema_name
     table_name_fqn = "{}.{}".format(target_schema,table_name)
@@ -48,13 +48,13 @@ def process(db, foi, df):
     header = foi.header_row
     delim = foi.file_delimiter or ','
 
-    table_exits=db.table_exists(table_name_fqn)
+    table_exists=db.table_exists(table_name_fqn)
  
-    if not table_exits:
+    if not table_exists:
         logging.info("Table Don't exist creating generic table : {}".format(table_name_fqn))
         import pandas 
  
-        sqlalchemy_conn = db.connect_SqlAlchemy()
+        #sqlalchemy_conn = db.connect_SqlAlchemy()
         csv_reader=pandas.read_csv(data_file, sep=delim, nrows=10,
                                     quotechar='"', encoding=foi.encoding, chunksize=10, 
                                     header=0, index_col=False,
@@ -116,28 +116,28 @@ def process(db, foi, df):
         cmd_string = """COPY {table} ({columns}) FROM STDIN WITH ({header} FORMAT CSV)""".format(table=table_name_fqn,
                                                                                                 columns=cols,header=header)
         db.create_cur()
-         
-        with open(data_file,'r') as f:
-            db.cursor.copy_expert(cmd_string, f)
-            rows_inserted=db.cursor.rowcount
-        db.commit()
-        continue_processing=True
-        ###############THERE EXEC COMMAND LOGIC HERE########################################################
+        try: 
+            with open(data_file,'r') as f:
+                db.cursor.copy_expert(cmd_string, f)
+                rows_inserted=db.cursor.rowcount
+            db.commit()
+            continue_processing=True
+            logic_status.status='PROCESSED'
+            logic_status.import_status=import_status.PROCESSED
+            logic_status.rows_inserted=rows_inserted
+        except Exception as e:
+            
+            logic_status.continue_processing=False
+            logic_status.status='FAILED'
+            logic_status.import_status=import_status.FAILED
+            logic_status.error_msg="EXCEPTION: "+str(e)
+            
 
-        
+            
+        ###############THERE EXEC COMMAND LOGIC HERE########################################################
         logging.debug("\t\tCommand: {0}".format(cmd_string))
         logging.info("\t\tRows Inserted: {0} ".format(rows_inserted))
         logging.info("\t\tCopy Command Completed: {0}".format(table_name))
     
-
-    # set values into meta_source_files table
-    t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
-    row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
-    row.rows_inserted = rows_inserted
-    row.database_table = target_schema + '.' + table_name
-    row.last_error_msg = ( error_msg or '')+'\n'+str(row.last_error_msg or '')
-    t.session.commit()
-    t.session.close()
-
-
-    return continue_processing
+ 
+    return logic_status
