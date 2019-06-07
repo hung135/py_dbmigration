@@ -35,3 +35,4 @@ pyyaml
 boto3
 py-dbutils
 BeautifulSoup4
+prettytable

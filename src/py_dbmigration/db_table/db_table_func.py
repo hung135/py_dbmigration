@@ -5,6 +5,7 @@ import sqlalchemy
 
 from sqlalchemy.schema import CreateSchema
 import sqlalchemy
+from sqlalchemy import exc as sqlachemy_exception
 from sqlalchemy.ext.declarative import declarative_base
 from .db_table_def import MetaBase,MetaSourceFiles
 
@@ -52,12 +53,9 @@ class RecordKeeper():
             try:
                 self.engine.execute(CreateSchema(self.table.DbSchema))
                 logging.debug("Creating Database Schema: {}".format(self.table.DbSchema))
-            except:
-                # logging.debug("Schema Already Exists No need to create:")
-                pass
-
-            # create tables
-            "" 
+            except sqlachemy_exception.ProgrammingError as e:
+                logging.warning(e)
+            
             MetaBase.metadata.create_all(bind=self.engine)
         else:
 

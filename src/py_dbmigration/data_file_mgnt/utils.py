@@ -109,10 +109,10 @@ def process_logic(foi, db, df):
                 row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == df.meta_source_file_id)
                 row.file_process_state=logic_status.import_status.value
                 if logic_status.import_status is not None:
-                    print("----------------------",logic_status.import_status)
-                    row.file_process_state=logic_status.import_status
+                     
+                    row.file_process_state=logic_status.import_status.value
                 else: 
-                    print("------------",logic_status.import_status)
+                     
                 if logic_status.error_msg is not None:
                     row.last_error_msg=logic_status.error_msg
                 if logic_status.rows_inserted>0:
