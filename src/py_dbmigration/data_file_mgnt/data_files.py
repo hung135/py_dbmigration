@@ -13,7 +13,8 @@ import sys
 
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
-from py_dbmigration.data_file_mgnt import utils 
+from py_dbmigration.data_file_mgnt import utils
+from py_dbmigration.data_file_mgnt.state import FilesOfInterest,FileState 
 import logging as log
 
 logging = log.getLogger()
@@ -44,158 +45,10 @@ logging.setLevel(log.DEBUG)
 
 
 
-# object to run through series of rule to change the data
-# only works when import using pandas at this time
-
-
-class RedactionRules:
-
-    def make_null(self, data_frame, column_name):
-
-        data_frame.drop(column_name, axis=1, inplace=True)
-
-    def make_hash(self, data_frame, column_name):
-        import hashlib
-        print("Hashing column", column_name)
-        data_frame[column_name] = data_frame[column_name].apply(
-            lambda x: hashlib.md5(str(x)).hexdigest())
-
-    def make_increment(self, data_frame, column_name):
-        import hashlib
-        print("Incrementing column", column_name)
-        data_frame[column_name] = data_frame[
-            column_name].apply(lambda x: x + 1)
-
-    def process_redaction(self, data_frame):
-
-        df_rules = self.df_rules.loc[
-            self.df_rules['data_set'] == self.dataset_name]
-
-        redacted_data_frame = data_frame
-        # print(redacted_data_frame.columns)
-        # drop all columns not in list:
-
-        # print(redacted_data_frame.index.tolist())
-        print("Redact Rules:", df_rules)
-
-        for col in redacted_data_frame.columns.tolist():
-
-            if col not in df_rules['column_name'].tolist():
-                print("\tDROPING COLUMN NOT IN Redact Rules: {}".format(col))
-
-                self.make_null(redacted_data_frame, col)
-
-        for idx, series in df_rules.iterrows():
-
-            # rule 1 drop the column
-            if series.rule == 'drop':  # checking for Nan
-                print("Dropping Columns SPECIFIED by Rules", series.column_name)
-                # print(redacted_data_frame.columns.tolist())
-
-                self.make_null(redacted_data_frame, series.column_name)
-            # rule 2 drop the column
-            if series.rule == 'Hash':  # checking for Nan
-                self.make_hash(redacted_data_frame, series.column_name)
-            if series.rule == 'Increment':  # checking for Nan
-                self.make_increment(redacted_data_frame, series.column_name)
-
-        # print(redacted_data_frame.columns)
-        return redacted_data_frame
-
-    def __init__(self, rules_file_path, dataset_name, data_frame=None):
-        print(rules_file_path)
-
-        self.rules_file_path = rules_file_path
-        self.df_rules = pd.read_excel(self.rules_file_path)
-        self.dataset_name = dataset_name
-
-        if data_frame is not None:
-            self.process_redaction(data_frame)
-        # print(x)
 
 # Struct used to group parameters to define files of interests
 
 
-class FilesOfInterest:
-    COUNT_VIA_PANDAS = 'PANDAS'
-    COUNT_VIA_LINUX = 'WC'
-    # 2 scerios...given a path and a file pattern we walk the dir
-    # gven table_name and a file regex we use it to map files from the meta
-    # source to a table
-
-    def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
-                 use_header=False, has_header=True, quoted_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
-                 file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF8',
-                 append_crc=False, limit_rows=None, header_row_location=0, count_via=COUNT_VIA_PANDAS,
-                 new_delimiter=None, dataset_name=None, redaction_file=None,
-                 upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
-                 post_action=None, pre_action=None, process_logic=None, project_name='Default',
-                 table_name_extract=None, reprocess=True, yaml=None,mapping=None):
-        self.yaml = yaml
-        self.mapping = mapping
-        # avoid trying to put any logic here
-        self.regex = file_regex
-        self.folder_regex = folder_regex
-        self.table_name = table_name
-        self.schema_name = schema_name
-        if column_list is not None:
-            self.column_list = column_list.replace(' ', '').replace('\n', '').split(',')
-        else:
-            self.column_list = None
-        
-        self.file_delimiter = file_delimiter
-        self.use_header = use_header
-        self.has_header = has_header
-        self.quoted_header = quoted_header
-        self.import_method = import_method
-        self.append_file_id = append_file_id
-        self.append_column_name = append_column_name
-        self.file_type = file_type
-        self.file_name_data_regex = file_name_data_regex
-        self.append_crc = append_crc
-
-        if file_path is not None and not(file_path[:5]=='s3://'):
-            self.file_path = file_path = os.path.abspath(file_path)
-        else:
-            self.file_path = file_path
-        self.parent_file_id = parent_file_id
-        self.insert_option = insert_option
-        self.encoding = encoding
-        self.total_files = 0
-
-        self.encoding = encoding
-        self.current_working_abs_file_name = None
-        self.limit_rows = limit_rows
-        self.header_list_returned = None
-        self.header_added = None
-        # self.start_row = start_row
-        self.header_row = header_row_location or 0
-        self.count_via = count_via
-        self.new_delimiter = new_delimiter
-        self.dataset_name = dataset_name
-        self.redaction_file = redaction_file
-        self.upsert_function_name = upsert_function_name
-        self.unzip_again = unzip_again
-        self.pre_action_sql = pre_action_sql
-        # list of sql to execute prior or post import of the file
-        self.post_action = post_action
-        self.pre_action = pre_action
-        self.process_logic = process_logic
-        self.project_name = project_name
-        self.table_name_extract = table_name_extract
-        self.reprocess = reprocess
-
-    
-    def __str__(self):
-        string_result={
-            'project_name':self.project_name,
-            'regex_pattern': self.regex,
-            'file_path':self.file_path,
-            'current_file':self.current_working_abs_file_name
-
-        }
-         
-        return str(string_result)
 
 
 def get_mapped_table(file_name, foi_list):
@@ -241,7 +94,7 @@ class DataFile:
     #                        process_end_dtm = now()
     #                    WHERE  file_name='{1}' and
     #                    """
-
+    current_file_state = None
     meta_source_file_id = 0
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
@@ -318,7 +171,7 @@ class DataFile:
                         db, self.FilesOfInterest, self.parent_file_id)
                 
     def init_db(self):
-        t = db_table.db_table_func.RecordKeeper(
+        db_table.db_table_func.RecordKeeper(
             self.db, db_table.db_table_def.MetaSourceFiles)
          
     def extract_file_name_data(self, db, files_of_interest):
@@ -542,7 +395,7 @@ class DataFile:
         :rtype: FilesOfInterest
         """
         assert isinstance(foi, FilesOfInterest)
-
+[]
         file_path = foi.file_path
         logging.debug("Walking Directory: '{}' : Search Pattern: {}".format(
             file_path, foi.regex))
@@ -559,8 +412,7 @@ class DataFile:
             file_path += '/'
 
         files_list = []
-        ii = 0
-
+          
         for root, subdirs, files in os.walk(file_path, topdown=True):
             # print(root)
 
@@ -602,9 +454,7 @@ class DataFile:
             with open(newfile, 'w') as f2:
                 f2.write(string_data + f.read())
 
-    def insert_append(self, orgfile, string_data):
-        with open(orgfile, 'w') as f:
-            f.write(self.source_file_path)
+    
 
     def list_current_work(db, host=None):
         assert isinstance(db, db_utils.DB)
@@ -654,6 +504,7 @@ class DataFile:
     def get_work(self, db):
         assert isinstance(db, db_utils.DB)
         assert isinstance(self.foi_list, list)
+        
         self.reset_stat()
         x = set(self.project_list)
          
@@ -692,7 +543,8 @@ class DataFile:
             self.meta_source_file_id = row.id
 
             self.row_count = row.total_rows
-
+        
+        self.current_file_state=FileState(self.curr_src_working_file,self.meta_source_file_id)
         return self.curr_src_working_file
 
     # Do work will query the meta source table for a record
@@ -700,13 +552,14 @@ class DataFile:
     # When it is done with the processing of the record it we stamp the process_end_dtm
     # signifying the file has been processed
 
-    def do_work(self, db, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False,do_once=False):
+    def do_work(self, db, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False ):
 
         # iterate over each file in the logging.meta_source_files table
         # get work will lock 1 file and store the id into meta_source_file_id
         # inside this instance
 
-        while self.get_work(db,) is not None:
+        while self.get_work(db) is not None:
+            
             full_file_name = os.path.join(
                 self.source_file_path, self.curr_src_working_file)
             foi = get_mapped_table(full_file_name, self.foi_list)
@@ -725,10 +578,9 @@ class DataFile:
             else:
                 self.set_work_file_status(
                     db, self.meta_source_file_id, 'FAILED', 'No Matching REGEX Found in yaml')
+            
             self.release_file_lock(db, self.meta_source_file_id)
 
             if cleanup:
                 self.cleanup_files()  # import_files(files,loan_acquisition)
-            if do_once:
-                
-                break
+            

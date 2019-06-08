@@ -8,7 +8,7 @@ import numpy as np
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
-from py_dbmigration.data_file_mgnt.structs import Status, import_status
+from py_dbmigration.data_file_mgnt.state import Status, import_status
 
 import re
  
@@ -28,9 +28,9 @@ def custom_logic(db, foi, df,logic_status):
     chunk_size = 50000
     lowercase = True
     rows_inserted = 0
-    import_status = None
-    additional_info = None
-    dataframe_columns = ''
+     
+    
+     
     file = os.path.join(df.source_file_path, df.curr_src_working_file)
     limit_rows = foi.limit_rows
      
@@ -142,11 +142,12 @@ def custom_logic(db, foi, df,logic_status):
                 dataframe_columns = dataframe.columns.tolist()
                  
                 rows_inserted = (len(dataframe))
-            continue_processing = True
+                logic_status.return_value = rows_inserted
+            
 
         except Exception as e:
             import_status = 'FAILED'
-             
+            logic_status.continue_process=False 
         
             try:
 
@@ -156,24 +157,19 @@ def custom_logic(db, foi, df,logic_status):
                 # if len(cols) > 1:
                 #    cols = str(list(delta))
                 logging.error("ERROR: \n---->{0}".format(str(e)[: 200]))
-                error_msg = str(e)[:256]
+                logic_status.error_msg  = str(e)[:256]
 
                 # additional_info = (','.join(cols) + str(e))[:2000]
                 
             except Exception as ee:
-
+                logic_status.error_msg = ee
+                logic_status.continue_process=False
                 # migrate_utils.static_func.profile_csv(file, ',', 0)
-                import datetime
-                print("sleeping so you can read:", ee)
-                datetime.time.sleep(5)
+                
+                
+                
     logging.info("\t\tRows Inserted: {}".format(rows_inserted))
-    t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
-    row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
-    row.rows_inserted = rows_inserted
-    row.last_error_msg = error_msg
-    row.database_table = target_schema + '.' + table_name
-    t.session.commit()
-    t.session.close()
+    
     
     return logic_status
 

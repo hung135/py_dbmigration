@@ -40,14 +40,14 @@ def custom_logic(db, foi, df,logic_status):
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
         md5 = None
         path = os.path.dirname(abs_file_path)
-        folder_name = os.path.basename(path)
+        #folder_name = os.path.basename(path)
         try:
             md5 = row.crc
             
         except:
             warning_msg = "CRC column does not exist in meta_source_file table. Please make sure you create it"
             logging.warning(warning_msg)
-            logic_status.additional_info=warning_msg
+             
         modified_write_path = os.path.join(abs_writable_path,  str(md5))
          
         files = []    
@@ -84,7 +84,7 @@ def custom_logic(db, foi, df,logic_status):
         # print("---error occured--sleeping so you can read", e)
          
         logging.error(e)
-        logic_status.import_status = 'FAILED'
+        logic_status.status = 'FAILED'
         logic_status.error_msg = 'Error During Extracting Files to CSV: {}'.format(e)
         logic_status.continue_processing = False
         return logic_status

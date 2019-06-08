@@ -3,7 +3,7 @@
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
-from py_dbmigration.data_file_mgnt.structs import Status, import_status
+from py_dbmigration.data_file_mgnt.state import FileState,FileStateEnum,LogicState,LogicStateEnum
 
 import datetime
 import logging as log
@@ -75,10 +75,11 @@ def process_logic(foi, db, df):
     continue_next_process = False
 
     for logic in process_logic:
-
+        
         custom_logic = logic['logic']
         logic_name = custom_logic.split('.')[-1]
         fqn_logic = 'py_dbmigration.{}'.format(custom_logic)
+        logic_status=LogicState(fqn_logic,df.current_file_state)
         # dynmaically import the modeul specified in the yaml file
         # this could be faster if we imported this once but for now it stays here
         logging.debug('Importing Module: {}'.format(custom_logic))
@@ -102,11 +103,11 @@ def process_logic(foi, db, df):
             row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == df.meta_source_file_id)     
             row.file_process_state='Custom Logic-'+logic_name
             t.session.commit()
-            logic_status = imp.process(db, foi, df)
+            logic_status = imp.process(db, foi, df,logic_status)
             
             try: 
-                if logic_status.import_status is None:
-                    sys.exit("Logic status was not returned")
+                if logic_status.status is None:
+                    sys.exit("Logic status was not returned:\n{}".format(fqn_logic))
 
                 else:
                     row.file_process_state=logic_status.import_status.value                

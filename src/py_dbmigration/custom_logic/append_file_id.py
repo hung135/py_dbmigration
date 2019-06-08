@@ -5,7 +5,7 @@ import sys
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
-from py_dbmigration.data_file_mgnt.structs import Status, import_status
+from py_dbmigration.data_file_mgnt.state import Status, import_status
 import subprocess
 logging.basicConfig(level='DEBUG')
 

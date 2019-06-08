@@ -5,7 +5,7 @@ import sys
 from py_dbutils import parents as db_utils
 from .. import data_file_mgnt
 from .. import migrate_utils
-from py_dbmigration.data_file_mgnt.structs import Status,  import_status
+from py_dbmigration.data_file_mgnt.state import Status,  import_status
 logging.basicConfig(level='DEBUG')
 
 '''
