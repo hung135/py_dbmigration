@@ -36,7 +36,7 @@ def custom_logic(db, foi, df,logic_status):
     file_size_mb = round(file_size * 1.0 / 1024 / 1024, 2)
     logging.info("\t\tFile Size: {} MB ".format(file_size_mb))
     try:
-        rows_updated = db.execute(update_sql.format(file_size, file_id))
+        db.execute(update_sql.format(file_size, file_id))
     except Exception as e:
         logic_status.import_status=import_status.FAILED
         logic_status.error_msg=str(e)
@@ -47,9 +47,6 @@ def custom_logic(db, foi, df,logic_status):
 
 
 def process(db, foi, df):
-    error_msg = None
-    additional_msg = None
-     
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
     logic_status=Status(file=__file__)

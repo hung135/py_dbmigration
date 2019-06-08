@@ -144,7 +144,7 @@ def move_data(sql_string, trg_table_name, src_db, trg_db, label='', skip_if_exis
     tmp_file_name = os.path.join(
         WORKINGPATH, '_tmp_{0}{1}.csv'.format(trg_table_name, label))
     copy_status = None
-    v_start_time = datetime.now()
+    v_start_time = datetime.datetime.now()
     if not (os.path.exists(os.path.dirname(tmp_file_name)) and skip_if_exists):
         
         copy_status = src_db.copy_to_csv(sql_string, tmp_file_name, ',')
@@ -164,7 +164,7 @@ def move_data(sql_string, trg_table_name, src_db, trg_db, label='', skip_if_exis
     set_state(trg_db, work_table, pk, 'Rows Inserted: {}'.format(load_status))
 
     if logging_table is not None:
-        v_end_time = datetime.now()
+        v_end_time = datetime.datetime.now()
         logging.info("PID: {} Inserting {} records:".format(
             os.getpid(), load_status))
         log_move_data(trg_db, logging_table, trg_table_name, sql_string,

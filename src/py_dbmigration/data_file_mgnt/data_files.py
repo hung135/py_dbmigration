@@ -13,7 +13,7 @@ import sys
 
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
-from . import utils 
+from py_dbmigration.data_file_mgnt import utils 
 import logging as log
 
 logging = log.getLogger()

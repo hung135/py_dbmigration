@@ -45,7 +45,7 @@ def process_yaml(yaml_file=None):
                 project_name = path_dict['project_name']
 
                 table_name = path_dict.get('table_name', None)
-                reset_failed = path_dict.get('reset_failed', False)
+                 
 
                 file_delimiter = path_dict.get('file_delimiter', None)
                 column_list = path_dict.get('column_list')
@@ -73,7 +73,7 @@ def process_yaml(yaml_file=None):
                         file_regex = regex_dict['file_regex']
                         file_type = regex_dict['file_type']
                         table_name = regex_dict.get('table_name', table_name)
-                        #print("---item enabled ", item_enabled, file_regex)
+                         
                         file_delimiter = regex_dict.get('file_delimiter', file_delimiter)
                         column_list = regex_dict.get('column_list', column_list)
                         schema_name = regex_dict.get('schema_name', schema_name)

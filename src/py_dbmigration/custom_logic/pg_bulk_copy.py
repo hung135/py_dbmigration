@@ -41,7 +41,7 @@ def custom_logic(db, foi, df,logic_status):
     table_name = foi.table_name or static_func.convert_str_snake_case(df.curr_src_working_file)
     target_schema = foi.schema_name
     table_name_fqn = "{}.{}".format(target_schema,table_name)
-    file_id = df.meta_source_file_id
+     
     header = foi.header_row
     delim = foi.file_delimiter or ','
 
@@ -60,7 +60,7 @@ def custom_logic(db, foi, df,logic_status):
         df=csv_reader.get_chunk(3)
         df.rename(columns=lambda x: str(x).strip(), inplace=True)
         db.create_table_from_dataframe(df,table_name_fqn)
-        table_exits=db.table_exists(table_name_fqn)
+         
      
  
     names = foi.header_list_returned or foi.column_list
@@ -110,15 +110,15 @@ def custom_logic(db, foi, df,logic_status):
         ###############THERE EXEC COMMAND LOGIC HERE########################################################
         
         logging.info("\t\tCopy Command STARTED: {0}".format(table_name_fqn))
-        cmd_string = """COPY {table} ({columns}) FROM STDIN WITH ({header} FORMAT CSV)""".format(table=table_name_fqn,
-                                                                                                columns=cols,header=header)
+        cmd_string = """COPY {table} ({columns}) FROM STDIN WITH ({header} FORMAT CSV, ENCODING '{encoding}')""".format(
+                table=table_name_fqn, columns=cols,header=header,encoding=encoding)
         db.create_cur()
         try: 
             with open(data_file,'r') as f:
                 db.cursor.copy_expert(cmd_string, f)
                 rows_inserted=db.cursor.rowcount
             db.commit()
-            continue_processing=True
+             
             logic_status.status='PROCESSED'
             logic_status.import_status=import_status.PROCESSED
             logic_status.rows_inserted=rows_inserted

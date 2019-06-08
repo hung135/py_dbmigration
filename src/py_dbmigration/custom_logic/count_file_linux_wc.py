@@ -22,22 +22,21 @@ update_sql = """UPDATE logging.meta_source_files set total_rows={}  where id = {
 
 
 def custom_logic(db, foi, df,logic_status):
- 
-
+  
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     # you have to return this boolean to let the framework now to continue w/ the rest of the processing logic
     
     file_id = df.meta_source_file_id
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
-    print(abs_file_path)
-
-    
+     
     try:
         data_value = migrate_utils.static_func.count_file_lines_wc_36(abs_file_path)
-        rows_updated = db.execute(update_sql.format(data_value, file_id))
+        db.execute(update_sql.format(data_value, file_id))
         
     except Exception as e:
         logic_status.continue_processing=False
+        logic_status.import_status=import_status.FAILED
+        logic_status.error_msg=e
 
 
     return logic_status
@@ -46,10 +45,7 @@ def custom_logic(db, foi, df,logic_status):
 
 def process(db, foi, df):
     # variables expected to be populated
-
-    error_msg = None
-    additional_msg = None
-
+ 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
     logic_status=Status(file=__file__)

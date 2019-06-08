@@ -8,6 +8,7 @@ from py_dbmigration.data_file_mgnt.structs import Status, import_status
 import datetime
 import logging as log
 import re
+import sys
 from py_dbmigration.custom_logic import purge_temp_file as purge
  
 
@@ -97,32 +98,36 @@ def process_logic(foi, db, df):
         try:
             
             time_started = datetime.datetime.now()
-             
+            t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+            row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == df.meta_source_file_id)     
+            row.file_process_state='Custom Logic-'+logic_name
+            t.session.commit()
             logic_status = imp.process(db, foi, df)
-             
+            
             try: 
-                
-                assert isinstance(logic_status,data_file_mgnt.structs.Status)
+                if logic_status.import_status is None:
+                    sys.exit("Logic status was not returned")
+
+                else:
+                    row.file_process_state=logic_status.import_status.value                
+                 
                 continue_next_process=logic_status.continue_processing
                 
-                t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
-                row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == df.meta_source_file_id)
-                row.file_process_state=logic_status.import_status.value
-                if logic_status.import_status is not None:
-                     
+                #t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+
+                if logic_status.import_status is not None: 
                     row.file_process_state=logic_status.import_status.value
-                else: 
+               
                      
                 if logic_status.error_msg is not None:
                     row.last_error_msg=logic_status.error_msg
                 if logic_status.rows_inserted>0:
                     row.rows_inserted=logic_status.rows_inserted
                  
-                t.session.commit()
-                t.session.close()
+                
               
             except Exception as e:
-                logging.warning("Please implement Status Object for this custom logic: --->{}".format(str(e)))
+                logging.error(": --->{}".format(fqn_logic))
                 
                 continue_next_process=logic_status # logic_status is bool in this case
              
@@ -131,9 +136,16 @@ def process_logic(foi, db, df):
             logging.info("\t\t\tExecution Time: {}sec".format(time_delta))
              
         except Exception as e:
+            continue_next_process=False
             df.set_work_file_status(db, df.meta_source_file_id, custom_logic, '{}: {}'.format(custom_logic, e))
-            logging.error("Unexpected Error occured running Custom logic: {}".format(e))
-            
+            #logging.error("Unexpected Error occured running Custom logic: {}".format(e))
+            row.file_process_state=import_status.FAILED.value
+            row.last_error_msg=logic_name+' - '+str(e)
+            t.session.commit()
+            t.session.close() 
+            logging.error("Syntax Error running Custom Logic: {}".format(fqn_logic))
+            sys.exit("Syntax Error occured: \nFor Details Run: meta_source --p={} --s=ALL".format(foi.project_name))    
+        t.session.close()    
         logging.debug('\t->Dynamic Module Ended: {}'.format(custom_logic))
 
         if not continue_next_process:
