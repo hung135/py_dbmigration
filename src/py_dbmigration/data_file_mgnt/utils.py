@@ -120,6 +120,6 @@ def process_logic(foi, db, df):
             execute_sql(db, foi.post_action, foi, df)
         row.file_process_state=FileStateEnum.PROCESSED.value
         #df.set_work_file_status(db, df.meta_source_file_id, 'PROCESSED')
-    logic_status.processed()
+    
     logic_status.file_state.processed()
     purge.process(db, foi, df)

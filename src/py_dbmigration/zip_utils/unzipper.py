@@ -30,8 +30,8 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
 
                 file.extractall(writeable_path)
                 file.close()
-            else:
-                namelist = list(file.namelist())
+            #else:
+            namelist = [str(f) for f in file.filelist]
         # print(source_file)
         if zip_type == 'tar':
             logging.info("Extracting TAR File:{0}".format(source_file))

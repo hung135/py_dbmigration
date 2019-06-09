@@ -145,11 +145,10 @@ class LogicState:
             self.row.process_msg_trail=self.name +"\n{}".format(self.row.process_msg_trail)
          
         self.table.session.commit()
-    def processed(self):
-        if not self.status in [LogicStateEnum.FAILED]:
-            self.status=LogicStateEnum.COMPLETE
-            self.row.file_process_state=self.status.value
-        self.table.session.commit()
+    # def processed(self):
+    #     if not self.status in [LogicStateEnum.FAILED]:
+    #         self.status=LogicStateEnum.COMPLETE
+    #     self.table.session.commit()
     
     def failed(self,msg):
         self.status=LogicStateEnum.FAILED
