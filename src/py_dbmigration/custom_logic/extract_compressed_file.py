@@ -54,11 +54,9 @@ def custom_logic(db, foi, df,logic_status):
 
         # instantiate a new Datafile object that craw this new directory of extracted files
         data_file_mgnt.data_files.DataFile(new_src_dir, db, file_table_map, parent_file_id=file_id)
-         
     except Exception as e:
         # import datetime
-        # print("---error occured--sleeping so you can read", e)
-        
+        # print("---error occured--sleeping so you can read", e)      
         logic_status.failed(e)
 
     return logic_status

@@ -63,7 +63,7 @@ class DataFileState:
     def authenticate(self):
         pass
     def processed(self):
-        if not self.status in [FileStateEnum.DUPLICATE,FileStateEnum.OBSOLETE]:
+        if not self.status in [FileStateEnum.FAILED,FileStateEnum.DUPLICATE,FileStateEnum.OBSOLETE]:
             self.status=FileStateEnum.PROCESSED
             self.row.file_process_state=self.status.value
         self.table.session.commit()
@@ -153,20 +153,16 @@ class LogicState:
     def failed(self,msg):
         self.status=LogicStateEnum.FAILED
         self.continue_processing_logic=False
-        self.row.file_process_state=self.status.value
-        self.row.last_error_msg=str(msg)
-        self.table.session.commit()
+        self.file_state.failed(str(msg))
         
 
     def failed_continue(self,msg):
         self.status=LogicStateEnum.FAILED
         self.continue_processing_logic=True
-        self.row.file_process_state=self.status.value
-        self.row.last_error_msg=msg
-        self.table.session.commit()
+        self.file_state.failed(str(msg))
 
     def hardfail(self,msg=None):
-        self.file_state.fail()
+        self.file_state.failed()
         sys.exit("Hard Fail Initiated for Logic File: \n\t{}".format(self.file_path))
 
     def __del__(self):
