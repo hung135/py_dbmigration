@@ -81,7 +81,7 @@ def process_logic(foi, db, df):
         custom_logic = logic['logic']
         logic_name = custom_logic.split('.')[-1]
         fqn_logic = 'py_dbmigration.{}'.format(custom_logic)
-        logic_status=LogicState(fqn_logic,df.current_file_state)
+        logic_status=LogicState(logic_name,df.current_file_state)
         # dynmaically import the modeul specified in the yaml file
         # this could be faster if we imported this once but for now it stays here
         logging.debug('Importing Module: {}'.format(custom_logic))
@@ -120,4 +120,5 @@ def process_logic(foi, db, df):
             execute_sql(db, foi.post_action, foi, df)
         row.file_process_state=FileStateEnum.PROCESSED.value
         #df.set_work_file_status(db, df.meta_source_file_id, 'PROCESSED')
+    logic_status.processed()
     purge.process(db, foi, df)

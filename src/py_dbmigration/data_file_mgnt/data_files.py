@@ -543,7 +543,8 @@ class DataFile:
 
             self.row_count = row.total_rows
         
-        self.current_file_state=DataFileState(self.db,self.curr_src_working_file,self.meta_source_file_id)
+        self.current_file_state=DataFileState(self.db,os.path.join(self.source_file_path,self.curr_src_working_file)
+                ,self.meta_source_file_id)
         return self.curr_src_working_file
 
     # Do work will query the meta source table for a record

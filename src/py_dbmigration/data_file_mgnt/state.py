@@ -10,7 +10,7 @@ class FileStateEnum(Enum):
     IMPORTED = 'IMPORTED'
     PROCESSING = 'PROCESSING' # file is in the middle of getting processed
     PROCESSED = 'PROCESSED' # file has completed process
-    OBSOLETE = 'OBSOLETE' #Data is render Obsolet when source delivers new complete set
+    OBSOLETE = 'OBSOLETE' #Data is render Obsolete when source delivers new complete set
     DUPLICATE = 'DUPLICATE' #duplicate data file based on file hash
     FAILED = 'FAILED'  #fail to import file
     HARDFAIL = 'HARDFAIL' #syntax and such errors WILL exit program
@@ -33,8 +33,8 @@ class DataFileState:
     continue_processing_logic=False
     file_id = None
     def __init__(self, db, file,file_id):
-        self.file_path=__file__
-        self.name=os.path.basename(__file__)
+        self.file_path=file
+        self.name=os.path.basename(file)
         self.status = FileStateEnum.RAW
         self.error_msg = None
         self.rows_inserted = None
@@ -62,10 +62,17 @@ class DataFileState:
 
     def authenticate(self):
         pass
-
+    def processed(self):
+        self.status=FileStateEnum.PROCESSED
+        self.row.file_process_state=self.status.value
+        self.table.session.commit()
+    def obsolete(self):
+        self.status=FileStateEnum.PROCESSED
+        self.row.file_process_state=self.status.value
+        self.table.session.commit()        
     def failed(self,msg):
         self.status=FileStateEnum.FAILED
-        self.row.file_import_status=self.status.value
+        self.row.file_process_state=self.status.value
         self.row.last_error_msg=msg
         self.table.session.commit()
         #logging.error("Data File Processing FAILED: {}".format(self.file_path))
@@ -97,8 +104,8 @@ class LogicState:
     file_state = None
     
     def __init__(self, file,file_state):
-        self.file_path=__file__
-        self.name=os.path.basename(__file__)
+        self.file_path=file
+        self.name=os.path.basename(file)
         self.status = LogicStateEnum.INIT
         self.error_msg = None
         self.return_value = None
@@ -131,19 +138,24 @@ class LogicState:
             self.row.process_msg_trail=self.name
         else:
             self.row.process_msg_trail=self.name +"\n{}".format(self.row.process_msg_trail)
+         
         self.table.session.commit()
-
+    def processed(self):
+        self.status=LogicStateEnum.COMPLETE
+        self.row.file_process_state=self.status.value
+        self.table.session.commit()
+    
     def failed(self,msg):
         self.status=LogicStateEnum.FAILED
         self.continue_processing_logic=False
-        self.row.file_import_status=self.status.value
+        self.row.file_process_state=self.status.value
         self.row.last_error_msg=msg
         self.table.session.commit()
 
     def failed_continue(self,msg):
         self.status=LogicStateEnum.FAILED
         self.continue_processing_logic=True
-        self.row.file_import_status=self.status.value
+        self.row.file_process_state=self.status.value
         self.row.last_error_msg=msg
         self.table.session.commit()
 
@@ -155,6 +167,7 @@ class LogicState:
         assert isinstance(self.row,db_table.db_table_def.MetaSourceFiles)
         self.row.last_error_msg=self.error_msg or self.row.last_error_msg
         self.table.session.commit()
+        #self.table.session.close()
 
     def authenticate(self):
         pass

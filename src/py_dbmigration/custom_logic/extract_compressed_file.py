@@ -7,6 +7,8 @@ import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.db_table as db_table
 import py_dbmigration.zip_utils as zip_utils
 
+from py_dbmigration.data_file_mgnt.state import DataFileState,FileStateEnum,LogicState,LogicStateEnum
+
 '''
     File name: generate_checksum.py
     Author: Hung Nguyen
@@ -33,16 +35,8 @@ def custom_logic(db, foi, df,logic_status):
 # def extract_file(self, db, abs_file_path, abs_writable_path, skip_ifexists=False):
     status_dict = {}
     try:
-        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
-        row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
-        md5 = None
-        path = os.path.dirname(abs_file_path)
-        folder_name = os.path.basename(path)
-        try:
-            md5 = row.crc
-        except:
-            logging.warning("CRC column does not exist in meta_source_file table. Please make sure you create it")
-        #modified_write_path = os.path.join(abs_writable_path, folder_name, str(md5))
+         
+        md5 = logic_status.row.crc
         modified_write_path = os.path.join(abs_writable_path, str(md5))
         
         files = zip_utils.unzipper.extract_file(abs_file_path, modified_write_path,
@@ -50,8 +44,8 @@ def custom_logic(db, foi, df,logic_status):
 
         total_files = len(files)
 
-        row.total_files = total_files
-        t.session.commit()
+        logic_status.row.total_files = total_files
+        logic_status.table.session.commit()
 
     # We walk the tmp dir and add those data files to list of to do
         new_src_dir = modified_write_path
@@ -67,18 +61,14 @@ def custom_logic(db, foi, df,logic_status):
         # import datetime
         # print("---error occured--sleeping so you can read", e)
          
-        logging.error(e)
-        status_dict['import_status'] = 'FAILED'
-        status_dict['error_msg'] = 'Error During Unziping File'
-        continue_processing = False
+        logic_status.failed(e)
 
-    return continue_processing
+    return logic_status
 
 
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
-def process(db, foi, df):
-    error_msg = None
-    additional_msg = None
+def process(db, foi, df,logic_status):
+    
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)

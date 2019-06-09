@@ -26,8 +26,7 @@ logging.basicConfig(level='DEBUG')
 def custom_logic(db, foi, df,logic_status):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     
-
-    file_id=df.meta_source_file_id
+    
      
     file_exists = db.has_record(
         """select 1
@@ -48,18 +47,13 @@ def custom_logic(db, foi, df,logic_status):
         # raise valuerror to abort process
         logging.error("\t\tObsolete Data File: Newer File Found")
     
-        logic_status.continue_processing = False
-        logic_status.import_status.import.OBSOLETE
-        logic_status.status='Obsolete Data File: Newer File Found'
-        logic_status.additional_msg='Obsolete Data File: Newer File Found'
+        logic_status.file_state.obsolete()
     return logic_status
 
 
-def process(db, foi, df):
+def process(db, foi, df,logic_status):
     # variables expected to be populated
-
-    error_msg = None
-    additional_msg = None
+ 
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)

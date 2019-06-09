@@ -39,7 +39,7 @@ def custom_logic(db, foi, df,logic_status):
         logging.info("\t\t\tMDB: {}".format(crc))
         logic_status.row.crc=crc 
         logic_status.table.session.commit()
-    
+        
     return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 

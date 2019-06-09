@@ -146,25 +146,9 @@ def custom_logic(db, foi, df,logic_status):
             
 
         except Exception as e:
-            import_status = 'FAILED'
-            logic_status.continue_process=False 
-        
-            try:
-
-                # cols_tb = db.get_table_columns(str.lower(str(foi.table_name)))
-                # delta = diff_list(dataframe_columns, cols_tb)
-                # cols = list(delta)
-                # if len(cols) > 1:
-                #    cols = str(list(delta))
-                logging.error("ERROR: \n---->{0}".format(str(e)[: 200]))
-                logic_status.error_msg  = str(e)[:256]
-
-                # additional_info = (','.join(cols) + str(e))[:2000]
-                
-            except Exception as ee:
-                logic_status.error_msg = ee
-                logic_status.continue_process=False
-                # migrate_utils.static_func.profile_csv(file, ',', 0)
+            
+            logic_status.failed(e)  
+                 
                 
                 
                 
@@ -173,7 +157,7 @@ def custom_logic(db, foi, df,logic_status):
     
     return logic_status
 
-def process(db, foi, df):
+def process(db, foi, df,logic_status):
     # variables expected to be populated
 
     error_msg = None

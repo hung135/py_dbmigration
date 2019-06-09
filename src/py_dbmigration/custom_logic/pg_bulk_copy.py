@@ -48,7 +48,7 @@ def custom_logic(db, foi, df,logic_status):
     table_exists=db.table_exists(table_name_fqn)
  
     if not table_exists:
-        logging.info("Table Don't exist creating generic table : {}".format(table_name_fqn))
+        logging.info("\t\tTable Don't exist creating generic table : {}".format(table_name_fqn))
         import pandas 
  
         #sqlalchemy_conn = db.connect_SqlAlchemy()
