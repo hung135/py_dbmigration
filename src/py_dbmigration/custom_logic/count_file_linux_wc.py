@@ -26,18 +26,18 @@ def custom_logic(db, foi, df,logic_status):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     # you have to return this boolean to let the framework now to continue w/ the rest of the processing logic
     
-    file_id = df.meta_source_file_id
+     
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
      
     try:
         data_value = migrate_utils.static_func.count_file_lines_wc_36(abs_file_path)
-        db.execute(update_sql.format(data_value, file_id))
-        logic_status.status='COMPLETE'
-        
-    except Exception as e:
-        logic_status.continue_processing=False
-        logic_status.import_status=import_status.FAILED
-        logic_status.error_msg=e
+        logic_status.row.total_rows=int(data_value)
+        logging.info("\t\t\tFile Row Count: {}".format(int(data_value)))
+        logic_status.table.session.commit()
+        #logic_status.status='COMPLETE'
+       
+    except Exception as e: 
+        logic_status.failed(e) 
 
 
     return logic_status

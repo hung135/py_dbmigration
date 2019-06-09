@@ -27,3 +27,6 @@ RUN if [ -f "requirements.txt" ]; then pip install -r requirements.txt && rm req
 RUN apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
+
+#RUN /bin/bash -c "echo alias meta=/workspace/meta_source.sh>>/root/.bashrc"
+#RUN /bin/bash -c "echo export LS_OPTIONS='--color=auto'>>/root/.bashrc"

@@ -22,6 +22,7 @@ class MetaSourceFiles(MetaBase):
     file_name_data = Column(c.String(256), nullable=True)
     file_type = Column(c.String(256), nullable=True)
     file_process_state = Column(c.String(256), default='RAW')
+  
     process_start_dtm = Column(c.DateTime, default=None)
     process_end_dtm = Column(c.DateTime, default=None)
     current_worker_host = Column(c.String(256), nullable=True)

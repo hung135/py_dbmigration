@@ -31,17 +31,15 @@ def custom_logic(db, foi, df,logic_status):
     sql = "select 1 from logging.meta_source_files where id = {} and crc is not null limit 1".format(df.meta_source_file_id)
     
  
-    if db.has_record(sql):
-        logging.info("\t\tChecksum already Exists, skipping:")
+    if logic_status.row.crc is not None:
+        logging.info("\t\tChecksum already Exists, Skipping:")
     else:
         logging.info("\t\tCheck Not Exists, generating MD%:")
         crc = migrate_utils.static_func.md5_file_36(abs_file_path)
         logging.info("\t\t\tMDB: {}".format(crc))
-        rows_updated = db.execute(update_sql.format(crc, file_id))
-       
-        if rows_updated == 0:
-            raise ValueError('Unexpected thing happend no rows updated')
-   
+        logic_status.row.crc=crc 
+        logic_status.table.session.commit()
+    
     return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 

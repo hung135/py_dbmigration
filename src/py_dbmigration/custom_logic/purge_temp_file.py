@@ -23,7 +23,7 @@ check_finish_sql ="select p.id,p.file_name,c.file_path from logging.meta_source_
  
 
 
-def custom_logic(db, foi, df,logic_status):
+def custom_logic(db, foi, df):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     continue_processing = True
     try:
@@ -53,10 +53,9 @@ def custom_logic(db, foi, df,logic_status):
 
 
 def process(db, foi, df):
-    error_msg = None
-    additional_msg = None
+ 
     
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-    assert isinstance(logic_status,LogicState)
-    return custom_logic(db, foi, df,logic_status)
+ 
+    return custom_logic(db, foi, df)

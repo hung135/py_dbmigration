@@ -54,9 +54,12 @@ def execute_sql(db, sql_list, foi, df):
 
 
 def process_logic(foi, db, df):
- 
+    table=df.current_file_state.table
+    row=df.current_file_state.row
+    assert isinstance(row,db_table.db_table_def.MetaSourceFiles)
+
     #store result of action you do in this variable
-    df.load_status_msg = None
+     
     if foi.table_name_extract is not None:
         table_name_regex = re.compile(foi.table_name_extract)
         # table_name = table_name_regex.match(table_name))
@@ -64,9 +67,8 @@ def process_logic(foi, db, df):
         foi.table_name = migrate_utils.static_func.convert_str_snake_case(re.search(foi.table_name_extract, df.curr_src_working_file).group(1))
 
         #print(foi.table_name)
-    
-    set_sql = "update logging.meta_source_files set reprocess={} where id={}".format(foi.reprocess, df.meta_source_file_id)
-    db.execute(set_sql,catch_exception=False)
+    row.reprocess=foi.reprocess 
+    table.session.commit()
 
     process_logic = foi.process_logic
     if foi.pre_action is not None:
@@ -85,73 +87,30 @@ def process_logic(foi, db, df):
         logging.debug('Importing Module: {}'.format(custom_logic))
          
         module = __import__('py_dbmigration.custom_logic',fromlist=[logic_name])
-        #print(dir(module))
-
+ 
         imp = getattr(module, logic_name)
         
         logging.info('\t->Dynamic Module Start: {}'.format(custom_logic))
         df.set_work_file_status(db, df.meta_source_file_id, custom_logic)
-
-        # maybe create a history table instead but for now cram into 1 field
-        sql_set_process_trail = "update logging.meta_source_files set process_msg_trail=concat('{};\n',process_msg_trail) where id={}".format(
-            logic_name, df.meta_source_file_id)
-        db.execute(sql_set_process_trail,catch_exception=False)
+ 
+        time_started = datetime.datetime.now()
+        #*************************************************************************
         try:
-            
-            time_started = datetime.datetime.now()
-            t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
-            row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == df.meta_source_file_id)     
-            row.file_process_state='Custom Logic-'+logic_name
-            t.session.commit()
             logic_status = imp.process(db, foi, df,logic_status)
-            
-            try: 
-                if logic_status.status is None:
-                    sys.exit("Logic status was not returned:\n{}".format(fqn_logic))
-
-                else:
-                    row.file_process_state=logic_status.import_status.value                
-                 
-                continue_next_process=logic_status.continue_processing
-                
-                #t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
-
-                if logic_status.import_status is not None: 
-                    row.file_process_state=logic_status.import_status.value
-               
-                     
-                if logic_status.error_msg is not None:
-                    row.last_error_msg=logic_status.error_msg
-                if logic_status.rows_inserted>0:
-                    row.rows_inserted=logic_status.rows_inserted
-                 
-                
-              
-            except Exception as e:
-                logging.error(": --->{}".format(fqn_logic))
-                
-                continue_next_process=logic_status # logic_status is bool in this case
-             
-            time_delta = (datetime.datetime.now() - time_started)
-            
-            logging.info("\t\t\tExecution Time: {}sec".format(time_delta))
-             
+            logic_status.completed()             
         except Exception as e:
-            logging.error("Syntax Error running Custom Logic: {}".format(fqn_logic))
-            
-            #df.set_work_file_status(db, df.meta_source_file_id, custom_logic, '{}: {}'.format(custom_logic, e))
-            #logging.error("Unexpected Error occured running Custom logic: {}".format(e))
+            logging.error("Syntax Error running Custom Logic: {}".format(fqn_logic)) 
             df.current_file_state.hardfail('{}: {}'.format(imp.__file__, e))
-            row.last_error_msg=logic_name+' - '+str(e)
-            
-            #
-            #sys.exit("Syntax Error occured: \nFor Details Run: meta_source --p={} --s=ALL".format(foi.project_name))    
-        t.session.close()    
+        #*************************************************************************
+
+        time_delta = (datetime.datetime.now() - time_started)
+        logging.info("\t\t\tExecution Time: {}sec".format(time_delta))            
         logging.debug('\t->Dynamic Module Ended: {}'.format(custom_logic))
 
-        if not continue_next_process:
+        if not logic_status.continue_processing_logic:
             logging.error('\t->Abort Processing for this file Because of Error: {}'.format(df.curr_src_working_file))
-            df.set_work_file_status(db, df.meta_source_file_id, 'FAILED', custom_logic+'\n'+str(df.load_status_msg or ''))
+             
+            #df.set_work_file_status(db, df.meta_source_file_id, 'FAILED', custom_logic+'\n'+str(df.load_status_msg or ''))
             break
 
     # if everything was kosher else file should have been tailed 'FAILED'
@@ -159,6 +118,6 @@ def process_logic(foi, db, df):
         if foi.post_action is not None:
             logging.info("Executing Post Load SQL")
             execute_sql(db, foi.post_action, foi, df)
-
-        df.set_work_file_status(db, df.meta_source_file_id, 'PROCESSED')
+        row.file_process_state=FileStateEnum.PROCESSED.value
+        #df.set_work_file_status(db, df.meta_source_file_id, 'PROCESSED')
     purge.process(db, foi, df)

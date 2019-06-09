@@ -99,7 +99,7 @@ def custom_logic(db, foi, df,logic_status):
             for row in f:
                 cols=row.replace(delim,',')
                 break
-    delim = foi.file_delimiterc
+    delim = foi.file_delimiter
     if foi.new_delimiter is not None:
         delim = foi.new_delimiter
      
@@ -118,17 +118,11 @@ def custom_logic(db, foi, df,logic_status):
                 db.cursor.copy_expert(cmd_string, f)
                 rows_inserted=db.cursor.rowcount
             db.commit()
-             
-            logic_status.status='PROCESSED'
-            logic_status.import_status=import_status.PROCESSED
-            logic_status.rows_inserted=rows_inserted
+            logic_status.row.rows_inserted=rows_inserted
+            logic_status.row.db_table=table_name_fqn
         except Exception as e:
             
-            logic_status.continue_processing=False
-            logic_status.status='FAILED'
-            logic_status.import_status=import_status.FAILED
-            logic_status.error_msg="EXCEPTION: "+str(e)
-            
+            logic_status.hardfail(e) 
 
             
         ###############THERE EXEC COMMAND LOGIC HERE########################################################

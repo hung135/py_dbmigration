@@ -7,6 +7,7 @@ class FileStateEnum(Enum):
     RAW = 'RAW'
     PREACTION = 'PREACTION' #logic(sql) before custom logic starts to run
     POSTACTION = 'POSTACTION' #logic after all custom logic has ran
+    IMPORTED = 'IMPORTED'
     PROCESSING = 'PROCESSING' # file is in the middle of getting processed
     PROCESSED = 'PROCESSED' # file has completed process
     OBSOLETE = 'OBSOLETE' #Data is render Obsolet when source delivers new complete set
@@ -29,7 +30,7 @@ class DataFileState:
     rows_inserted = 0
     error_msg = None
     table_name = None
-    continue_processing=False
+    continue_processing_logic=False
     file_id = None
     def __init__(self, db, file,file_id):
         self.file_path=__file__
@@ -62,12 +63,13 @@ class DataFileState:
     def authenticate(self):
         pass
 
-    def fail(self):
+    def failed(self,msg):
         self.status=FileStateEnum.FAILED
         self.row.file_import_status=self.status.value
+        self.row.last_error_msg=msg
         self.table.session.commit()
-        logging.error("Data File Processing FAILED: {}".format(self.file_path))
-
+        #logging.error("Data File Processing FAILED: {}".format(self.file_path))
+ 
     def hardfail(self,msg=None):
         self.table.session.commit()
         self.table.session.close()
@@ -84,12 +86,14 @@ class DataFileState:
     def __str__(self):
         return_string="""File: {}\nStatus: {}\nError_msg:  {}\n """
         return return_string.format(self.name,self.status,self.error_msg)
+
+
 class LogicState:
     # object to carry status info for prossing and import
     status = None
     name = None
     error_msg = None
-    continue_processing=False
+    continue_processing_logic=None
     file_state = None
     
     def __init__(self, file,file_state):
@@ -98,8 +102,13 @@ class LogicState:
         self.status = LogicStateEnum.INIT
         self.error_msg = None
         self.return_value = None
-        assert isinstance(file_state,DataFileState)
+        self.row=file_state.row
+        self.table=file_state.table
+        #assert isinstance(file_state.row,db_table.db_table_def.MetaSourceFiles)
         self.file_state=file_state
+        if self.row.file_process_state==FileStateEnum.RAW.value:
+            self.row.file_process_state=FileStateEnum.PROCESSING.value
+            self.table.session.commit()
         
    
     def __str__(self):
@@ -112,14 +121,40 @@ class LogicState:
     def __repr__(self):
         return_string="""Logic: {}\nStatus: {}\nError_msg:  {}\n FileState: {}"""
         return return_string.format(self.name,self.status,self.error_msg, self.file_state.status)
+    
+    #This logic has ran to comletion
+    def completed(self):
+        if not self.status==LogicStateEnum.FAILED:
+            self.status=LogicStateEnum.COMPLETE
+            self.continue_processing_logic=True
+        if self.row.process_msg_trail is None:
+            self.row.process_msg_trail=self.name
+        else:
+            self.row.process_msg_trail=self.name +"\n{}".format(self.row.process_msg_trail)
+        self.table.session.commit()
+
+    def failed(self,msg):
+        self.status=LogicStateEnum.FAILED
+        self.continue_processing_logic=False
+        self.row.file_import_status=self.status.value
+        self.row.last_error_msg=msg
+        self.table.session.commit()
+
+    def failed_continue(self,msg):
+        self.status=LogicStateEnum.FAILED
+        self.continue_processing_logic=True
+        self.row.file_import_status=self.status.value
+        self.row.last_error_msg=msg
+        self.table.session.commit()
 
     def hardfail(self,msg=None):
         self.file_state.fail()
         sys.exit("Hard Fail Initiated for Logic File: \n\t{}".format(self.file_path))
 
     def __del__(self):
-        
-        self.file_state.row.last_err_msg=self.error_msg or self.file_state.row.last_err_msg
+        assert isinstance(self.row,db_table.db_table_def.MetaSourceFiles)
+        self.row.last_error_msg=self.error_msg or self.row.last_error_msg
+        self.table.session.commit()
 
     def authenticate(self):
         pass
