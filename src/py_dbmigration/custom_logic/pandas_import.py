@@ -142,7 +142,8 @@ def custom_logic(db, foi, df,logic_status):
                 dataframe_columns = dataframe.columns.tolist()
                  
                 rows_inserted = (len(dataframe))
-                logic_status.return_value = rows_inserted
+            logic_status.row.rows_inserted = rows_inserted
+            logic_status.table.session.commit()
             
 
         except Exception as e:
@@ -159,10 +160,7 @@ def custom_logic(db, foi, df,logic_status):
 
 def process(db, foi, df,logic_status):
     # variables expected to be populated
-
-    error_msg = None
-    additional_msg = None
-
+  
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
     assert isinstance(logic_status,LogicState)

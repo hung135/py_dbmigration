@@ -42,7 +42,8 @@ def custom_logic(db, foi, df,logic_status):
         logic_status.status='Duplicate File Found'
         logic_status.continue_processing=False
          
-        logic_status.import_status=import_status.DUPLICATE
+        logic_status.file_state.duplicate()
+        logic_status.continue_processing_logic=True
     return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 

@@ -23,9 +23,7 @@ from py_dbmigration.data_file_mgnt.state import DataFileState,FileStateEnum,Logi
 
 
 def custom_logic(db, foi, df,logic_status):
-    continue_processing = True
-    table_name = foi.table_name
-    target_schema = foi.schema_name
+      
     file_id = df.meta_source_file_id
     skip_ifexists = (not foi.unzip_again)
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
@@ -33,7 +31,7 @@ def custom_logic(db, foi, df,logic_status):
 
 
 # def extract_file(self, db, abs_file_path, abs_writable_path, skip_ifexists=False):
-    status_dict = {}
+   
     try:
          
         md5 = logic_status.row.crc
@@ -60,7 +58,7 @@ def custom_logic(db, foi, df,logic_status):
     except Exception as e:
         # import datetime
         # print("---error occured--sleeping so you can read", e)
-         
+        
         logic_status.failed(e)
 
     return logic_status

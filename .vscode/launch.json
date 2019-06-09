@@ -10,6 +10,12 @@
             "request": "launch",
             "program": "/workspace/tests/test_data_load_pg_bulkcopy.py",
             "console": "integratedTerminal"
-        }
+        },{
+            "name": "Python: data_load",
+            "type": "python",
+            "request": "launch",
+            "program": "/workspace/tests/test_data_load.py",
+            "console": "integratedTerminal"
+        },
     ]
 }

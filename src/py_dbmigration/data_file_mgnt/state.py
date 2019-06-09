@@ -63,11 +63,16 @@ class DataFileState:
     def authenticate(self):
         pass
     def processed(self):
-        self.status=FileStateEnum.PROCESSED
-        self.row.file_process_state=self.status.value
+        if not self.status in [FileStateEnum.DUPLICATE,FileStateEnum.OBSOLETE]:
+            self.status=FileStateEnum.PROCESSED
+            self.row.file_process_state=self.status.value
         self.table.session.commit()
     def obsolete(self):
-        self.status=FileStateEnum.PROCESSED
+        self.status=FileStateEnum.OBSOLETE
+        self.row.file_process_state=self.status.value
+        self.table.session.commit()  
+    def duplicate(self):
+        self.status=FileStateEnum.DUPLICATE
         self.row.file_process_state=self.status.value
         self.table.session.commit()        
     def failed(self,msg):
@@ -141,16 +146,18 @@ class LogicState:
          
         self.table.session.commit()
     def processed(self):
-        self.status=LogicStateEnum.COMPLETE
-        self.row.file_process_state=self.status.value
+        if not self.status in [LogicStateEnum.FAILED]:
+            self.status=LogicStateEnum.COMPLETE
+            self.row.file_process_state=self.status.value
         self.table.session.commit()
     
     def failed(self,msg):
         self.status=LogicStateEnum.FAILED
         self.continue_processing_logic=False
         self.row.file_process_state=self.status.value
-        self.row.last_error_msg=msg
+        self.row.last_error_msg=str(msg)
         self.table.session.commit()
+        
 
     def failed_continue(self,msg):
         self.status=LogicStateEnum.FAILED
