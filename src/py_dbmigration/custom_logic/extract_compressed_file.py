@@ -82,5 +82,5 @@ def process(db, foi, df):
 
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-    logic_status=Status(file=__file__)
+    assert isinstance(logic_status,LogicState)
     return custom_logic(db, foi, df,logic_status)

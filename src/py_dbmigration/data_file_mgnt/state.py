@@ -21,7 +21,8 @@ class LogicStateEnum(Enum):
     FAILED = 'FAILED' #errors with the data
     HARDFAIL = 'HARDFAIL' #syntax and such errors WILL exit program
 
-class FileState:
+#State of the data file
+class DataFileState:
     # object to carry status info for prossing and import
     status = FileStateEnum.RAW
     name = None
@@ -60,10 +61,17 @@ class FileState:
 
     def authenticate(self):
         pass
-    def hardfail(self):
+
+    def fail(self):
+        self.status=FileStateEnum.FAILED
+        self.row.file_import_status=self.status.value
+        self.table.session.commit()
+        logging.error("Data File Processing FAILED: {}".format(self.file_path))
+
+    def hardfail(self,msg=None):
         self.table.session.commit()
         self.table.session.close()
-        sys.exit("Hard Fail Initiated: \n\t{}".format(self.file_path))
+        sys.exit("Hard Fail Initiated Data File: \n\t{}\n{}".format(self.file_path,msg or ''))
     def close(self):
         self.table.session.commit()
         self.table.session.close()
@@ -72,7 +80,7 @@ class FileState:
         pass
     def set_cfpb_error_log(self):
         pass
-        
+
     def __str__(self):
         return_string="""File: {}\nStatus: {}\nError_msg:  {}\n """
         return return_string.format(self.name,self.status,self.error_msg)
@@ -90,7 +98,7 @@ class LogicState:
         self.status = LogicStateEnum.INIT
         self.error_msg = None
         self.return_value = None
-        assert isinstance(file_state,FileState)
+        assert isinstance(file_state,DataFileState)
         self.file_state=file_state
         
    
@@ -105,9 +113,9 @@ class LogicState:
         return_string="""Logic: {}\nStatus: {}\nError_msg:  {}\n FileState: {}"""
         return return_string.format(self.name,self.status,self.error_msg, self.file_state.status)
 
-    def hardfail(self):
- 
-        sys.exit("Hard Fail Initiated for Logic: \n\t{}".format(self.file_path))
+    def hardfail(self,msg=None):
+        self.file_state.fail()
+        sys.exit("Hard Fail Initiated for Logic File: \n\t{}".format(self.file_path))
 
     def __del__(self):
         

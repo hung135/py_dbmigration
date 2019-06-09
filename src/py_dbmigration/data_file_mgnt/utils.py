@@ -3,7 +3,7 @@
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
-from py_dbmigration.data_file_mgnt.state import FileState,FileStateEnum,LogicState,LogicStateEnum
+from py_dbmigration.data_file_mgnt.state import DataFileState,FileStateEnum,LogicState,LogicStateEnum
 
 import datetime
 import logging as log
@@ -88,7 +88,7 @@ def process_logic(foi, db, df):
         #print(dir(module))
 
         imp = getattr(module, logic_name)
-         
+        
         logging.info('\t->Dynamic Module Start: {}'.format(custom_logic))
         df.set_work_file_status(db, df.meta_source_file_id, custom_logic)
 
@@ -137,15 +137,15 @@ def process_logic(foi, db, df):
             logging.info("\t\t\tExecution Time: {}sec".format(time_delta))
              
         except Exception as e:
-            continue_next_process=False
-            df.set_work_file_status(db, df.meta_source_file_id, custom_logic, '{}: {}'.format(custom_logic, e))
-            #logging.error("Unexpected Error occured running Custom logic: {}".format(e))
-            row.file_process_state=import_status.FAILED.value
-            row.last_error_msg=logic_name+' - '+str(e)
-            t.session.commit()
-            t.session.close() 
             logging.error("Syntax Error running Custom Logic: {}".format(fqn_logic))
-            sys.exit("Syntax Error occured: \nFor Details Run: meta_source --p={} --s=ALL".format(foi.project_name))    
+            
+            #df.set_work_file_status(db, df.meta_source_file_id, custom_logic, '{}: {}'.format(custom_logic, e))
+            #logging.error("Unexpected Error occured running Custom logic: {}".format(e))
+            df.current_file_state.hardfail('{}: {}'.format(imp.__file__, e))
+            row.last_error_msg=logic_name+' - '+str(e)
+            
+            #
+            #sys.exit("Syntax Error occured: \nFor Details Run: meta_source --p={} --s=ALL".format(foi.project_name))    
         t.session.close()    
         logging.debug('\t->Dynamic Module Ended: {}'.format(custom_logic))
 

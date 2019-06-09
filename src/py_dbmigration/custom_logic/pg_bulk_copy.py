@@ -4,7 +4,7 @@ import os
 import sys
 from py_dbutils.rdbms import postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
-from py_dbmigration.data_file_mgnt.state import Status , import_status
+from py_dbmigration.data_file_mgnt.state import DataFileState,FileStateEnum,LogicState,LogicStateEnum
 import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
 import py_dbmigration.migrate_utils.static_func as static_func
@@ -99,7 +99,7 @@ def custom_logic(db, foi, df,logic_status):
             for row in f:
                 cols=row.replace(delim,',')
                 break
-    delim = foi.file_delimiter
+    delim = foi.file_delimiterc
     if foi.new_delimiter is not None:
         delim = foi.new_delimiter
      
@@ -138,13 +138,11 @@ def custom_logic(db, foi, df,logic_status):
     
  
     return logic_status
-def process(db, foi, df):
+
+
+def process(db, foi, df,logic_status):
     # variables expected to be populated
-
-    error_msg = None
-    additional_msg = None
-
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-    logic_status=Status(file=__file__)
+    assert isinstance(logic_status,LogicState)
     return custom_logic(db, foi, df,logic_status)

@@ -14,7 +14,7 @@ import sys
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
 from py_dbmigration.data_file_mgnt import utils
-from py_dbmigration.data_file_mgnt.state import FilesOfInterest,FileState 
+from py_dbmigration.data_file_mgnt.state import FilesOfInterest,DataFileState 
 import logging as log
 
 logging = log.getLogger()
@@ -395,7 +395,6 @@ class DataFile:
         :rtype: FilesOfInterest
         """
         assert isinstance(foi, FilesOfInterest)
-[]
         file_path = foi.file_path
         logging.debug("Walking Directory: '{}' : Search Pattern: {}".format(
             file_path, foi.regex))
@@ -544,7 +543,7 @@ class DataFile:
 
             self.row_count = row.total_rows
         
-        self.current_file_state=FileState(self.curr_src_working_file,self.meta_source_file_id)
+        self.current_file_state=DataFileState(self.db,self.curr_src_working_file,self.meta_source_file_id)
         return self.curr_src_working_file
 
     # Do work will query the meta source table for a record

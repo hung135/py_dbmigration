@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-from py_dbmigration.data_file_mgnt import *
+#from py_dbmigration.data_file_mgnt import *
 from py_dbmigration.migrate_utils import static_func
 import py_dbmigration.db_table as db_table
 import logging as log
