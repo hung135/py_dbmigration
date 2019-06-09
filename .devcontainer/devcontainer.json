@@ -5,6 +5,6 @@
 	"service": "app",
 	"workspaceFolder": "/workspace",
 	"extensions": [
-		"ms-python.python"
+		"ms-python.python","himanoa.python-autopep8"
 	]
 }

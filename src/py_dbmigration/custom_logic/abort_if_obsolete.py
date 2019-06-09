@@ -47,7 +47,7 @@ def custom_logic(db, foi, df,logic_status):
         # raise valuerror to abort process
         logging.error("\t\tObsolete Data File: Newer File Found")
     
-        logic_status.file_state.obsolete()
+        logic_status.continue_to_next_logic(logic_status.file_state.obsolete())
     return logic_status
 
 

@@ -33,7 +33,7 @@ class DataFileState:
     continue_processing_logic=False
     file_id = None
     def __init__(self, db, file,file_id):
-        self.file_path=file
+        self.file_path=os.path.abspath(file)
         self.name=os.path.basename(file)
         self.status = FileStateEnum.RAW
         self.error_msg = None
@@ -71,15 +71,18 @@ class DataFileState:
         self.status=FileStateEnum.OBSOLETE
         self.row.file_process_state=self.status.value
         self.table.session.commit()  
+        return False
     def duplicate(self):
         self.status=FileStateEnum.DUPLICATE
         self.row.file_process_state=self.status.value
-        self.table.session.commit()        
+        self.table.session.commit()
+        return False        
     def failed(self,msg):
         self.status=FileStateEnum.FAILED
         self.row.file_process_state=self.status.value
         self.row.last_error_msg=msg
         self.table.session.commit()
+        return False
         #logging.error("Data File Processing FAILED: {}".format(self.file_path))
  
     def hardfail(self,msg=None):
@@ -133,7 +136,11 @@ class LogicState:
     def __repr__(self):
         return_string="""Logic: {}\nStatus: {}\nError_msg:  {}\n FileState: {}"""
         return return_string.format(self.name,self.status,self.error_msg, self.file_state.status)
-    
+
+    #This logic has ran to comletion
+    def continue_to_next_logic(self,TrueFalse):
+        assert isinstance(TrueFalse,bool)
+        self.continue_processing_logic=TrueFalse
     #This logic has ran to comletion
     def completed(self):
         if not self.status==LogicStateEnum.FAILED:

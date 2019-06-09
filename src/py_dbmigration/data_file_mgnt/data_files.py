@@ -567,9 +567,9 @@ class DataFile:
 
                 # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
                 logging.info(
-                    "->Processing file_id: {}:\n\t{}".format(self.meta_source_file_id, self.curr_src_working_file))
+                    "\t->Processing file_id: {}: --> {}".format(self.meta_source_file_id, self.curr_src_working_file))
                 logging.info(
-                    "->Path:\n\t{}".format(self.source_file_path))
+                    "\t->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path,full_file_name))
 
                 self.set_work_file_status(
                     db, self.meta_source_file_id, 'Processing Started', '')

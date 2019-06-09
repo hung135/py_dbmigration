@@ -4,7 +4,7 @@ import os
 import sys
 import py_dbutils.parents as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
-from py_dbmigration.data_file_mgnt.state import DataFileState,FileStateEnum,LogicState,LogicStateEnum
+from py_dbmigration.data_file_mgnt.state import DataFileState, FileStateEnum, LogicState, LogicStateEnum
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbmigration.db_table as db_table
 logging.basicConfig(level='DEBUG')
@@ -21,12 +21,9 @@ logging.basicConfig(level='DEBUG')
 # sql used to update logging....faster than any framework wrapper
 
 
-def custom_logic(db, foi, df,logic_status):
+def custom_logic(db, foi, df, logic_status):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
- 
 
- 
-    
     already_processed = db.has_record(
         """select 1 from logging.meta_source_files a,logging.meta_source_files b
                     where a.file_process_state='PROCESSED'
@@ -34,25 +31,22 @@ def custom_logic(db, foi, df,logic_status):
                     and b.id={}
                     and a.project_name=b.project_name
                     """.format(df.meta_source_file_id))
-     
+
     if already_processed:
         # raise execption to continue with the next file
         # raise valuerror to abort process
         logging.error("\t\tDuplicate File Found")
-        logic_status.status='Duplicate File Found'
-        logic_status.continue_processing=False
-         
-        logic_status.file_state.duplicate()
-        logic_status.continue_processing_logic=True
+
+        # let file state machine determin if we can continue
+        logic_status.continue_to_next_logic(
+            logic_status.file_state.duplicate())
     return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 
 
-def process(db, foi, df,logic_status):
+def process(db, foi, df, logic_status):
     # variables expected to be populated
 
- 
-
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
-    assert isinstance(logic_status,LogicState)
-    return custom_logic(db, foi, df,logic_status)
+    assert isinstance(logic_status, LogicState)
+    return custom_logic(db, foi, df, logic_status)

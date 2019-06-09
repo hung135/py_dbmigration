@@ -1,7 +1,7 @@
 
 import logging
 import os
- 
+
 import py_dbutils.parents as db_utils
 from py_dbmigration import data_file_mgnt
 from py_dbmigration import migrate_utils
@@ -22,32 +22,27 @@ logging.basicConfig(level='DEBUG')
 update_sql = """UPDATE logging.meta_source_files set  crc='{}'  where id = {}"""
 
 
-def custom_logic(db, foi, df,logic_status):
+def custom_logic(db, foi, df, logic_status):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
-     
-    file_id = df.meta_source_file_id
- 
+
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
-    sql = "select 1 from logging.meta_source_files where id = {} and crc is not null limit 1".format(df.meta_source_file_id)
-    
- 
+
     if logic_status.row.crc is not None:
         logging.info("\t\tChecksum already Exists, Skipping:")
     else:
         logging.info("\t\tCheck Not Exists, generating MD%:")
         crc = migrate_utils.static_func.md5_file_36(abs_file_path)
         logging.info("\t\t\tMDB: {}".format(crc))
-        logic_status.row.crc=crc 
+        logic_status.row.crc = crc
         logic_status.table.session.commit()
-        
+
     return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 
 
-def process(db, foi, df,logic_status):
- 
-     
+def process(db, foi, df, logic_status):
+
     assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
     assert isinstance(db, db_utils.DB)
-    assert isinstance(logic_status,LogicState)
-    return custom_logic(db, foi, df,logic_status)
+    assert isinstance(logic_status, LogicState)
+    return custom_logic(db, foi, df, logic_status)
