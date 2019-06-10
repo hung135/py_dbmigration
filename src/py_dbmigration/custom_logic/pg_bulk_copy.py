@@ -68,7 +68,7 @@ def custom_logic(db, foi, df,logic_status):
     cols = foi.column_list or  db_cols_list
     encoding = foi.encoding
  
-    column_count=len(cols.split(','))
+    column_count=len(cols)
      
     #count_column_csv(full_file_path, header_row_location=0, sample_size=200, delimiter=','):
     logging.debug("Delimiter: {}".format(foi.file_delimiter))

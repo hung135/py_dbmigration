@@ -139,12 +139,15 @@ class LogicState:
     #This logic has ran to comletion
     def continue_to_next_logic(self,TrueFalse):
         assert isinstance(TrueFalse,bool)
+        print("\t\tSet Continue to Next Logic: {}".format(TrueFalse))
         self.continue_processing_logic=TrueFalse
     #This logic has ran to comletion
     def completed(self):
-        if not self.status==LogicStateEnum.FAILED:
+        if not ( self.row.file_process_state  in ('OBSOLETE','FAILED','DUPLICATE')):
             self.status=LogicStateEnum.COMPLETE
             self.continue_processing_logic=True
+        else:
+            self.continue_processing_logic=False
         if self.row.process_msg_trail is None:
             self.row.process_msg_trail=self.name
         else:
