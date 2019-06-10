@@ -4,7 +4,7 @@ import os
 import sys
 import py_dbutils.parents as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
-from py_dbmigration.data_file_mgnt.state import DataFileState,FileStateEnum,LogicState,LogicStateEnum
+from py_dbmigration.data_file_mgnt.state import *
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbmigration.db_table as db_table
 logging.basicConfig(level='DEBUG')
@@ -53,6 +53,6 @@ def process(db, foi, df,logic_status):
 
  
 
-    assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
+    assert isinstance(foi,FOI)
     assert isinstance(logic_status,LogicState)
     return custom_logic(db, foi, df,logic_status)

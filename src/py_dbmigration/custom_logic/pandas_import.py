@@ -8,7 +8,7 @@ import numpy as np
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
-from py_dbmigration.data_file_mgnt.state import DataFileState,FileStateEnum,LogicState,LogicStateEnum
+from py_dbmigration.data_file_mgnt.state import *
 
 import re
  
@@ -32,22 +32,19 @@ def custom_logic(db, foi, df,logic_status):
     
      
     file = os.path.join(df.source_file_path, df.curr_src_working_file)
-    limit_rows = foi.limit_rows
+    limit_rows = (foi.limit_rows)
      
     table_name = foi.table_name
     target_schema = foi.schema_name
-    table_name_extract = foi.table_name_extract
+    #table_name_extract = foi.table_name_extract
     header = foi.header_row
-    names = foi.header_list_returned or foi.column_list
+    names =  foi.column_list
     file_type = foi.file_type
     file_id = df.meta_source_file_id
 
     delim = foi.new_delimiter or foi.file_delimiter
     append_file_id = foi.append_file_id
-
-
-     
-    error_msg = None
+ 
     if db is not None:
          
         sqlalchemy_conn = db.connect_SqlAlchemy()
@@ -56,7 +53,7 @@ def custom_logic(db, foi, df,logic_status):
         if table_name is None:
             table_name = str(os.path.basename((file)))
          
-        make_snake_case=foi.yaml.get('convert_table_name_snake_case',False)
+        make_snake_case=foi.convert_table_name_snake_case or False
         if make_snake_case:
             table_name=migrate_utils.static_func.convert_str_snake_case(table_name)
         counter = 0
@@ -74,17 +71,15 @@ def custom_logic(db, foi, df,logic_status):
             if limit_rows is not None:
                 logging.debug("Pandas Read Limit SET: {0}:ROWS".format(limit_rows))
             foi.table_name = table_name
-            # names = ','.join(foi.column_list)
-            # names = ','.join(foi.header_list_returned)
+       
 
             logging.debug(sys._getframe().f_code.co_name + " : " + file)
 
+          
             if file_type == 'CSV':
                 for counter, dataframe in enumerate(
-                        pd.read_csv(file, sep=delim, nrows=limit_rows,
-                                    quotechar='"', encoding=foi.encoding, chunksize=chunk_size, 
-                                    header=header, index_col=False,
-                                    dtype=object)):
+                        pd.read_csv(file, sep=delim, nrows=limit_rows, encoding=foi.encoding, chunksize=chunk_size, 
+                                    header=header, index_col=False, dtype=object)):
                     
                     if foi.column_list is None:
                         foi.column_list=[]
@@ -161,7 +156,7 @@ def custom_logic(db, foi, df,logic_status):
 def process(db, foi, df,logic_status):
     # variables expected to be populated
   
-    assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
+    assert isinstance(foi,FOI)
     assert isinstance(db, db_utils.DB)
     assert isinstance(logic_status,LogicState)
     return custom_logic(db, foi, df,logic_status)

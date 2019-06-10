@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python: load_pg_bulkcopy",
             "type": "python",
@@ -16,6 +17,12 @@
             "request": "launch",
             "program": "/workspace/tests/test_data_load.py",
             "console": "integratedTerminal"
-        },
+        },{
+            "name": "Python: data_load_mp",
+            "type": "python",
+            "request": "launch",
+            "program": "/workspace/tests/test_data_load_mp.py",
+            "console": "integratedTerminal"
+        }
     ]
 }

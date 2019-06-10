@@ -14,7 +14,7 @@ import sys
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
 from py_dbmigration.data_file_mgnt import utils
-from py_dbmigration.data_file_mgnt.state import FilesOfInterest,DataFileState 
+from py_dbmigration.data_file_mgnt.state import FilesOfInterest, DataFileState, FOI
 import logging as log
 
 logging = log.getLogger()
@@ -57,7 +57,7 @@ def get_mapped_table(file_name, foi_list):
     for i in foi_list:
         # print(i.regex)
         # if i.table_name is not None:
-        assert isinstance(i, FilesOfInterest)
+        assert isinstance(i, FilesOfInterest) or isinstance(i, FOI)
 
         if re.match(i.regex, file_name, re.IGNORECASE):
             # print("***FOI.regex:", i.regex, i.table_name, file_name)
@@ -98,7 +98,7 @@ class DataFile:
     meta_source_file_id = 0
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
-        assert isinstance(foi_list[0], FilesOfInterest)
+        #assert isinstance(foi_list[0], FilesOfInterest)
         
         curr_path=(os.path.dirname(__file__))
         
@@ -114,9 +114,9 @@ class DataFile:
         self.project_list = []
         for p in foi_list:
             self.project_list.append(p.project_name)
-            if p.yaml is not None:
-                self.working_path = self.working_path or p.yaml.get('write_path',None)
-        
+            if p.write_path is not None:
+                self.working_path = self.working_path or p.write_path
+        self.project_list = list(set(self.project_list))
         self.working_path=working_path or self.working_path or os.getcwd()
         self.working_path = os.path.abspath(self.working_path) 
         self.compressed_file_type = compressed_file_type
@@ -148,7 +148,7 @@ class DataFile:
         
         for files_of_interest in self.foi_list:
             if files_of_interest.file_path is not None:
-                assert isinstance(files_of_interest, FilesOfInterest)
+                #assert isinstance(files_of_interest, FilesOfInterest)
                 file_path = files_of_interest.file_path[:5] 
                 if file_path=='s3://':
                     logging.info("Walking AWS s3")
@@ -174,6 +174,31 @@ class DataFile:
         db_table.db_table_func.RecordKeeper(
             self.db, db_table.db_table_def.MetaSourceFiles)
          
+    def extract_file_name_datav2(self, db, foi):
+         
+        if foi.project_name is not None:
+            extract_file_name = getattr(foi, 'extract_file_name_data')
+            project_name = getattr(foi, 'project_name')
+            date_format = getattr(foi, 'format_extracted_date')
+             
+            if extract_file_name is not None and date_format is None:
+                sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
+                sql_update_file_data_date_children =  self.sql_yaml['sql_update_file_data_date_children']
+              
+            if extract_file_name is not None and date_format is not None:
+                sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
+                sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children_regex']
+            if extract_file_name is not None:
+ 
+                db.execute(sql_update_file_data_date.format(
+                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name),catch_exception=False)
+                db.execute(sql_update_file_data_date_children.format(
+                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name),catch_exception=False)
+
+                #print(sql_update_file_data_date.format(
+                #    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
+                # time.sleep(5)
+
     def extract_file_name_data(self, db, files_of_interest):
          
         if files_of_interest.yaml is not None:
@@ -198,28 +223,7 @@ class DataFile:
                 #print(sql_update_file_data_date.format(
                 #    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
                 # time.sleep(5)
-
-    def insert_into_file(self, foi, file_id, db=None):
-        assert isinstance(foi, FilesOfInterest)
-        # logging.debug("Appending to Each Line:{0}: Data: {1}".format(file,
-        # header_name, text_append,use_header,"<---Has Header"))
-        header_added = False
-        # logging.debug("Appending File ID to File:{}".format(newfile))
-
-        newfile = os.path.join(
-            self.working_path, "appended", self.curr_src_working_file)
-
-        header_added, header_list_returned = migrate_utils.static_func.insert_each_line(
-            foi.current_working_abs_file_name,
-            newfile,
-            str(file_id),
-            foi.file_delimiter, foi.use_header, foi.has_header,
-            foi.quoted_header, foi.append_file_id,
-            foi.append_crc, db, foi.schema_name, foi.table_name,
-            foi.limit_rows, foi.header_row
-        )
-        # return fullpath to new file
-        return newfile, header_added, header_list_returned
+ 
 
     # @migrate_utils.static_func.timer
     # def put_foi_to_db(self, db, foi_list):
@@ -263,7 +267,7 @@ class DataFile:
     # that id gets stored with the meta data about the file to later use
 
     def insert_working_files(self, db, file_of_interest_obj, parent_file_id=0):
-        assert isinstance(file_of_interest_obj, FilesOfInterest)
+        assert isinstance(file_of_interest_obj, FilesOfInterest) or isinstance(file_of_interest_obj,FOI)
         t = db_table.db_table_func.RecordKeeper(
             db, db_table.db_table_def.MetaSourceFiles)
         id_regex = file_of_interest_obj.file_name_data_regex
@@ -316,7 +320,7 @@ class DataFile:
                                                             file_name_data=file_id,
                                                             file_type=v_file_type,
                                                             parent_file_id=parent_file_id,
-                                                            upsert_function_name=file_of_interest_obj.upsert_function_name,
+                                                            #upsert_function_name=file_of_interest_obj.upsert_function_name,
                                                             project_name=file_of_interest_obj.project_name)
                 t.add_record(row, commit=True)
 
@@ -394,7 +398,7 @@ class DataFile:
         """Walks a directory structure and returns all files that match the regex pattern
         :rtype: FilesOfInterest
         """
-        assert isinstance(foi, FilesOfInterest)
+        assert isinstance(foi, FilesOfInterest) or isinstance(foi,FOI)
         file_path = foi.file_path
         logging.debug("Walking Directory: '{}' : Search Pattern: {}".format(
             file_path, foi.regex))
@@ -404,11 +408,10 @@ class DataFile:
             regex = re.compile(foi.regex)
         except Exception as e:
             logging.error(
-                "Bad Regex Pattern for Walking Directory: '{}'".format(foi.regex))
+                "Bad Regex Pattern for Walking Directory: '{}' \n{}".format(foi.regex,e))
             raise
 
-        if file_path[-1] != '/':
-            file_path += '/'
+        
 
         files_list = []
           
@@ -508,7 +511,7 @@ class DataFile:
         x = set(self.project_list)
          
         for foi in self.foi_list:
-            self.extract_file_name_data(db, foi)
+            self.extract_file_name_datav2(db, foi)
          
         project_list = (','.join("'" + item + "'" for item in x))
 
