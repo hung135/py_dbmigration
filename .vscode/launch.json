@@ -23,6 +23,7 @@
             "request": "launch",
             "program": "/workspace/tests/test_data_load_mp.py",
             "console": "integratedTerminal"
+            
         }
     ]
 }

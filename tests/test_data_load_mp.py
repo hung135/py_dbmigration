@@ -25,7 +25,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
          
         db.execute("truncate table logging.meta_source_files")
         print('# In function:', sys._getframe().f_code.co_name) 
-        import py_dbmigration.data_load_mp as data_load
+        import py_dbmigration.data_load as data_load
         data_load.main(yamlfile='/workspace/tests/data_load_mp.yaml',
         write_path=self.dirs['sample_working_dir'],
                     schema=self.TEST_SCHEMA, logging_mode='debug')
