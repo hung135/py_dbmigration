@@ -25,10 +25,10 @@ def print_table_file_state(db,project,state,add_fields=''):
             where_project="upper(project_name) = upper('{}') ".format(project)
         if state!='ALL':
             where_state="upper(file_process_state)=upper('{}') and ".format(state)
-        proj , meta=(db.query("""select distinct project_name,file_process_state,file_name ,
-                        total_rows as file_rows,rows_inserted,last_error_msg
+        proj , meta=(db.query("""select distinct project_name as PRJ,concat(id,' : ',file_process_state) as State,file_name ,
+                        total_rows as file_rows,rows_inserted as rowInserted,last_error_msg
                         --,process_msg_trail
-                        ,concat(file_path,'/',file_name) 
+                        ,concat(file_path,'/',file_name)  as path
                         {}
                         from logging.meta_source_files where {} {} order by 3,2
                         """.format(add_fields,where_state,where_project)))

@@ -87,7 +87,7 @@ class DataFileState:
  
     def hardfail(self,msg=None):
         #self.close()
-        sys.exit("Hard Fail Initiated Data File: \n\t{}\n{}".format(self.file_path,msg or ''))
+        sys.exit("Hard Fail Initiated Data File: \n\t{}\nError Msg: {}".format(self.file_path,msg ))
     # def close(self):
     #     self.table.session.commit()
     #     self.table.session.close()
@@ -345,9 +345,9 @@ class FOI(object):
         self.limit_rows = self.limit_rows 
         self.header_row = self.header_row or 0
         if self.column_list is not None:
-            self.column_list = self.column_list.split(',')
+            self.column_list =  self.column_list.replace(' ', '').replace('\n', '').split(',')
         if self.column_list2 is not None:
-            self.column_list2 = self.column_list2.split(',')
+            self.column_list2 = self.column_list2.replace(' ', '').replace('\n', '').split(',')
     
     def __str__(self):
         string_result={
