@@ -3,7 +3,7 @@
 import py_dbmigration.migrate_utils as migrate_utils
 from py_dbmigration.data_file_mgnt.state import *
  
-
+import os
 import datetime
 import logging as log
 import re
@@ -91,7 +91,7 @@ def process_logic(foi, db, df):
 
         imp = getattr(module, logic_name)
 
-        logging.info('\t->Dynamic Module Start: {}'.format(custom_logic))
+        logging.info('\t->PID:{} :Custom Logic Start: {}'.format(os.getpid(),custom_logic))
         df.set_work_file_status(db, df.meta_source_file_id, custom_logic)
 
         time_started = datetime.datetime.now()
@@ -101,7 +101,7 @@ def process_logic(foi, db, df):
             logic_status.completed()
         except Exception as e:
             logging.error(
-                "Syntax Error running Custom Logic: {}".format(fqn_logic))
+                "PID: {}, Syntax Error running Custom Logic: {}".format(os.getpid(),fqn_logic))
             logic_status.hardfail('{}: {}'.format(imp.__file__, e))
         # *************************************************************************
 
@@ -111,7 +111,7 @@ def process_logic(foi, db, df):
 
         if not logic_status.continue_processing_logic:
             logging.error(
-                '\t->Abort Processing for this file Because of Error: {}'.format(df.curr_src_working_file))
+                '\t->PID: {}, Abort Processing for this file Because of Error: {}'.format(os.getpid(),df.curr_src_working_file))
 
             #df.set_work_file_status(db, df.meta_source_file_id, 'FAILED', custom_logic+'\n'+str(df.load_status_msg or ''))
             break

@@ -62,7 +62,7 @@ def get_mapped_table(file_name, foi_list):
         if re.match(i.regex, file_name, re.IGNORECASE):
             # print("***FOI.regex:", i.regex, i.table_name, file_name)
             logging.info(
-                "\tFile->Table mapping found: {} {}.{}".format(i.file_type, i.schema_name, i.table_name))
+                "\tFile->Table mapping found: {} {}".format(i.file_type,i.regex))
             return copy.copy(i)
     return None
 
