@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 from py_dbutils.rdbms import postgres as db_utils
-import py_dbmigration.data_file_mgnt as data_file_mgnt
+ 
 from py_dbmigration.data_file_mgnt.state import *
 import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table

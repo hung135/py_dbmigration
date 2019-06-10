@@ -310,6 +310,7 @@ class FOI(object):
    
     reprocess=None 
     extract_file_name_data = None
+    format_extracted_date = None
     file_name_data_regex = None
     table_name_extract = None
     unzip_again = None

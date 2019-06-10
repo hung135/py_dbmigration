@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import py_dbutils.parents as db_utils
-import py_dbmigration.data_file_mgnt as data_file_mgnt
+import py_dbmigration.data_file_mgnt.data_files as data_files 
 import py_dbmigration.db_table as db_table
 import py_dbmigration.zip_utils as zip_utils
 from py_dbmigration.data_file_mgnt.state import *
@@ -47,11 +47,11 @@ def custom_logic(db, foi, df, logic_status):
         logging.debug(
             "WALKING EXTRACTED FILES:\nsrc_dir:{0} \nworking_dir:{1}: --{2}".format(new_src_dir, df.working_path, modified_write_path))
 
-        file_table_map = [data_file_mgnt.data_files.FilesOfInterest('DATA', '.*', file_path=modified_write_path, file_name_data_regex=None,
+        file_table_map = [data_files.FilesOfInterest('DATA', '.*', file_path=modified_write_path, file_name_data_regex=None,
                                                                     parent_file_id=file_id, project_name=foi.project_name)]
 
         # instantiate a new Datafile object that craw this new directory of extracted files
-        data_file_mgnt.data_files.DataFile(
+        data_files.DataFile(
             new_src_dir, db, file_table_map, parent_file_id=file_id)
     except Exception as e:
         logic_status.failed(e)

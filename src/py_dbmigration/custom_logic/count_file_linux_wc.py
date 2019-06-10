@@ -2,8 +2,7 @@
 import logging
 import os
  
-from py_dbutils import parents as db_utils
-import py_dbmigration.data_file_mgnt as data_file_mgnt
+from py_dbutils import parents as db_utils 
 import py_dbmigration.migrate_utils as migrate_utils
 from py_dbmigration.data_file_mgnt.state import *
 logging.basicConfig(level='DEBUG')
