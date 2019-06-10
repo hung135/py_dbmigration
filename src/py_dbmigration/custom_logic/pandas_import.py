@@ -85,7 +85,7 @@ def custom_logic(db, foi, df,logic_status):
                         foi.column_list=[]
                      
                     if not foi.use_header and len(foi.column_list) > 0:
-
+                        dataframe.rename(columns=lambda x: str(x).strip(), inplace=True)
                         dataframe.columns = map(str,
                                                 # foi.column_list
                                                 names
@@ -93,7 +93,7 @@ def custom_logic(db, foi, df,logic_status):
                     else:
                          
                          
-                        col_list = dataframe.columns.tolist()
+                        col_list = [str(col).strip() for col in dataframe.columns]
                          
 
                 # cols_new = [i.split(' ', 1)[1].replace(" ", "_").lower() for i in col_list]

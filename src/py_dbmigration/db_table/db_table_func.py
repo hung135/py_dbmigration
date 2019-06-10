@@ -11,7 +11,8 @@ from .db_table_def import MetaBase,MetaSourceFiles
 
  
 class RecordKeeper():
-    engine_dict = {}  # using dict because class level variable not getting set
+     
+    engine_dict = {}
     table_dict = {}
     
     def __init__(self, db, table_def):
@@ -20,6 +21,8 @@ class RecordKeeper():
 
         :rtype: 
         """
+        self.engine_dict = {}
+        self.table_dict = {}
         self.host = db.host
         self.dbschema = 'logging'
         self.database = db.dbname

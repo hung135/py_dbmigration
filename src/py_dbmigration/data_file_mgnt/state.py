@@ -58,7 +58,7 @@ class DataFileState:
 
     def __del__(self):
         self.table.session.commit()
-        self.table.session.close()
+        self.table.session.close()  
 
     def authenticate(self):
         pass
@@ -86,12 +86,11 @@ class DataFileState:
         #logging.error("Data File Processing FAILED: {}".format(self.file_path))
  
     def hardfail(self,msg=None):
-        self.table.session.commit()
-        self.table.session.close()
+        #self.close()
         sys.exit("Hard Fail Initiated Data File: \n\t{}\n{}".format(self.file_path,msg or ''))
-    def close(self):
-        self.table.session.commit()
-        self.table.session.close()
+    # def close(self):
+    #     self.table.session.commit()
+    #     self.table.session.close()
         
     def set_cfpb_load_status(self):
         pass
@@ -174,15 +173,13 @@ class LogicState:
 
     def __del__(self):
         assert isinstance(self.row,db_table.db_table_def.MetaSourceFiles)
-        self.row.last_error_msg=self.error_msg or self.row.last_error_msg
+        
         self.table.session.commit()
-        #self.table.session.close()
+      
 
     def authenticate(self):
         pass
-
-    def close(self):
-        pass
+ 
 
 class FilesOfInterest:
     
@@ -280,8 +277,7 @@ class FilesOfInterest:
     def authenticate(self):
         pass
 
-    def close(self):
-        pass
+   
 
 
 class FOI(object):

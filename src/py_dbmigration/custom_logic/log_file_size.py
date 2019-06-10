@@ -29,7 +29,7 @@ def custom_logic(db, foi, df, logic_status):
     file_size_mb = round(file_size * 1.0 / 1024 / 1024, 2)
     logging.info("\t\tFile Size: {} MB ".format(file_size_mb))
     logic_status.row.file_size = file_size_mb
-
+    logic_status.completed()
     return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 

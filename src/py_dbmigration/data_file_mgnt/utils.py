@@ -99,12 +99,12 @@ def process_logic(foi, db, df):
         time_started = datetime.datetime.now()
         # *************************************************************************
         try:
-            logic_status = imp.process(db, foi, df, logic_status)
+            imp.process(db, foi, df, logic_status)
             logic_status.completed()
         except Exception as e:
             logging.error(
                 "Syntax Error running Custom Logic: {}".format(fqn_logic))
-            df.current_file_state.hardfail('{}: {}'.format(imp.__file__, e))
+            logic_status.hardfail('{}: {}'.format(imp.__file__, e))
         # *************************************************************************
 
         time_delta = (datetime.datetime.now() - time_started)

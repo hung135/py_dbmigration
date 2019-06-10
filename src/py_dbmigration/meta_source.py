@@ -18,7 +18,7 @@ def print_table_state(db):
         for r in proj:
             t.add_row(r)
         print(t) 
-def print_table_file_state(db,project,state):
+def print_table_file_state(db,project,state,add_fields=''):
         where_project='1=1'
         where_state='1=1 and '
         if project!='ALL':
@@ -26,9 +26,12 @@ def print_table_file_state(db,project,state):
         if state!='ALL':
             where_state="upper(file_process_state)=upper('{}') and ".format(state)
         proj , meta=(db.query("""select distinct project_name,file_process_state,file_name ,
-                        total_rows as file_rows,rows_inserted,last_error_msg,process_msg_trail
-                        -- ,concat(file_path,'/',file_name)
-                        from logging.meta_source_files where {} {} order by 3,2""".format(where_state,where_project)))
+                        total_rows as file_rows,rows_inserted,last_error_msg
+                        --,process_msg_trail
+                        ,concat(file_path,'/',file_name) 
+                        {}
+                        from logging.meta_source_files where {} {} order by 3,2
+                        """.format(add_fields,where_state,where_project)))
         cols=[]
         for col in meta:
             cols.append(col.name)
@@ -46,6 +49,8 @@ def main():
     parser.add_argument('--p', required=True, help='Project Name, ''ALL'' or Project Name')
     parser.add_argument('--r',  help='Reset Project, FAILED, STUCK (or in progress), ALL , CLEAN = Delete records from meta source')
     parser.add_argument('--s',  help='List all files in these states, FAILED, PROCESSED, OBSOLETE, Processing,DUPLICATE')
+    parser.add_argument('--f', default='', help='addition fields from meta_source to display')
+    
     db=db_utils.DB()
 
 
@@ -61,12 +66,12 @@ def main():
         cnt,=db.get_a_row("select count(*) from logging.meta_source_files where project_name='{}'".format(args.p))
         if int(cnt)==0:
             sys.exit("ERROR! - Project Name was not found!")
-
- 
-    
+    add_fields=''
+    if args.f!='':
+        add_fields=","+args.f
     
     if args.s is not None:
-        print_table_file_state(db,args.p,args.s)
+        print_table_file_state(db,args.p,args.s,add_fields)
     if args.r is not None:
         if args.r in ('FAILED', 'Processing'):
             db.execute("""update logging.meta_source_files
