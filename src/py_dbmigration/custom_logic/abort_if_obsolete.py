@@ -3,9 +3,9 @@ import logging
 import os
 import sys
 import py_dbutils.rdbms.postgres as db_utils
-import py_dbmigration.data_file_mgnt as data_file_mgnt
+ 
 import py_dbmigration.migrate_utils as migrate_utils
-from py_dbmigration.data_file_mgnt.state import *
+from py_dbmigration.data_file_mgnt.state import FOI,LogicState
  
 
 logging.basicConfig(level='DEBUG')
@@ -45,9 +45,12 @@ def custom_logic(db, foi, df,logic_status):
     if file_exists:
         # raise execption to continue with the next file
         # raise valuerror to abort process
-        logging.error("\t\tObsolete Data File: Newer File Found")
+        logging.info("\t\tObsolete Data File: Newer File Found")
     
         logic_status.continue_to_next_logic(logic_status.file_state.obsolete())
+    else:
+        logging.info("\t\tNOT Obsolete Data")
+
     return logic_status
 
 

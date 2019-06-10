@@ -35,11 +35,13 @@ def custom_logic(db, foi, df, logic_status):
     if already_processed:
         # raise execption to continue with the next file
         # raise valuerror to abort process
-        logging.error("\t\tDuplicate File Found")
+        logging.info("\t\tDuplicate File Found")
 
         # let file state machine determin if we can continue
         logic_status.continue_to_next_logic(
             logic_status.file_state.duplicate())
+    else:
+        logging.info("\t\tDuplicate NOT File Found")
     return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 

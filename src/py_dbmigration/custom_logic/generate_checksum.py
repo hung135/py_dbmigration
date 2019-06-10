@@ -30,7 +30,7 @@ def custom_logic(db, foi, df, logic_status):
     if logic_status.row.crc is not None:
         logging.info("\t\tChecksum already Exists, Skipping:")
     else:
-        logging.info("\t\tCheck Not Exists, generating MD%:")
+        logging.info("\t\tCheck Not Exists, generating MD5:")
         crc = migrate_utils.static_func.md5_file_36(abs_file_path)
         logging.info("\t\t\tMDB: {}".format(crc))
         logic_status.row.crc = crc
