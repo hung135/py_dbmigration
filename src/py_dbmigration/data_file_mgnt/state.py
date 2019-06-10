@@ -189,7 +189,10 @@ class FilesOfInterest:
     # 2 scerios...given a path and a file pattern we walk the dir
     # gven table_name and a file regex we use it to map files from the meta
     # source to a table
-
+    write_path=None
+    extract_file_name_data = None
+    format_extracted_date = None
+    file_path = None # the direction not the FQN of the file...
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
                  use_header=False, has_header=True, quoted_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
                  file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF8',
@@ -233,7 +236,7 @@ class FilesOfInterest:
         self.encoding = encoding
         self.current_working_abs_file_name = None
         self.limit_rows = limit_rows
-        self.header_list_returned = None
+       
         self.header_added = None
         # self.start_row = start_row
         self.header_row = header_row_location or 0
@@ -279,3 +282,86 @@ class FilesOfInterest:
 
     def close(self):
         pass
+
+
+class FOI(object):
+    
+    # 2 scerios...given a path and a file pattern we walk the dir
+    # gven table_name and a file regex we use it to map files from the meta
+    # source to a table
+    project_name = None
+    regex = None
+    path = None
+    write_path = None
+    file_path = None
+    file_type= None
+    table_name= None
+    file_regex= None
+    file_delimiter= None
+    column_list= None
+    schema_name= None
+    use_header= None
+    has_header= None
+    append_file_id= None
+    file_encoding= None
+    pre_action_sql= None
+    post_action_sql= None
+    pre_action= None
+    post_action= None
+    limit_rows= None
+    
+    process_logic= None
+   
+    reprocess=None 
+    extract_file_name_data = None
+    file_name_data_regex = None
+    table_name_extract = None
+    unzip_again = None
+    header_row = None
+    new_delimiter = None
+    convert_table_name_snake_case = None
+    encoding = None
+    def __init__(self,level1,mapping ):
+
+        for key in level1:
+            if str(level1[key])=='None':
+                setattr(self, key, None)
+            else:
+                setattr(self, key, level1[key])
+
+        for key in mapping:
+            if str(mapping[key])=='None':
+                setattr(self, key, None)
+            elif (key)=='process_logic':
+                self.process_logic=self.process_logic + mapping[key]
+            else:
+                setattr(self, key, mapping[key])
+
+        self.file_path = self.path or self.file_path
+        self.file_path = os.path.abspath(self.file_path)
+        self.regex = self.regex or self.file_regex
+        self.file_name_data_regex = self.extract_file_name_data or self.file_name_data_regex
+        self.encoding = self.file_encoding or self.encoding
+        self.limit_rows = self.limit_rows 
+        self.header_row = self.header_row or 0
+    
+    def __str__(self):
+        string_result={
+            'project_name':self.project_name,
+            'regex_pattern': self.regex,
+            'file_path':self.path,
+            'current_file':self.file_path
+
+        }
+         
+        return str(string_result)
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def __repr__(self):
+        return self.__str__
+
+    def __del__(self):
+        pass
+
+  

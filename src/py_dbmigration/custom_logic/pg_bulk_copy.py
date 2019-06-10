@@ -4,7 +4,7 @@ import os
 import sys
 from py_dbutils.rdbms import postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
-from py_dbmigration.data_file_mgnt.state import DataFileState,FileStateEnum,LogicState,LogicStateEnum
+from py_dbmigration.data_file_mgnt.state import *
 import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
 import py_dbmigration.migrate_utils.static_func as static_func
@@ -28,7 +28,7 @@ logging.basicConfig(level='DEBUG')
 def custom_logic(db, foi, df,logic_status):
  
      
-    assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
+    assert isinstance(foi,FOI)
     assert isinstance(db, db_utils.DB)
  
 
@@ -63,7 +63,7 @@ def custom_logic(db, foi, df,logic_status):
          
      
  
-    names = foi.header_list_returned or foi.column_list
+    names = foi.column_list
   
     db_cols =db.get_table_columns(target_schema+'.'+table_name)
      
@@ -82,12 +82,8 @@ def custom_logic(db, foi, df,logic_status):
         logging.info('Config Column Count:{} Datafile Column Count: {}'.format(column_count,file_column_count))
         cols=foi.mapping.get('column_list2').split(',')
 
-    if foi.header_list_returned is not None:
-
-        cols = ','.join(foi.header_list_returned)
-    else:
-        # remove file_id in the case we got headers from db
-        cols = ','.join(cols)
+ 
+    cols = ','.join(cols)
     
      
     header = ''
@@ -136,7 +132,7 @@ def custom_logic(db, foi, df,logic_status):
 
 def process(db, foi, df,logic_status):
     # variables expected to be populated
-    assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
+    assert isinstance(foi,FOI)
     assert isinstance(db, db_utils.DB)
     assert isinstance(logic_status,LogicState)
     return custom_logic(db, foi, df,logic_status)

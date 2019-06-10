@@ -5,7 +5,7 @@ import sys
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
-from py_dbmigration.data_file_mgnt.state import DataFileState,FileStateEnum,LogicState,LogicStateEnum
+from py_dbmigration.data_file_mgnt.state import *
  
 logging.basicConfig(level='DEBUG')
 
@@ -42,7 +42,7 @@ def process(db, foi, df):
     error_msg = None
     additional_msg = None
 
-    assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
+    assert isinstance(foi,FOI)
     assert isinstance(db, db_utils.DB)
     assert isinstance(logic_status,LogicState)
     return custom_logic(db, foi, df,logic_status)

@@ -6,7 +6,7 @@ from py_dbutils import parents as db_utils
 from .. import data_file_mgnt
 from .. import migrate_utils
 
-from py_dbmigration.data_file_mgnt.state import DataFileState, FileStateEnum, LogicState, LogicStateEnum
+from py_dbmigration.data_file_mgnt.state import *
 logging.basicConfig(level='DEBUG')
 
 '''
@@ -34,8 +34,8 @@ def custom_logic(db, foi, df, logic_status):
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 
 
-def process(db, foi, df, logic_status):
-    assert isinstance(foi, data_file_mgnt.data_files.FilesOfInterest)
+def process(db, foi, df,logic_status):
+    assert isinstance(foi,FOI)
     assert isinstance(db, db_utils.DB)
     assert isinstance(logic_status, LogicState)
     return custom_logic(db, foi, df, logic_status)

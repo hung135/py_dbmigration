@@ -1,6 +1,5 @@
 #This file is to configure mapping of files to database tables 
 - path: '/workspace/tests/sample_data/'
-  mp_cores: 2
   write_path: '/workspace/tmp/'
   convert_table_name_snake_case: True
   enabled: True # activates this configration tree
