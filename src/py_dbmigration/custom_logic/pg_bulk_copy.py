@@ -61,13 +61,11 @@ def custom_logic(db, foi, df,logic_status):
         df.rename(columns=lambda x: str(x).strip(), inplace=True)
         db.create_table_from_dataframe(df,table_name_fqn)
          
-     
- 
-    names = foi.column_list
+      
   
-    db_cols =db.get_table_columns(target_schema+'.'+table_name)
+    db_cols_list =db.get_table_columns(target_schema+'.'+table_name)
      
-    cols = foi.column_list or  db_cols
+    cols = foi.column_list or  db_cols_list
     encoding = foi.encoding
  
     column_count=len(cols.split(','))
@@ -80,7 +78,7 @@ def custom_logic(db, foi, df,logic_status):
     if column_count!=file_column_count:
         logging.info('Using column_list2 since column counts differr:')
         logging.info('Config Column Count:{} Datafile Column Count: {}'.format(column_count,file_column_count))
-        cols=foi.mapping.get('column_list2').split(',')
+        cols=foi.column_list2
 
  
     cols = ','.join(cols)

@@ -295,6 +295,7 @@ class FOI(object):
     file_regex= None
     file_delimiter= None
     column_list= None
+    column_list2 = None
     schema_name= None
     use_header= None
     has_header= None
@@ -335,6 +336,7 @@ class FOI(object):
             else:
                 setattr(self, key, mapping[key])
 
+        #ensure variable data types are proper here so we don't have to massage it else wheres
         self.file_path = self.path or self.file_path
         self.file_path = os.path.abspath(self.file_path)
         self.regex = self.regex or self.file_regex
@@ -342,6 +344,10 @@ class FOI(object):
         self.encoding = self.file_encoding or self.encoding
         self.limit_rows = self.limit_rows 
         self.header_row = self.header_row or 0
+        if self.column_list is not None:
+            self.column_list = self.column_list.split(',')
+        if self.column_list2 is not None:
+            self.column_list2 = self.column_list2.split(',')
     
     def __str__(self):
         string_result={
