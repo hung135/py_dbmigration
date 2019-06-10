@@ -56,7 +56,7 @@ def process_logic(foi, db, df):
     table = df.current_file_state.table
     row = df.current_file_state.row
     assert isinstance(row, db_table.db_table_def.MetaSourceFiles)
-
+    foi.render_runtime_data(df)
     # store result of action you do in this variable
 
     if foi.table_name_extract is not None:
@@ -101,7 +101,7 @@ def process_logic(foi, db, df):
             logic_status.completed()
         except Exception as e:
             logging.error(
-                "PID: {}, Syntax Error running Custom Logic: {}".format(os.getpid(),fqn_logic))
+                "PID: {}, Syntax Error running Custom Logic: {}\n{}".format(os.getpid(),fqn_logic,e))
             logic_status.hardfail('{}: {}'.format(imp.__file__, e))
         # *************************************************************************
 

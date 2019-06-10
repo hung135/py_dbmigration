@@ -1,6 +1,7 @@
 from enum import Enum
 import os, sys
 import py_dbmigration.db_table as db_table
+from py_dbmigration.data_file_mgnt.data_files.utils import inject_frame_work_data
 
 #enums to classify various states if a file
 class FileStateEnum(Enum):
@@ -352,6 +353,18 @@ class FOI(object):
         if self.column_list2 is not None:
             self.column_list2 = self.column_list2.replace(' ', '').replace('\n', '').split(',')
     
+    #set runtime values for any objects
+    def render_runtime_values(df)
+        for field in thisObject:
+            if isinstance(field,str):
+                field=inject_frame_work_data(attr,self,df)
+        for field in self.pre_action:
+            if isinstance(attr,str):
+                field=inject_frame_work_data(field,self,df)
+        for field in self.post_action:
+            if isinstance(attr,str):
+                field=inject_frame_work_data(field,self,df)
+
     def __str__(self):
         string_result={
             'project_name':self.project_name,

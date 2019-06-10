@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 from py_dbutils.rdbms import postgres as db_utils
- 
+from py_dbmigration.data_file_mgnt.utils import inject_frame_work_data 
 from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
@@ -39,6 +39,7 @@ def custom_logic(db, foi, df,logic_status):
     data_file = os.path.join(df.source_file_path, df.curr_src_working_file)
   
     table_name = foi.table_name or static_func.convert_str_snake_case(df.curr_src_working_file)
+    
     target_schema = foi.schema_name
     table_name_fqn = "{}.{}".format(target_schema,table_name)
      
