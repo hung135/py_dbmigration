@@ -168,7 +168,7 @@ class LogicState:
         self.file_state.failed(str(msg))
 
     def hardfail(self,msg=None):
-        self.file_state.failed()
+        self.file_state.failed(str(msg))
         sys.exit("Hard Fail Initiated for Logic File: \n\t{}".format(self.file_path))
 
     def __del__(self):
@@ -318,6 +318,7 @@ class FOI(object):
     new_delimiter = None
     convert_table_name_snake_case = None
     encoding = None
+    mapping = None
     def __init__(self,level1,mapping ):
 
         for key in level1:

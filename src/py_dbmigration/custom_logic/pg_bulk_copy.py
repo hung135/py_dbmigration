@@ -4,7 +4,7 @@ import os
 import sys
 from py_dbutils.rdbms import postgres as db_utils
  
-from py_dbmigration.data_file_mgnt.state import *
+from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
 import py_dbmigration.migrate_utils.static_func as static_func
@@ -70,7 +70,7 @@ def custom_logic(db, foi, df,logic_status):
     cols = foi.column_list or  db_cols
     encoding = foi.encoding
  
-    column_count=len(cols)
+    column_count=len(cols.split(','))
      
     #count_column_csv(full_file_path, header_row_location=0, sample_size=200, delimiter=','):
     logging.debug("Delimiter: {}".format(foi.file_delimiter))
