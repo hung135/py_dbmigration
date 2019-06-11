@@ -13,7 +13,7 @@ class Config(object):
         'sample_zip_data_dir': "/workspace/_sample_zip_data/",
         'zip_data_dir': "/workspace/_sample_zip_data/"}
     
-    def get_pg_database(self):
+    def get_pg_database(self,appname=__file__):
         from py_dbutils.rdbms import postgres as db_utils
         HOST = os.environ['PGHOST'] or 'localhost'
         DATABASE = os.environ['PGDATABASE'] or 'postgres'
@@ -22,7 +22,7 @@ class Config(object):
         DBPASSWORD = os.environ['PGPASSWORD'] or 'docker'
 
         db = db_utils.DB(host=HOST, userid=USERID, dbname=DATABASE, schema=self.TEST_SCHEMA,
-                                    pwd=DBPASSWORD,  port=DBPORT)
+                                    pwd=DBPASSWORD,  port=DBPORT, label=appname)
         db.execute("create schema {}".format(self.LOGGING_SCHEMA))
         db.execute("drop schema {} cascade".format(self.TEST_SCHEMA))
         db.execute("create schema {}".format(self.TEST_SCHEMA))
