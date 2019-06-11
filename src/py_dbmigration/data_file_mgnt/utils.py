@@ -20,6 +20,53 @@ logging = log.getLogger()
 # list of key values to replace in sql with runtime data values
 
 
+def recurse_replace_yaml(p_trg_data, p_base_dict):
+    def inject_yaml_data(str_data, yaml):
+
+        dict_keys = yaml.keys()
+        # print('before ', str_data)
+        for key in dict_keys:
+            if isinstance(yaml[key], dict):
+                str_data=recurse_replace_yaml(str_data,yaml[key])
+            elif not (isinstance(yaml[key], list) or isinstance(yaml[key], dict)):
+                str_data = str_data.replace("{{" + key + "}}", str(yaml[key]))
+        # print('after ', str_data)
+        return str_data
+
+    assert isinstance(p_base_dict, dict), "2nd parameter has to be TYPE dict: {}".format(type(p_base_dict))
+    if isinstance(p_trg_data, list):
+        new_list = []
+        for trg_item in p_trg_data:
+            if isinstance(trg_item, str):
+                trg_item = inject_yaml_data(trg_item, p_base_dict)
+            elif isinstance(trg_item, list) or isinstance(trg_item, dict):
+                if isinstance(trg_item, dict):
+                    trg_item = recurse_replace_yaml(trg_item, trg_item)
+                trg_item = recurse_replace_yaml(trg_item, p_base_dict)
+            new_list.append(trg_item)
+        p_trg_data = new_list
+        # pprint.pprint(p_trg_data)
+    elif isinstance(p_trg_data, dict):
+        # v_trg_dict = copy.deepcopy(p_trg_dict)
+        # pprint.pprint(p_trg_data)
+        new_dict = {}
+        for trg_key in p_trg_data.keys():
+            trg_item = p_trg_data[trg_key]
+            if isinstance(trg_item, str):
+                if trg_key=='logging_table':
+                    print(trg_item)
+                    import pprint 
+                    pprint.pprint(p_base_dict)
+                trg_item = inject_yaml_data(trg_item, p_base_dict)
+            elif isinstance(trg_item, list) or isinstance(trg_item, dict):
+                trg_item = recurse_replace_yaml(trg_item, p_base_dict)
+            new_dict[trg_key] = trg_item
+        p_trg_data = new_dict
+    elif isinstance(p_trg_data, str):
+        p_trg_data = inject_yaml_data(p_trg_data, p_base_dict)
+
+    return p_trg_data
+
 def inject_frame_work_data(sql, foi, df):
 
     x = sql.replace("{{{file_id}}}", str(df.meta_source_file_id))
