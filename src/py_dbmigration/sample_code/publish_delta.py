@@ -54,8 +54,9 @@ trg_db = db_utils.DB(host=os.environ['PGHOST_EXTERNAL'],
                                     password=os.environ['PGPASSWORD_EXTERNAL'])
 
 database_name = os.environ['PGDATABASE_INTERNAL']
+file_name=os.path.basename(__file__)
 record_keeper = db_table.db_table_func.RecordKeeper(
-    trg_db, db_table.db_table_def.PublishLog)
+    trg_db, db_table.db_table_def.PublishLog,file_name)
 
 # row = t.get_record(db_table.MetaSourceFiles.id == self.meta_source_file_id)
 # row.process_end_dtm = dt.datetime.now()

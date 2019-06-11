@@ -171,8 +171,9 @@ class DataFile:
                         db, self.FilesOfInterest, self.parent_file_id)
                 
     def init_db(self):
+        file_name=os.path.basename(__file__)+"init_db"
         db_table.db_table_func.RecordKeeper(
-            self.db, db_table.db_table_def.MetaSourceFiles)
+            self.db, db_table.db_table_def.MetaSourceFiles,file_name)
          
     def extract_file_name_datav2(self, db, foi):
          
@@ -268,8 +269,9 @@ class DataFile:
 
     def insert_working_files(self, db, file_of_interest_obj, parent_file_id=0):
         assert isinstance(file_of_interest_obj, FilesOfInterest) or isinstance(file_of_interest_obj,FOI)
+        file_name=os.path.basename(__file__)+"insert_working_files"
         t = db_table.db_table_func.RecordKeeper(
-            db, db_table.db_table_def.MetaSourceFiles)
+            db, db_table.db_table_def.MetaSourceFiles,appname=file_name)
         id_regex = file_of_interest_obj.file_name_data_regex
         #print("----------inserting working file")
 
@@ -515,9 +517,10 @@ class DataFile:
          
         project_list = (','.join("'" + item + "'" for item in x))
 
+        file_name=os.path.basename(__file__)+"get_work"
         t = db_table.db_table_func.RecordKeeper(
-            db, db_table.db_table_def.MetaSourceFiles)
-
+            db, db_table.db_table_def.MetaSourceFiles,file_name)
+        t.close()
         # to ensure we lock 1 row to avoid race conditions
         
         sql = self.sql_yaml['sql_get_work'].format(
@@ -530,7 +533,8 @@ class DataFile:
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,
                            db_table.db_table_def.MetaSourceFiles.current_worker_host_pid == self.curr_pid,
                            db_table.db_table_def.MetaSourceFiles.process_end_dtm == None)
-
+        t.engine.dispose()
+        print("-----closeddddddd")
         if row is None:
             logging.info("No Work Left")
             return None
@@ -545,7 +549,9 @@ class DataFile:
             self.meta_source_file_id = row.id
 
             self.row_count = row.total_rows
-        
+        t.session.close()
+        t.engine.dispose()
+        print("-----closeddddddd")
         self.current_file_state=DataFileState(self.db,os.path.join(self.source_file_path,self.curr_src_working_file)
                 ,self.meta_source_file_id)
         return self.curr_src_working_file

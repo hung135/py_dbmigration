@@ -42,7 +42,12 @@ class DataFileState:
         self.file_extracted = None
         self.table_name = None
         self.file_id=file_id
-        self.table = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+        self.db=db
+        try:
+            self.table.close()
+        except:
+            pass
+        self.table = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles,self.name)
         self.row = self.table.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
         
         self.row.file_process_state=self.status.value
@@ -56,10 +61,14 @@ class DataFileState:
         return return_string.format(self.name,self.status,self.error_msg)
 
     
-
+    def close(self):
+        self.table.session.commit()
+        self.table.session.close()
+        self.table.close()
     def __del__(self):
         self.table.session.commit()
-        self.table.session.close()  
+        self.table.session.close()
+        self.table.close()
 
     def authenticate(self):
         pass

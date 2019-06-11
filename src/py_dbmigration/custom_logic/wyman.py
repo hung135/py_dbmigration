@@ -202,8 +202,8 @@ def process(db, foi, df):
             ee.to_sql(table_name, sqlalchemy_conn, schema=target_dbschema, if_exists='append', index=False)
              
             total_rows += len(ee)
-
-        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+        file_name=os.path.basename(__file__)
+        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles,file_name)
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
         row.total_rows = total_rows
         row.database_table = target_dbschema + '.' + table_name

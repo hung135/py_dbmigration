@@ -58,8 +58,8 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
     def test_02_record_keeper(self):
         db=self.get_pg_database()
         print('# In function:', sys._getframe().f_code.co_name)
-
-        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles)
+        file_name=os.path.basename(__file__)
+        t = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles,appname=file_name)
         row = db_table.db_table_def.MetaSourceFiles(project_name=self.PROJECT_NAME, file_path='.', file_name='abc', file_name_data='',
                                                     file_type='ZIP', parent_file_id=0)
         t.add_record(row, commit=True)

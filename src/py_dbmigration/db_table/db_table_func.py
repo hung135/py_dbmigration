@@ -15,13 +15,13 @@ class RecordKeeper():
     engine_dict = {}
     table_dict = {}
     
-    def __init__(self, db, table_def):
+    def __init__(self, db, table_def,appname=__file__):
         # type: (dbutils.conn, str, str) -> object
         """
 
         :rtype: 
         """
-        self.engine_dict = {}
+        #self.engine_dict = {}
         self.table_dict = {}
         self.host = db.host
         self.dbschema = 'logging'
@@ -38,37 +38,34 @@ class RecordKeeper():
             self.table = self.table_dict[key]
 
         
+ 
 
-        # call class method to make sure url attribute is set
-        if self.engine_dict.get('only1', None) is None:
+        #db.connect_SqlAlchemy()
+        sql_alchemy_uri_connected=db.sql_alchemy_uri.format(
+                userid=db.userid,
+                pwd=db.pwd,
+                host=db.host,
+                port=db.port,
+                db=db.dbname,
+                appname=appname
+            ) 
+        self.engine = sqlalchemy.create_engine(sql_alchemy_uri_connected)
+        #self.engine = self.engine_dict['only1']
 
-            #db.connect_SqlAlchemy()
-            sql_alchemy_uri_connected=db.sql_alchemy_uri.format(
-                    userid=db.userid,
-                    pwd=db.pwd,
-                    host=db.host,
-                    port=db.port,
-                    db=db.dbname
-                ) 
-            self.engine_dict['only1'] = sqlalchemy.create_engine(sql_alchemy_uri_connected)
-            self.engine = self.engine_dict['only1']
-
-            try:
-                self.engine.execute(CreateSchema(self.table.DbSchema))
-                logging.debug("Creating Database Schema: {}".format(self.table.DbSchema))
-            except sqlachemy_exception.ProgrammingError as e:
-                logging.warning(e)
-            
-            MetaBase.metadata.create_all(bind=self.engine)
-        else:
-
-            self.engine = self.engine_dict['only1']
+        try:
+            self.engine.execute(CreateSchema(self.table.DbSchema))
+            logging.debug("Creating Database Schema: {}".format(self.table.DbSchema))
+        except sqlachemy_exception.ProgrammingError as e:
+            logging.warning(e)
+        
+        MetaBase.metadata.create_all(bind=self.engine)
+        
         # create session
 
         Session = sqlalchemy.orm.sessionmaker()
         Session.configure(bind=self.engine)
         self.session = Session()
-
+        
         # reflecting whole schema
         self.metadata = MetaData()
         self.metadata.reflect(bind=self.engine)
@@ -113,10 +110,16 @@ class RecordKeeper():
             print(e)
         except:
             self.session.rollback()
-
+    def close(self):
+        self.session.close()
+       
+        self.engine.dispose()
+        print('------------closing sql alchemy connection')
     def __del__(self):
         try:
             self.session.close()
+             
+            self.engine.dispose()
             logging.debug("Closing db_table Session: {} {} {}".format(self.host, self.database, self.dbschema))
         except Exception as e:
             logging.error("Error Occured Closing db_table Session: {}".format(e))
