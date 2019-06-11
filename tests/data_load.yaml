@@ -40,7 +40,7 @@
       file_type: 'CSV'
       schema_name: 'test'
       reprocess: True
-      #table_name: 'test1'
+      #table_name: test111
       file_delimiter: ","
       process_logic:
         - logic: 'custom_logic.count_file_linux_wc'

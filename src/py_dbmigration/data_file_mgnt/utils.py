@@ -9,7 +9,7 @@ import logging as log
 import re
 import sys
 from py_dbmigration.custom_logic import purge_temp_file as purge
-
+import yaml
 
 import py_dbmigration.db_table as db_table
 
@@ -66,7 +66,34 @@ def recurse_replace_yaml(p_trg_data, p_base_dict):
         p_trg_data = inject_yaml_data(p_trg_data, p_base_dict)
 
     return p_trg_data
+# run through the yaml and replace embedded params
+def pre_process_yaml(yaml_file):
+    # yaml_file = os.path.abspath(yaml_file)
+    yaml_data=None
+    with open(yaml_file,'r') as f:
+        yaml_data = yaml.full_load(f)
+     
+    mig_list = []
+    for yaml_obj in yaml_data:
+        item = recurse_replace_yaml(yaml_obj, yaml_obj)
+        mig_list.append(item)
+        for i in item.keys():
+            j = item[i]
+            if isinstance(j, dict):
 
+                j = recurse_replace_yaml(j, j)
+
+            elif isinstance(j, list):
+
+                j = recurse_replace_yaml(j, yaml_obj)
+
+            elif isinstance(j, str):
+
+                j = recurse_replace_yaml(j, yaml_obj)
+
+    #pprint.pprint(mig_list)
+     
+    return mig_list
 def inject_frame_work_data(sql, foi, df):
 
     x = sql.replace("{{{file_id}}}", str(df.meta_source_file_id))
