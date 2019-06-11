@@ -3,7 +3,7 @@ import os
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as dfm
 import py_dbmigration.migrate_utils.static_func as static_func
-
+from  py_dbmigration.data_file_mgnt.utils import  pre_process_yaml as ppy
 from  py_dbmigration.data_file_mgnt.state import  FOI
 import multiprocessing as mp
 
@@ -29,13 +29,15 @@ def process_yaml(yaml_file=None):
     if yaml_file is None:
         yaml_file = os.path.join(os.getcwd(),"data_load.yaml")
     logging.debug("loaind yaml file: {}".format(yaml_file))
-    paths = None
+    # paths = None
      
-    with open(yaml_file,'r') as f:
-        from yaml import Loader
-        paths= yaml.load(f,Loader=Loader)
-
+    # with open(yaml_file,'r') as f:
+    #     from yaml import Loader
+    #     paths= yaml.load(f,Loader=Loader)
+    paths=ppy(yaml_file)
     datafiles = []
+    print(paths)
+     
     
     try:
         for path_dict in paths:

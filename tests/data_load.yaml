@@ -40,7 +40,7 @@
       file_type: 'CSV'
       schema_name: 'test'
       reprocess: True
-      #table_name: test111
+      table_name: test{{{file_id}}}
       file_delimiter: ","
       process_logic:
         - logic: 'custom_logic.count_file_linux_wc'
@@ -67,3 +67,4 @@
        
       post_action: 
         - sql: "vacuum analyze {{schema_name}}.{{table_name}}"
+        - sql: "select 1 from logging.meta_source_files where id={{file_id}}"

@@ -354,7 +354,7 @@ class FOI(object):
             self.column_list2 = self.column_list2.replace(' ', '').replace('\n', '').split(',')
     
     #set runtime values for any objects
-    def render_runtime_values(self,df):
+    def render_runtime_data(self,df):
         obj=self
         self_attributes=[a for a in dir(obj) if not a.startswith('__') and not callable(getattr(obj,a))]
          
@@ -363,16 +363,19 @@ class FOI(object):
             field=getattr(self,a)
             if isinstance(field,str):
                 field=utils.inject_frame_work_data(field,self,df)
+                setattr(self,a,field)
         if self.pre_action is not None:
             assert isinstance(self.pre_action,list)
             for sql in self.pre_action:
                 if isinstance(sql,str):
                     field=utils.inject_frame_work_data(sql,self,df)
+                    setattr(self,a,field)
         if self.post_action is not None:           
             assert isinstance(self.post_action,list)         
             for sql in self.post_action:
                 if isinstance(sql,str):
                     field=utils.inject_frame_work_data(sql,self,df)
+                    setattr(self,a,field)
 
     def __str__(self):
         string_result={

@@ -32,7 +32,7 @@ def custom_logic(db, foi, df,logic_status):
      
     file = os.path.join(df.source_file_path, df.curr_src_working_file)
     limit_rows = (foi.limit_rows)
-     
+    
     table_name = foi.table_name
     target_schema = foi.schema_name
     #table_name_extract = foi.table_name_extract
@@ -154,7 +154,7 @@ def custom_logic(db, foi, df,logic_status):
 
 def process(db, foi, df,logic_status):
     # variables expected to be populated
-  
+    foi.render_runtime_data(df)
     assert isinstance(foi,FOI)
     assert isinstance(db, db_utils.DB)
     assert isinstance(logic_status,LogicState)
