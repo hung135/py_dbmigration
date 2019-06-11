@@ -1,7 +1,7 @@
 from enum import Enum
 import os, sys
 import py_dbmigration.db_table as db_table
-from py_dbmigration.data_file_mgnt.data_files.utils import inject_frame_work_data
+from py_dbmigration.data_file_mgnt import utils
 
 #enums to classify various states if a file
 class FileStateEnum(Enum):
@@ -307,8 +307,8 @@ class FOI(object):
     file_encoding= None
     pre_action_sql= None
     post_action_sql= None
-    pre_action= None
-    post_action= None
+    pre_action= []
+    post_action= []
     limit_rows= None
     
     process_logic= None
@@ -354,16 +354,25 @@ class FOI(object):
             self.column_list2 = self.column_list2.replace(' ', '').replace('\n', '').split(',')
     
     #set runtime values for any objects
-    def render_runtime_values(df)
-        for field in thisObject:
+    def render_runtime_values(self,df):
+        obj=self
+        self_attributes=[a for a in dir(obj) if not a.startswith('__') and not callable(getattr(obj,a))]
+         
+
+        for a in self_attributes:
+            field=getattr(self,a)
             if isinstance(field,str):
-                field=inject_frame_work_data(attr,self,df)
-        for field in self.pre_action:
-            if isinstance(attr,str):
-                field=inject_frame_work_data(field,self,df)
-        for field in self.post_action:
-            if isinstance(attr,str):
-                field=inject_frame_work_data(field,self,df)
+                field=utils.inject_frame_work_data(field,self,df)
+        if self.pre_action is not None:
+            assert isinstance(self.pre_action,list)
+            for sql in self.pre_action:
+                if isinstance(sql,str):
+                    field=utils.inject_frame_work_data(sql,self,df)
+        if self.post_action is not None:           
+            assert isinstance(self.post_action,list)         
+            for sql in self.post_action:
+                if isinstance(sql,str):
+                    field=utils.inject_frame_work_data(sql,self,df)
 
     def __str__(self):
         string_result={

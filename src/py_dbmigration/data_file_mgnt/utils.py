@@ -22,11 +22,11 @@ logging = log.getLogger()
 
 def inject_frame_work_data(sql, foi, df):
 
-    x = sql.replace("{file_id}", str(df.meta_source_file_id))
-    x = x.replace("{schema_name}", foi.schema_name)
-    x = x.replace("{table_name}", foi.table_name)
+    x = sql.replace("{{{file_id}}}", str(df.meta_source_file_id))
+    x = x.replace("{{schema_name}}", foi.schema_name)
+    x = x.replace("{{table_name}}", foi.table_name)
 
-    x = x.replace("{column_list}", ','.join(foi.column_list or []))
+    x = x.replace("{{column_list}}", ','.join(foi.column_list or []))
 
     return x
 
