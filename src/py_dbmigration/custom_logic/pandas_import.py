@@ -154,7 +154,7 @@ def custom_logic(db, foi, df,logic_status):
 
 def process(db, foi, df,logic_status):
     # variables expected to be populated
-    foi.render_runtime_data(df)
+  
     assert isinstance(foi,FOI)
     assert isinstance(db, db_utils.DB)
     assert isinstance(logic_status,LogicState)

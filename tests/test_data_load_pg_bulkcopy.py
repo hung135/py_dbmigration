@@ -17,8 +17,9 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
   
       
     
-    def test_data_load(self):
-        db=self.get_pg_database()
+    def test_data_load_pg_bulkcopy(self):
+        file_name=__file__
+        db=self.get_pg_database(appname=self.whoami())
          
         db.execute("truncate table logging.meta_source_files")
         print('# In function:', sys._getframe().f_code.co_name) 

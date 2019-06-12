@@ -34,14 +34,15 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
             os.makedirs(name=self.dirs[x],exist_ok = True)
     
     #@unittest.skip("Skipping for now")
-    def test_08_walkdir_data_file(self):
-        db=self.get_pg_database()
+    def xtest_08_walkdir_data_file(self):
+     
+        db=self.get_pg_database(appname=self.whoami())
         print('# In function:', sys._getframe().f_code.co_name)
         # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
         print("Truncating Logging Tables:")
 
         db.execute(
-            "TRUNCATE table logging.meta_source_files, logging.table_file_regex, logging.error_log, logging.load_status RESTART IDENTITY;")
+            "TRUNCATE table logging.meta_source_files, logging.error_log, logging.load_status RESTART IDENTITY;")
  
         # This is how we store the files we are looking for List of FileOfInterest
         foi_list = [

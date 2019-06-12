@@ -20,7 +20,8 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
    
  
     def test_01(self):
-        self.db=self.get_pg_database()
+        file_name=sys._getframe().f_code.co_name
+        db=self.get_pg_database(appname=file_name)
         print("test function",self)
         rs=self.db.query("select * from information_schema.tables")
         for row in rs:

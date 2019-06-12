@@ -33,7 +33,7 @@ class DataFileState:
     table_name = None
     continue_processing_logic=False
     file_id = None
-    def __init__(self, db, file,file_id):
+    def __init__(self, db, file,file_id,appname=None):
         self.file_path=os.path.abspath(file)
         self.name=os.path.basename(file)
         self.status = FileStateEnum.RAW
@@ -43,11 +43,11 @@ class DataFileState:
         self.table_name = None
         self.file_id=file_id
         self.db=db
-        try:
-            self.table.close()
-        except:
-            pass
-        self.table = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles,self.name)
+        # try:
+        #     self.table.close()
+        # except:
+        #     pass
+        self.table = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles,appname or self.name)
         self.row = self.table.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
         
         self.row.file_process_state=self.status.value
@@ -60,15 +60,22 @@ class DataFileState:
         return_string="""File: {}\nStatus: {}\nError_msg:  {}\n """
         return return_string.format(self.name,self.status,self.error_msg)
 
-    
+    def refresh(self,appname=None):
+        try:
+            self.table.close()
+        except:
+            pass
+        self.table = db_table.db_table_func.RecordKeeper(self.db, db_table.db_table_def.MetaSourceFiles,appname or self.name)
+        self.row = self.table.get_record(db_table.db_table_def.MetaSourceFiles.id == self.file_id)
+
     def close(self):
         self.table.session.commit()
-        self.table.session.close()
-        self.table.close()
+        #self.table.session.close()
+        #self.table.close()
     def __del__(self):
         self.table.session.commit()
-        self.table.session.close()
-        self.table.close()
+        #self.table.session.close()
+        #self.table.close()
 
     def authenticate(self):
         pass
@@ -130,6 +137,8 @@ class LogicState:
         self.table=file_state.table
         #assert isinstance(file_state.row,db_table.db_table_def.MetaSourceFiles)
         self.file_state=file_state
+        # file_state.refresh(self.name)
+        
         if self.row.file_process_state==FileStateEnum.RAW.value:
             self.row.file_process_state=FileStateEnum.PROCESSING.value
             self.table.session.commit()
@@ -188,6 +197,7 @@ class LogicState:
         assert isinstance(self.row,db_table.db_table_def.MetaSourceFiles)
         
         self.table.session.commit()
+        self.table.close()
       
 
     def authenticate(self):

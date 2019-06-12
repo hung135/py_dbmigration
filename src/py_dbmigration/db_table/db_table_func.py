@@ -49,14 +49,15 @@ class RecordKeeper():
                 db=db.dbname,
                 appname=appname
             ) 
+        print(sql_alchemy_uri_connected,'---------------------------')
         self.engine = sqlalchemy.create_engine(sql_alchemy_uri_connected)
         #self.engine = self.engine_dict['only1']
 
-        try:
-            self.engine.execute(CreateSchema(self.table.DbSchema))
-            logging.debug("Creating Database Schema: {}".format(self.table.DbSchema))
-        except sqlachemy_exception.ProgrammingError as e:
-            logging.warning(e)
+        # try:
+        #     self.engine.execute(CreateSchema(self.table.DbSchema))
+        #     logging.debug("Creating Database Schema: {}".format(self.table.DbSchema))
+        # except sqlachemy_exception.ProgrammingError as e:
+        #     logging.warning(e)
         
         MetaBase.metadata.create_all(bind=self.engine)
         
@@ -64,7 +65,7 @@ class RecordKeeper():
 
         Session = sqlalchemy.orm.sessionmaker()
         Session.configure(bind=self.engine)
-        self.session = Session()
+        self.session = Session(bind=self.engine)
         
         # reflecting whole schema
         self.metadata = MetaData()
@@ -111,7 +112,7 @@ class RecordKeeper():
         except:
             self.session.rollback()
     def close(self):
-        self.session.close()
+        #self.session.close()
        
         self.engine.dispose()
         print('------------closing sql alchemy connection')

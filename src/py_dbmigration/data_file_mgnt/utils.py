@@ -2,7 +2,6 @@
  
 import py_dbmigration.migrate_utils as migrate_utils
 from py_dbmigration.data_file_mgnt.state import *
- 
 import os
 import datetime
 import logging as log
@@ -10,9 +9,7 @@ import re
 import sys
 from py_dbmigration.custom_logic import purge_temp_file as purge
 import yaml
-
 import py_dbmigration.db_table as db_table
-
 
 logging = log.getLogger()
 
@@ -99,7 +96,6 @@ def inject_frame_work_data(string_text, foi, df):
     x = string_text.replace("{{{file_id}}}", str(df.meta_source_file_id))
     x = x.replace("{{schema_name}}", str(foi.schema_name or 'NONE'))
     x = x.replace("{{table_name}}", str(foi.table_name or 'NONE'))
-
     x = x.replace("{{column_list}}", ','.join(foi.column_list or []))
 
     return x
@@ -118,6 +114,7 @@ def execute_sql(db, sql_list, foi, df):
         t = datetime.datetime.now()
 
         db.execute(modified_sql, catch_exception=False)
+        db.commit()
 
         time_delta = (datetime.datetime.now() - t)
         logging.info("\t\tExecution Time: {}sec".format(time_delta))
@@ -127,9 +124,9 @@ def execute_sql(db, sql_list, foi, df):
 
 
 def process_logic(foi, db, df):
-    table = df.current_file_state.table
-    row = df.current_file_state.row
-    assert isinstance(row, db_table.db_table_def.MetaSourceFiles)
+    #table = df.current_file_state.table
+    #row = df.current_file_state.row
+    #assert isinstance(row, db_table.db_table_def.MetaSourceFiles)
     foi.render_runtime_data(df)
     # store result of action you do in this variable
 
@@ -141,8 +138,8 @@ def process_logic(foi, db, df):
             re.search(foi.table_name_extract, df.curr_src_working_file).group(1))
 
         # print(foi.table_name)
-    row.reprocess = foi.reprocess
-    table.session.commit()
+    #row.reprocess = foi.reprocess
+    #table.session.commit()
 
     process_logic = foi.process_logic
     if foi.pre_action is not None:
@@ -195,7 +192,7 @@ def process_logic(foi, db, df):
         if foi.post_action is not None:
             logging.info("Executing Post Load SQL")
             execute_sql(db, foi.post_action, foi, df)
-        row.file_process_state = FileStateEnum.PROCESSED.value
+        #row.file_process_state = FileStateEnum.PROCESSED.value
         #df.set_work_file_status(db, df.meta_source_file_id, 'PROCESSED')
 
     logic_status.file_state.processed()

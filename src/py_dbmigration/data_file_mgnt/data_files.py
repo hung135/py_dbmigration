@@ -172,9 +172,10 @@ class DataFile:
                 
     def init_db(self):
         file_name=os.path.basename(__file__)+"init_db"
-        db_table.db_table_func.RecordKeeper(
-            self.db, db_table.db_table_def.MetaSourceFiles,file_name)
-         
+        t=db_table.db_table_func.RecordKeeper(
+            self.db, db_table.db_table_def.MetaSourceFiles,appname=file_name)
+        t.close()
+        
     def extract_file_name_datav2(self, db, foi):
          
         if foi.project_name is not None:
@@ -323,8 +324,10 @@ class DataFile:
                                                             file_type=v_file_type,
                                                             parent_file_id=parent_file_id,
                                                             #upsert_function_name=file_of_interest_obj.upsert_function_name,
-                                                            project_name=file_of_interest_obj.project_name)
-                t.add_record(row, commit=True)
+                                                            project_name=file_of_interest_obj.project_name
+                                                            )
+                t.add_record(row)
+                t.session.commit()
 
     def dump_delimited_file(self, db, file_name, delimiter):
         shell_command = """psql -c "copy data_table FROM '{0}}' WITH DELIMITER AS '{1}' CSV QUOTE AS '"' """
@@ -519,8 +522,8 @@ class DataFile:
 
         file_name=os.path.basename(__file__)+"get_work"
         t = db_table.db_table_func.RecordKeeper(
-            db, db_table.db_table_def.MetaSourceFiles,file_name)
-        t.close()
+            db, db_table.db_table_def.MetaSourceFiles,appname=file_name)
+        
         # to ensure we lock 1 row to avoid race conditions
         
         sql = self.sql_yaml['sql_get_work'].format(
@@ -533,8 +536,8 @@ class DataFile:
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,
                            db_table.db_table_def.MetaSourceFiles.current_worker_host_pid == self.curr_pid,
                            db_table.db_table_def.MetaSourceFiles.process_end_dtm == None)
-        t.engine.dispose()
-        print("-----closeddddddd")
+        
+         
         if row is None:
             logging.info("No Work Left")
             return None
@@ -549,9 +552,9 @@ class DataFile:
             self.meta_source_file_id = row.id
 
             self.row_count = row.total_rows
-        t.session.close()
-        t.engine.dispose()
-        print("-----closeddddddd")
+        
+        t.close()
+         
         self.current_file_state=DataFileState(self.db,os.path.join(self.source_file_path,self.curr_src_working_file)
                 ,self.meta_source_file_id)
         return self.curr_src_working_file

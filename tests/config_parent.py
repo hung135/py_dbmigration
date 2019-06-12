@@ -1,9 +1,14 @@
 import os
+import inspect
+
 class Config(object):
 
     TEST_SCHEMA = 'test'
     LOGGING_SCHEMA = 'logging'
     PROJECT_NAME= 'test_project'
+
+    def whoami(self): 
+        return inspect.getouterframes(inspect.currentframe())[1].function
 
     dirs = {
         'data_dir': "/workspace/_sample_data/",
@@ -38,4 +43,5 @@ class Config(object):
         for f in sql_files:
             with open(f,'r') as sql_file:
                 db.cursor.execute(sql_file.read())
+        db.commit()
         return db

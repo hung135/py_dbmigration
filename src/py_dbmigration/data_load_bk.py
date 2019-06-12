@@ -170,7 +170,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None):
     PGDATASCHEMA = os.getenv('PGDATASCHEMA',schema)
     
     if len(datafiles) > 0:
-        db = db_utils.DB(schema=PGDATASCHEMA)
+        db = db_utils.DB(schema=PGDATASCHEMA,label=__file__+str(173))
          
         # db.truncate_table("logging", "meta_source_files")
 
