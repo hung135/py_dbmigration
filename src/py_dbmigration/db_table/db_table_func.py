@@ -115,7 +115,7 @@ class RecordKeeper():
         # self.session.close()
 
         self.engine.dispose()
-        logging.info("Closing SqlAlchemy Engine: {}".format(self.appname))
+        logging.debug("Closing SqlAlchemy Engine: {}".format(self.appname))
 
     def __del__(self):
         try:
