@@ -270,6 +270,7 @@ class FilesOfInterest:
         # list of sql to execute prior or post import of the file
         self.post_action = post_action
         self.pre_action = pre_action
+        if process_logic is None:
         self.process_logic = process_logic
         self.project_name = project_name
         self.table_name_extract = table_name_extract
@@ -355,7 +356,7 @@ class FOI(object):
             if str(mapping[key])=='None':
                 setattr(self, key, None)
             elif (key)=='process_logic':
-                self.process_logic=self.process_logic + mapping[key]
+                self.process_logic=self.process_logic + (mapping[key] or [])
             else:
                 setattr(self, key, mapping[key])
 

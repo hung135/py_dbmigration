@@ -36,7 +36,7 @@ def process_yaml(yaml_file=None):
     #     paths= yaml.load(f,Loader=Loader)
     paths=ppy(yaml_file)
     datafiles = []
-    print(paths)
+    #print(paths)
      
     
     try:

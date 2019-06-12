@@ -24,9 +24,9 @@ RUN pip install pipenv
 COPY .devcontainer/requirements.txt.temp requirements.txt* /workspace/
 RUN if [ -f "requirements.txt" ]; then pip install -r requirements.txt && rm requirements.txt; fi
 # Clean up
-RUN apt-get autoremove -y \
-    && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/*
+# RUN apt-get autoremove -y \
+#     && apt-get clean -y \
+#     && rm -rf /var/lib/apt/lists/*
 
 #RUN /bin/bash -c "echo alias meta=/workspace/meta_source.sh>>/root/.bashrc"
 #RUN /bin/bash -c "echo export LS_OPTIONS='--color=auto'>>/root/.bashrc"

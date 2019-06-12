@@ -114,7 +114,7 @@ def execute_sql(db, sql_list, foi, df):
         t = datetime.datetime.now()
 
         db.execute(modified_sql, catch_exception=False)
-        db.commit()
+        
 
         time_delta = (datetime.datetime.now() - t)
         logging.info("\t\tExecution Time: {}sec".format(time_delta))
