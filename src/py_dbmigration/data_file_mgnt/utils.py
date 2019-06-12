@@ -145,7 +145,7 @@ def process_logic(foi, db, df):
     if foi.pre_action is not None:
         logging.info("Executing Pre Load SQL")
         execute_sql(db, foi.pre_action, foi, df)
-    continue_next_process = False
+     
 
     for logic in process_logic:
 
@@ -188,7 +188,7 @@ def process_logic(foi, db, df):
             break
 
     # if everything was kosher else file should have been tailed 'FAILED'
-    if continue_next_process:
+    if logic_status.continue_processing_logic:
         if foi.post_action is not None:
             logging.info("Executing Post Load SQL")
             execute_sql(db, foi.post_action, foi, df)
