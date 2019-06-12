@@ -112,9 +112,9 @@ def custom_logic(db, foi, df,logic_status):
             with open(data_file,'r') as f:
                 db.cursor.copy_expert(cmd_string, f)
                 rows_inserted=db.cursor.rowcount
-            db.commit()
+                db.commit()
             logic_status.row.rows_inserted=rows_inserted
-            logic_status.row.db_table=table_name_fqn
+            logic_status.row.database_table=table_name_fqn
         except Exception as e:
             logging.error(__file__)
             logging.error(e)

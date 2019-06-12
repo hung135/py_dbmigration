@@ -27,7 +27,7 @@ def custom_logic(db, foi, df, logic_status):
 
     file_size = os.path.getsize(abs_file_path)
     file_size_mb = round(file_size * 1.0 / 1024 / 1024, 2)
-    logging.info("\t\tFile Size: {} MB ".format(file_size_mb))
+    logging.info("\t\t\tFile Size: {} MB ".format(file_size_mb))
     logic_status.row.file_size = file_size_mb
     
     return logic_status

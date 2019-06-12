@@ -109,7 +109,7 @@ def execute_sql(db, sql_list, foi, df):
         modified_sql = inject_frame_work_data(sql['sql'], foi, df)
         shorten_sql = (
             modified_sql[:50] + "...") if len(modified_sql) > 75 else modified_sql
-        logging.info("\tSQL Step #: {} {}".format(id, shorten_sql))
+        logging.info("\tPID: {} SQL Step #: {} {}".format(df.curr_pid, id, shorten_sql))
 
         t = datetime.datetime.now()
 
