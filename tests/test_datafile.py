@@ -34,7 +34,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
             os.makedirs(name=self.dirs[x],exist_ok = True)
     
     #@unittest.skip("Skipping for now")
-    def xtest_08_walkdir_data_file(self):
+    def test_08_walkdir_data_file(self):
      
         db=self.get_pg_database(appname=self.whoami())
         print('# In function:', sys._getframe().f_code.co_name)

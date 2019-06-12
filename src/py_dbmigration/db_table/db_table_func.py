@@ -26,7 +26,7 @@ class RecordKeeper():
         self.host = db.host
         self.dbschema = 'logging'
         self.database = db.dbname
-       
+        self.appname = appname
         self.engine = None  # instance
         #assert isinstance(db, db_utils.DB)
 
@@ -115,7 +115,7 @@ class RecordKeeper():
         #self.session.close()
        
         self.engine.dispose()
-        print('------------closing sql alchemy connection')
+        logging.info("Closing SqlAlchemy Engine: {}".format(self.appname))
     def __del__(self):
         try:
             self.session.close()

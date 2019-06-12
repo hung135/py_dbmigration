@@ -429,7 +429,7 @@ class DataFile:
 
         # logging.debug("Done Walking Directory:")
         match_list = list(filter(regex.match, files_list))
-        # logging.debug("Done Walking Directory---------------------------------:{}".format(list(match_list)))
+         
         foi.file_list = match_list
 
         return foi

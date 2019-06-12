@@ -19,7 +19,7 @@ def timer(f):
     return wrapper
 
 
-# decorator function to time a function
+# decorator function print all the parameters passed in
 def dump_params(f):
     def wrapper(*args, **kwargs):
         # print('# In function:', sys._getframe().f_code.co_name)
@@ -955,7 +955,8 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     from sqlalchemy.dialects import postgresql
      
     con = db.connect_SqlAlchemy()
-    meta = sqlalchemy.MetaData(bind=con, reflect=True, schema=targetschema)
+    meta = sqlalchemy.MetaData(bind=con,  schema=targetschema)
+    meta.reflect()
     # print dir(meta.tables)
     folder_deploy = os.path.join(folder ,"deploy/tables/")
     folder_revert = os.path.join(folder ,"revert/tables/")
@@ -986,7 +987,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     # for n, t in meta.tables.iteritems():
     for n, t in meta.tables.items():
         table_count += 1
-        print(n,t,"--------")
+         
 
         if file_prefix is not None:
             filename = file_prefix + t.name.lower() + ".sql"
@@ -2025,14 +2026,18 @@ def sqlite_to_csv(full_file_path, out_file_path=None):
                      index_label='index', header=True, index=False, encoding='utf-8')
 
 
-def sql_to_excel(db, sql_string, full_file_path, column_names):
+def sql_to_excel(db, sql_string, full_file_path, column_names=None):
     import xlsxwriter
     workbook = xlsxwriter.Workbook(full_file_path)
     worksheet = workbook.add_worksheet()
     row = 0
     col = 0
-    rs , dummy = db.query(sql_string)
-    header = column_names.split(',')
+    rs , cols = db.query(sql_string)
+    header=None
+    if column_names is not None:
+        header = column_names.split(',')
+    else: 
+        header= [col[0] for col in cols]
     # Write the header
     print('Writing Excel File')
     print('file name', full_file_path)
