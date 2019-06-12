@@ -89,3 +89,11 @@ sql_update_DATA_meta_source:
     ,duplicate_file=False
     WHERE   file_type in ('CSV','DATA')
     AND {}
+
+sql_any_proc_still_unzipping:
+  select count(*) from logging.meta_source_files 
+  where file_process_state='PROCESSING'
+  AND file_type in ('ZIP','GZ','TAR','RAR')
+  AND process_start_dtm IS NOT NULL 
+  AND process_end_dtm IS NULL
+  
