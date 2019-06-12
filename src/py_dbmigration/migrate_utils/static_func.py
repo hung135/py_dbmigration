@@ -2053,5 +2053,5 @@ def sql_to_excel(db, sql_string, full_file_path, column_names=None):
         for c in r:
             worksheet.write(row, col, r[col])
             col += 1
-
+    workbook.close()
     print('Records written', row)
