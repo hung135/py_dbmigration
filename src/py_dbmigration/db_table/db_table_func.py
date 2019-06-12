@@ -7,15 +7,15 @@ from sqlalchemy.schema import CreateSchema
 import sqlalchemy
 from sqlalchemy import exc as sqlachemy_exception
 from sqlalchemy.ext.declarative import declarative_base
-from .db_table_def import MetaBase,MetaSourceFiles
+from .db_table_def import MetaBase, MetaSourceFiles
 
- 
+
 class RecordKeeper():
-     
+
     engine_dict = {}
     table_dict = {}
-    
-    def __init__(self, db, table_def,appname=__file__):
+
+    def __init__(self, db, table_def, appname=__file__):
         # type: (dbutils.conn, str, str) -> object
         """
 
@@ -37,19 +37,16 @@ class RecordKeeper():
             self.table_dict[key] = table_def
             self.table = self.table_dict[key]
 
-        
- 
+        # db.connect_SqlAlchemy()
+        sql_alchemy_uri_connected = db.sql_alchemy_uri.format(
+            userid=db.userid,
+            pwd=db.pwd,
+            host=db.host,
+            port=db.port,
+            db=db.dbname,
+            appname=appname
+        )
 
-        #db.connect_SqlAlchemy()
-        sql_alchemy_uri_connected=db.sql_alchemy_uri.format(
-                userid=db.userid,
-                pwd=db.pwd,
-                host=db.host,
-                port=db.port,
-                db=db.dbname,
-                appname=appname
-            ) 
-        print(sql_alchemy_uri_connected,'---------------------------')
         self.engine = sqlalchemy.create_engine(sql_alchemy_uri_connected)
         #self.engine = self.engine_dict['only1']
 
@@ -58,15 +55,15 @@ class RecordKeeper():
         #     logging.debug("Creating Database Schema: {}".format(self.table.DbSchema))
         # except sqlachemy_exception.ProgrammingError as e:
         #     logging.warning(e)
-        
+
         MetaBase.metadata.create_all(bind=self.engine)
-        
+
         # create session
 
         Session = sqlalchemy.orm.sessionmaker()
         Session.configure(bind=self.engine)
         self.session = Session(bind=self.engine)
-        
+
         # reflecting whole schema
         self.metadata = MetaData()
         self.metadata.reflect(bind=self.engine)
@@ -92,14 +89,15 @@ class RecordKeeper():
             print(i)
 
     def get_all_records(self):
-         
+
         row = self.session.query(self.table).all()
 
         return row
 
     def get_record(self, *row):
         # update row to database
-        row = self.session.query(MetaSourceFiles).filter(*row).order_by(MetaSourceFiles.id.desc()).first()
+        row = self.session.query(MetaSourceFiles).filter(
+            *row).order_by(MetaSourceFiles.id.desc()).first()
 
         return row
 
@@ -107,21 +105,26 @@ class RecordKeeper():
         try:
             self.session.commit()
         except sqlalchemy.exc.IntegrityError as e:
-            logging.warning("Duplicate Found: This library will ignore duplicate records")
+            logging.warning(
+                "Duplicate Found: This library will ignore duplicate records")
             print(e)
         except:
             self.session.rollback()
+
     def close(self):
-        #self.session.close()
-       
+        # self.session.close()
+
         self.engine.dispose()
         logging.info("Closing SqlAlchemy Engine: {}".format(self.appname))
+
     def __del__(self):
         try:
             self.session.close()
-             
+
             self.engine.dispose()
-            logging.debug("Closing db_table Session: {} {} {}".format(self.host, self.database, self.dbschema))
+            logging.debug("Closing db_table Session: {} {} {}".format(
+                self.host, self.database, self.dbschema))
         except Exception as e:
-            logging.error("Error Occured Closing db_table Session: {}".format(e))
+            logging.error(
+                "Error Occured Closing db_table Session: {}".format(e))
             # print(e)

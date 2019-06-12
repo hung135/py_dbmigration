@@ -7,7 +7,7 @@ import copy
 import pandas as pd
 #import db_logging
 import py_dbmigration.db_table as db_table
-#mport db_table.db_table_func
+# mport db_table.db_table_func
 import yaml
 import sys
 
@@ -42,13 +42,7 @@ logging.setLevel(log.DEBUG)
 # object to carry status info for prossing and import
 
 
-
-
-
-
 # Struct used to group parameters to define files of interests
-
-
 
 
 def get_mapped_table(file_name, foi_list):
@@ -62,7 +56,7 @@ def get_mapped_table(file_name, foi_list):
         if re.match(i.regex, file_name, re.IGNORECASE):
             # print("***FOI.regex:", i.regex, i.table_name, file_name)
             logging.info(
-                "\tFile->Table mapping found: {} {}".format(i.file_type,i.regex))
+                "\tFile->Table mapping found: {} {}".format(i.file_type, i.regex))
             return copy.copy(i)
     return None
 
@@ -83,7 +77,7 @@ def convert_to_sql(instring):
 
 class DataFile:
     #COMPRESSED_FILE_TYPES = ['ZIP', 'GZ', 'TAR']
-#    SUPPORTED_DATAFILE_TYPES = ['DATA', 'CSV', 'DAT', 'XLSX', 'TXT', 'XLS', 'MDB']
+    #    SUPPORTED_DATAFILE_TYPES = ['DATA', 'CSV', 'DAT', 'XLSX', 'TXT', 'XLS', 'MDB']
 
     working_path = None
     db = None
@@ -99,30 +93,29 @@ class DataFile:
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
         #assert isinstance(foi_list[0], FilesOfInterest)
-        
-        curr_path=(os.path.dirname(__file__))
-        
-        with open(os.path.join(curr_path,'logic_sql.yml'),'r') as f:
+
+        curr_path = (os.path.dirname(__file__))
+
+        with open(os.path.join(curr_path, 'logic_sql.yml'), 'r') as f:
             from yaml import Loader
-            self.sql_yaml= yaml.load(f,Loader=Loader)
-            
-         
+            self.sql_yaml = yaml.load(f, Loader=Loader)
+
         self.load_status_msg = None
         self.parent_file_id = parent_file_id
         self.db = db
-        
+
         self.project_list = []
         for p in foi_list:
             self.project_list.append(p.project_name)
             if p.write_path is not None:
                 self.working_path = self.working_path or p.write_path
         self.project_list = list(set(self.project_list))
-        self.working_path=working_path or self.working_path or os.getcwd()
-        self.working_path = os.path.abspath(self.working_path) 
+        self.working_path = working_path or self.working_path or os.getcwd()
+        self.working_path = os.path.abspath(self.working_path)
         self.compressed_file_type = compressed_file_type
         # self.file_pattern_list = file_pattern_list
         self.source_file_path = None
-        
+
         self.curr_src_working_file = None
         self.curr_pid = None
         self.host = None
@@ -145,87 +138,91 @@ class DataFile:
         # self.put_foi_to_db(db, foi_list)
 
         # take each pattern and walks the directory
-        
+
         for files_of_interest in self.foi_list:
             if files_of_interest.file_path is not None:
                 #assert isinstance(files_of_interest, FilesOfInterest)
-                file_path = files_of_interest.file_path[:5] 
-                if file_path=='s3://':
+                file_path = files_of_interest.file_path[:5]
+                if file_path == 's3://':
                     logging.info("Walking AWS s3")
-                    self.FilesOfInterest = self.walk_s3(files_of_interest,  db=db)
+                    self.FilesOfInterest = self.walk_s3(
+                        files_of_interest,  db=db)
                 else:
                     if os.path.isdir(files_of_interest.file_path):
-                        
-                        self.FilesOfInterest = self.walk_dir(files_of_interest,  db=db)
-                        #print(self.FilesOfInterest.file_list,"---------s--------",self.meta_source_file_id)
+
+                        self.FilesOfInterest = self.walk_dir(
+                            files_of_interest,  db=db)
+
                     else:
-                        logging.error("Directory from Yaml does not exists: {}".format(files_of_interest.file_path))
+                        logging.error("Directory from Yaml does not exists: {}".format(
+                            files_of_interest.file_path))
                         sys.exit(1)
                 self.FilesOfInterest.parent_file_id = self.meta_source_file_id
 
-                # logging.debug(self.FilesOfInterest.file_list)
-
                 if not 0 >= len(list(self.FilesOfInterest.file_list)):
-                     
+
                     self.insert_working_files(
                         db, self.FilesOfInterest, self.parent_file_id)
-                
+
     def init_db(self):
-        file_name=os.path.basename(__file__)+"init_db"
-        t=db_table.db_table_func.RecordKeeper(
-            self.db, db_table.db_table_def.MetaSourceFiles,appname=file_name)
+        file_name = os.path.basename(__file__)+"init_db"
+        t = db_table.db_table_func.RecordKeeper(
+            self.db, db_table.db_table_def.MetaSourceFiles, appname=file_name)
         t.close()
-        
+
     def extract_file_name_datav2(self, db, foi):
-         
+
         if foi.project_name is not None:
             extract_file_name = getattr(foi, 'extract_file_name_data')
             project_name = getattr(foi, 'project_name')
             date_format = getattr(foi, 'format_extracted_date')
-             
+
             if extract_file_name is not None and date_format is None:
                 sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
-                sql_update_file_data_date_children =  self.sql_yaml['sql_update_file_data_date_children']
-              
+                sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children']
+
             if extract_file_name is not None and date_format is not None:
                 sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
-                sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children_regex']
+                sql_update_file_data_date_children = self.sql_yaml[
+                    'sql_update_file_data_date_children_regex']
             if extract_file_name is not None:
- 
-                db.execute(sql_update_file_data_date.format(
-                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name),catch_exception=False)
-                db.execute(sql_update_file_data_date_children.format(
-                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name),catch_exception=False)
 
-                #print(sql_update_file_data_date.format(
+                db.execute(sql_update_file_data_date.format(
+                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
+                db.execute(sql_update_file_data_date_children.format(
+                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
+
+                # print(sql_update_file_data_date.format(
                 #    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
                 # time.sleep(5)
 
     def extract_file_name_data(self, db, files_of_interest):
-         
+
         if files_of_interest.yaml is not None:
-            extract_file_name = files_of_interest.yaml.get('extract_file_name_data', None)
+            extract_file_name = files_of_interest.yaml.get(
+                'extract_file_name_data', None)
             project_name = files_of_interest.yaml.get('project_name', None)
-            date_format = files_of_interest.yaml.get('format_extracted_date', None)
-             
+            date_format = files_of_interest.yaml.get(
+                'format_extracted_date', None)
+
             if extract_file_name is not None and date_format is None:
                 sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
-                sql_update_file_data_date_children =  self.sql_yaml['sql_update_file_data_date_children']
-              
+                sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children']
+
             if extract_file_name is not None and date_format is not None:
                 sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
-                sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children_regex']
+                sql_update_file_data_date_children = self.sql_yaml[
+                    'sql_update_file_data_date_children_regex']
             if extract_file_name is not None:
- 
-                db.execute(sql_update_file_data_date.format(
-                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name),catch_exception=False)
-                db.execute(sql_update_file_data_date_children.format(
-                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name),catch_exception=False)
 
-                #print(sql_update_file_data_date.format(
+                db.execute(sql_update_file_data_date.format(
+                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
+                db.execute(sql_update_file_data_date_children.format(
+                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
+
+                # print(sql_update_file_data_date.format(
                 #    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
                 # time.sleep(5)
- 
 
     # @migrate_utils.static_func.timer
     # def put_foi_to_db(self, db, foi_list):
@@ -251,6 +248,7 @@ class DataFile:
 
     # compiles a given regext and will returned a compiled regex
     # will logg and error and returnx None if regext can not be compiled
+
     def validate_regex(self, regex):
         compiled_regex = None
 
@@ -269,20 +267,20 @@ class DataFile:
     # that id gets stored with the meta data about the file to later use
 
     def insert_working_files(self, db, file_of_interest_obj, parent_file_id=0):
-        assert isinstance(file_of_interest_obj, FilesOfInterest) or isinstance(file_of_interest_obj,FOI)
-        file_name=os.path.basename(__file__)+"insert_working_files"
+        assert isinstance(file_of_interest_obj, FilesOfInterest) or isinstance(
+            file_of_interest_obj, FOI)
+        file_name = os.path.basename(__file__)+"insert_working_files"
         t = db_table.db_table_func.RecordKeeper(
-            db, db_table.db_table_def.MetaSourceFiles,appname=file_name)
+            db, db_table.db_table_def.MetaSourceFiles, appname=file_name)
         id_regex = file_of_interest_obj.file_name_data_regex
-        #print("----------inserting working file")
 
         for walked_filed_name in file_of_interest_obj.file_list:
             p = None
             extracted_id = None
             file_id = '0'
-            #print("------>path, file_name-->",file_of_interest_obj.file_path, walked_filed_name)
+
             if 's3://' in file_of_interest_obj.file_path:
-                full_file_path=walked_filed_name
+                full_file_path = walked_filed_name
             else:
                 full_file_path = os.path.join(
                     file_of_interest_obj.file_path, walked_filed_name)
@@ -296,7 +294,7 @@ class DataFile:
                     file_name, file_path, file_of_interest_obj.project_name)
             )
             file_found = x
-            #print("--------",x)
+
             if file_found == 0:
                 logging.debug("New file found: {}".format(full_file_path))
                 # if get_mapped_table(walked_filed_name,
@@ -323,7 +321,7 @@ class DataFile:
                                                             file_name_data=file_id,
                                                             file_type=v_file_type,
                                                             parent_file_id=parent_file_id,
-                                                            #upsert_function_name=file_of_interest_obj.upsert_function_name,
+                                                            # upsert_function_name=file_of_interest_obj.upsert_function_name,
                                                             project_name=file_of_interest_obj.project_name
                                                             )
                 t.add_record(row)
@@ -335,30 +333,32 @@ class DataFile:
 
     @staticmethod
     def reset_meta_table(db, option='FAILED', where_clause='1=1'):
-        curr_path=(os.path.dirname(__file__))
-        sql_yaml=None
-        with open(os.path.join(curr_path,'logic_sql.yml'),'r') as f:
+        curr_path = (os.path.dirname(__file__))
+        sql_yaml = None
+        with open(os.path.join(curr_path, 'logic_sql.yml'), 'r') as f:
             from yaml import Loader
-            sql_yaml= yaml.load(f,Loader=Loader)
+            sql_yaml = yaml.load(f, Loader=Loader)
 
-         
         if option.upper() == 'ALL':
-            db.execute(sql_yaml['sql_update_ALL_meta_source'].format(where_clause))
+            db.execute(
+                sql_yaml['sql_update_ALL_meta_source'].format(where_clause))
         if option.upper() == 'FAILED':
             logging.debug("RESET META DATA FAILED IMPORTS:")
-            db.execute(sql_yaml['sql_update_FAILED_meta_source'].format(where_clause))
+            db.execute(
+                sql_yaml['sql_update_FAILED_meta_source'].format(where_clause))
         if option.upper() == 'RAW':
             logging.debug("RESET META DATA RAW IMPORTS:")
-            db.execute(sql_yaml['sql_update_RAW_meta_source'].format(where_clause))
+            db.execute(
+                sql_yaml['sql_update_RAW_meta_source'].format(where_clause))
         if option.upper() == 'DATA':
             logging.debug("RESET META DATA   IMPORTS:")
-            db.exeucte(sql_yaml['sql_update_RAW_meta_source'].format(where_clause))
-           
-         
+            db.exeucte(
+                sql_yaml['sql_update_RAW_meta_source'].format(where_clause))
+
     @staticmethod
     def walk_s3(foi,  db=None):
         import boto3
-        
+
         regex = None
         try:
             regex = re.compile(foi.regex)
@@ -366,44 +366,42 @@ class DataFile:
             logging.error(
                 "Bad Regex Pattern for Walking Directory: '{}'".format(foi.regex))
             raise
- 
-        
-        s3 = boto3.resource('s3')
-        split_url=foi.file_path.replace('s3://','').split('/')
-        bucket_name=split_url[0]
-        
-        bucket = s3.Bucket(bucket_name)
-       
 
+        s3 = boto3.resource('s3')
+        split_url = foi.file_path.replace('s3://', '').split('/')
+        bucket_name = split_url[0]
+
+        bucket = s3.Bucket(bucket_name)
 
         files_list = []
-        #for o in bucket.objects.filter(Delimiter='/'):
+        # for o in bucket.objects.filter(Delimiter='/'):
         #    files_list.append(o.key)
 
-             
         #s3 = boto3.client("s3")
-        #all_objects = s3.list_objects(Bucket = bucket_name) 
+        #all_objects = s3.list_objects(Bucket = bucket_name)
         #contents = all_objects.get('Contents')
-        filter1='s3://'+bucket_name+'/'
-        
-        files = list(bucket.objects.filter(Prefix=foi.file_path.replace(filter1,'')))
-        #print(len(files))
+        filter1 = 's3://'+bucket_name+'/'
+
+        files = list(bucket.objects.filter(
+            Prefix=foi.file_path.replace(filter1, '')))
+        # print(len(files))
         for item in files:
-     
-            file_name=item.key  
+
+            file_name = item.key
             files_list.append(filter1+file_name)
-            
-            #print(item.get('Key'))
-            #print("\n")
+
+            # print(item.get('Key'))
+            # print("\n")
         match_list = list(filter(regex.match, files_list))
         foi.file_list = match_list
         return foi
+
     @staticmethod
     def walk_dir(foi,  db=None):
         """Walks a directory structure and returns all files that match the regex pattern
         :rtype: FilesOfInterest
         """
-        assert isinstance(foi, FilesOfInterest) or isinstance(foi,FOI)
+        assert isinstance(foi, FilesOfInterest) or isinstance(foi, FOI)
         file_path = foi.file_path
         logging.debug("Walking Directory: '{}' : Search Pattern: {}".format(
             file_path, foi.regex))
@@ -413,13 +411,11 @@ class DataFile:
             regex = re.compile(foi.regex)
         except Exception as e:
             logging.error(
-                "Bad Regex Pattern for Walking Directory: '{}' \n{}".format(foi.regex,e))
+                "Bad Regex Pattern for Walking Directory: '{}' \n{}".format(foi.regex, e))
             raise
 
-        
-
         files_list = []
-          
+
         for root, subdirs, files in os.walk(file_path, topdown=True):
             # print(root)
 
@@ -429,7 +425,7 @@ class DataFile:
 
         # logging.debug("Done Walking Directory:")
         match_list = list(filter(regex.match, files_list))
-         
+
         foi.file_list = match_list
 
         return foi
@@ -461,8 +457,6 @@ class DataFile:
             with open(newfile, 'w') as f2:
                 f2.write(string_data + f.read())
 
-    
-
     def list_current_work(db, host=None):
         assert isinstance(db, db_utils.DB)
         if host is not None:
@@ -480,10 +474,9 @@ class DataFile:
 
     def release_file_lock(self, db, file_id):
         update_sql = """UPDATE logging.meta_source_files set process_end_dtm='{}'
-        where id={}""".format( datetime.datetime.now(), file_id )
+        where id={}""".format(datetime.datetime.now(), file_id)
         assert isinstance(db, db_utils.DB)
         db.execute(update_sql)
-         
 
     def set_work_file_status(self, db, file_id, status, error_msg=None):
         if error_msg is None:
@@ -494,8 +487,7 @@ class DataFile:
         # update_sql = """UPDATE logging.meta_source_files set file_process_state='{}'
         # ,last_error_msg='{}'
         # where id={} and file_process_state not in ('OBSOLETE','DUPLICATE')""".format( status, error_msg, file_id )
-        
-         
+
         # assert isinstance(db, db_utils.DB)
         # db.execute(update_sql)
 
@@ -511,24 +503,24 @@ class DataFile:
     def get_work(self, db):
         assert isinstance(db, db_utils.DB)
         assert isinstance(self.foi_list, list)
-        
+
         self.reset_stat()
         x = set(self.project_list)
-         
+
         for foi in self.foi_list:
             self.extract_file_name_datav2(db, foi)
-         
+
         project_list = (','.join("'" + item + "'" for item in x))
 
-        file_name=os.path.basename(__file__)+"get_work"
+        file_name = os.path.basename(__file__)+"get_work"
         t = db_table.db_table_func.RecordKeeper(
-            db, db_table.db_table_def.MetaSourceFiles,appname=file_name)
-        
+            db, db_table.db_table_def.MetaSourceFiles, appname=file_name)
+
         # to ensure we lock 1 row to avoid race conditions
-        
+
         sql = self.sql_yaml['sql_get_work'].format(
-                db_table.db_table_def.MetaSourceFiles.DbSchema, 
-                self.host, self.curr_pid, project_list)
+            db_table.db_table_def.MetaSourceFiles.DbSchema,
+            self.host, self.curr_pid, project_list)
         t.engine.execute(sql)
 
         t.session.commit()
@@ -536,8 +528,7 @@ class DataFile:
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,
                            db_table.db_table_def.MetaSourceFiles.current_worker_host_pid == self.curr_pid,
                            db_table.db_table_def.MetaSourceFiles.process_end_dtm == None)
-        
-         
+
         if row is None:
             logging.info("No Work Left")
             return None
@@ -552,11 +543,11 @@ class DataFile:
             self.meta_source_file_id = row.id
 
             self.row_count = row.total_rows
-        
+
         t.close()
-         
-        self.current_file_state=DataFileState(self.db,os.path.join(self.source_file_path,self.curr_src_working_file)
-                ,self.meta_source_file_id)
+
+        self.current_file_state = DataFileState(self.db, os.path.join(
+            self.source_file_path, self.curr_src_working_file), self.meta_source_file_id)
         return self.curr_src_working_file
 
     # Do work will query the meta source table for a record
@@ -564,14 +555,14 @@ class DataFile:
     # When it is done with the processing of the record it we stamp the process_end_dtm
     # signifying the file has been processed
 
-    def do_work(self, db, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False ):
+    def do_work(self, db, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False):
 
         # iterate over each file in the logging.meta_source_files table
         # get work will lock 1 file and store the id into meta_source_file_id
         # inside this instance
 
         while self.get_work(db) is not None:
-            
+
             full_file_name = os.path.join(
                 self.source_file_path, self.curr_src_working_file)
             foi = get_mapped_table(full_file_name, self.foi_list)
@@ -581,7 +572,7 @@ class DataFile:
                 logging.info(
                     "\t->Processing file_id: {}: --> {}".format(self.meta_source_file_id, self.curr_src_working_file))
                 logging.info(
-                    "\t->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path,full_file_name))
+                    "\t->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path, full_file_name))
 
                 self.set_work_file_status(
                     db, self.meta_source_file_id, 'Processing Started', '')
@@ -590,9 +581,8 @@ class DataFile:
             else:
                 self.set_work_file_status(
                     db, self.meta_source_file_id, 'FAILED', 'No Matching REGEX Found in yaml')
-            
+
             self.release_file_lock(db, self.meta_source_file_id)
 
             if cleanup:
                 self.cleanup_files()  # import_files(files,loan_acquisition)
-            
