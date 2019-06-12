@@ -13,8 +13,8 @@ import sys
 
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
-from py_dbmigration.data_file_mgnt import utils
-from py_dbmigration.data_file_mgnt.state import FilesOfInterest, DataFileState, FOI
+from py_dbmigration.data_file_mgnt import utils 
+from py_dbmigration.data_file_mgnt.state import FilesOfInterest, DataFileState, FOI,LogicState
 import logging as log
 
 logging = log.getLogger()
@@ -546,8 +546,7 @@ class DataFile:
 
         t.close()
 
-        self.current_file_state = DataFileState(self.db, os.path.join(
-            self.source_file_path, self.curr_src_working_file), self.meta_source_file_id)
+        
         return self.curr_src_working_file
 
     # Do work will query the meta source table for a record
@@ -566,7 +565,10 @@ class DataFile:
             full_file_name = os.path.join(
                 self.source_file_path, self.curr_src_working_file)
             foi = get_mapped_table(full_file_name, self.foi_list)
+            self.current_file_state = DataFileState(self.db, os.path.join(
+            self.source_file_path, self.curr_src_working_file), self.meta_source_file_id)
             if foi is not None:
+                
 
                 # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
                 logging.info(
@@ -574,14 +576,19 @@ class DataFile:
                 logging.info(
                     "\t->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path, full_file_name))
 
-                self.set_work_file_status(
-                    db, self.meta_source_file_id, 'Processing Started', '')
+                # self.set_work_file_status(
+                #     db, self.meta_source_file_id, 'Processing Started', '')
                 utils.process_logic(foi, db, self)
 
             else:
-                self.set_work_file_status(
-                    db, self.meta_source_file_id, 'FAILED', 'No Matching REGEX Found in yaml')
-
+                logging.error('No Matching Regex Found for this file: {}'.format(full_file_name))
+                logic_status = LogicState('NOREGEX', self.current_file_state)
+                assert isinstance(logic_status,LogicState)
+                logic_status.row.reprocess=False
+                logic_status.failed('No Matching REGEX Found in yaml')
+                # self.set_work_file_status(
+                #     db, self.meta_source_file_id, 'FAILED', 'No Matching REGEX Found in yaml')
+            self.current_file_state.table.close()
             self.release_file_lock(db, self.meta_source_file_id)
 
             if cleanup:

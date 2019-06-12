@@ -116,8 +116,10 @@ def custom_logic(db, foi, df,logic_status):
             logic_status.row.rows_inserted=rows_inserted
             logic_status.row.db_table=table_name_fqn
         except Exception as e:
-            
-            logic_status.hardfail(e) 
+            logging.error(__file__)
+            logging.error(e)
+            logic_status.row.reprocess=foi.reprocess or False
+            logic_status.failed(e) 
 
             
         ###############THERE EXEC COMMAND LOGIC HERE########################################################

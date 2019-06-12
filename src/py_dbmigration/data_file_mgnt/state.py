@@ -181,6 +181,7 @@ class LogicState:
     def failed(self,msg):
         self.status=LogicStateEnum.FAILED
         self.continue_processing_logic=False
+        
         self.file_state.failed(str(msg))
         
 
@@ -270,7 +271,7 @@ class FilesOfInterest:
         # list of sql to execute prior or post import of the file
         self.post_action = post_action
         self.pre_action = pre_action
-        if process_logic is None:
+         
         self.process_logic = process_logic
         self.project_name = project_name
         self.table_name_extract = table_name_extract
