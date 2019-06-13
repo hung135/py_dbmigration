@@ -10,11 +10,12 @@ import py_dbmigration.db_table as db_table
 # mport db_table.db_table_func
 import yaml
 import sys
+import time
 
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
 from py_dbmigration.data_file_mgnt import utils 
-from py_dbmigration.data_file_mgnt.state import FilesOfInterest, DataFileState, FOI,LogicState
+from py_dbmigration.data_file_mgnt.state import FilesOfInterest, DataFileState, FOI,LogicState, WorkState
 import os, logging as log
 
 logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
@@ -530,9 +531,19 @@ class DataFile:
                            db_table.db_table_def.MetaSourceFiles.process_end_dtm == None)
 
         if row is None:
-            logging.info("No Work Left")
-            return None
+            logging.info("\tNo Work Left, Checking Unzip in Progress")
+            sql = self.sql_yaml['sql_any_proc_still_unzipping']
 
+            unzipping_count=1
+            t.close() #closing sqlalchemy so we don't lock while sleeping
+            while(unzipping_count>0):
+                unzipping_count,=db.get_a_row(sql)
+                if (unzipping_count)>0:
+                    logging.info("\tStill Got someone Unzipping going back to sleep")
+                    time.sleep(10)
+                    return WorkState.SLEEP
+                else:
+                    return WorkState.NO_MORE_WORK
         else:
             self.curr_src_working_file = row.file_name
             self.source_file_path = row.file_path
@@ -544,10 +555,10 @@ class DataFile:
 
             self.row_count = row.total_rows
 
-        t.close()
+             
 
-        
-        return self.curr_src_working_file
+        t.close()
+        return WorkState.HAVE_MORE_WORK
 
     # Do work will query the meta source table for a record
     # It will stamp that record with this pid and ip address
@@ -560,36 +571,45 @@ class DataFile:
         # get work will lock 1 file and store the id into meta_source_file_id
         # inside this instance
 
-        while self.get_work(db) is not None:
+        get_work_status=WorkState.HAVE_MORE_WORK
+        while get_work_status in [WorkState.SLEEP, WorkState.HAVE_MORE_WORK]:
+            get_work_status=self.get_work(db)
+            if get_work_status == WorkState.HAVE_MORE_WORK:
+                full_file_name = os.path.join(
+                    self.source_file_path, self.curr_src_working_file)
+                foi = get_mapped_table(full_file_name, self.foi_list)
+                self.current_file_state = DataFileState(self.db, os.path.join(
+                self.source_file_path, self.curr_src_working_file), self.meta_source_file_id)
+                if foi is not None:
+                    
 
-            full_file_name = os.path.join(
-                self.source_file_path, self.curr_src_working_file)
-            foi = get_mapped_table(full_file_name, self.foi_list)
-            self.current_file_state = DataFileState(self.db, os.path.join(
-            self.source_file_path, self.curr_src_working_file), self.meta_source_file_id)
-            if foi is not None:
-                
+                    # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
+                    logging.info(
+                        "\t->Processing file_id: {}: --> {}".format(self.meta_source_file_id, self.curr_src_working_file))
+                    logging.info(
+                        "\t->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path, full_file_name))
 
-                # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
-                logging.info(
-                    "\t->Processing file_id: {}: --> {}".format(self.meta_source_file_id, self.curr_src_working_file))
-                logging.info(
-                    "\t->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path, full_file_name))
+                    # self.set_work_file_status(
+                    #     db, self.meta_source_file_id, 'Processing Started', '')
+                    utils.process_logic(foi, db, self)
 
-                # self.set_work_file_status(
-                #     db, self.meta_source_file_id, 'Processing Started', '')
-                utils.process_logic(foi, db, self)
+                else:
+                    logging.error('No Matching Regex Found for this file: {}'.format(full_file_name))
+                    logic_status = LogicState('NOREGEX', self.current_file_state)
+                    assert isinstance(logic_status,LogicState)
+                    logic_status.row.reprocess=False
+                    logic_status.failed('No Matching REGEX Found in yaml')
+                    # self.set_work_file_status(
+                    #     db, self.meta_source_file_id, 'FAILED', 'No Matching REGEX Found in yaml')
+                self.current_file_state.table.close()
+                self.release_file_lock(db, self.meta_source_file_id)
 
+                if cleanup:
+                    self.cleanup_files()  # import_files(files,loan_acquisition)
+            elif get_work_status == WorkState.NO_MORE_WORK:
+                logging.info(f"No More Work Found Exiting Process")
+            elif get_work_status == WorkState.SLEEP:
+                logging.info(f"Work up From sleep, Checking for more work")   
             else:
-                logging.error('No Matching Regex Found for this file: {}'.format(full_file_name))
-                logic_status = LogicState('NOREGEX', self.current_file_state)
-                assert isinstance(logic_status,LogicState)
-                logic_status.row.reprocess=False
-                logic_status.failed('No Matching REGEX Found in yaml')
-                # self.set_work_file_status(
-                #     db, self.meta_source_file_id, 'FAILED', 'No Matching REGEX Found in yaml')
-            self.current_file_state.table.close()
-            self.release_file_lock(db, self.meta_source_file_id)
-
-            if cleanup:
-                self.cleanup_files()  # import_files(files,loan_acquisition)
+                logging.error(f"Unknown Work State Tripped EXITING")
+                sys.exit(1)       

@@ -28,7 +28,7 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
 
             file = zipfile.ZipFile(source_file)
             if skip is False:
-                logging.info("\tPID: {}, Extracting Zip File:\n\t\t{}".format(os.getpid(),source_file))
+                logging.info("\tExtracting Zip File:\n\t\t{}".format(source_file))
 
                 file.extractall(writeable_path)
                 file.close()
@@ -36,14 +36,14 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
             namelist = [str(f) for f in file.filelist]
         # print(source_file)
         if zip_type == 'tar':
-            logging.info("\tPID: {}, Extracting TAR File:{}".format(os.getpid(),source_file))
+            logging.info("\tExtracting TAR File:{}".format(source_file))
             file = tarfile.open(source_file, "r:")
             namelist = list(file.getnames())
             if skip is False:
                 file.extractall(writeable_path)
                 file.close()
         if zip_type == 'gzip':
-            logging.info("\tPID: {}, Extracting GZip File:{}".format(os.getpid(),source_file))
+            logging.info("\tExtracting GZip File:{}".format(source_file))
             #file = tarfile.TarFile(source_file)
             file = tarfile.open(source_file, "r:gz")
             namelist = list(file.getnames())
@@ -56,5 +56,5 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
 
 def cleanup_file(files):
     for file in files.list:
-        logging.debug("\tPID: {}, Deleting File:{}".format(os.getpid(),files.path + '/' + file))
-        os.remove(files.path + '/' + file)
+        logging.info(f"\tDeleting Temp File:{os.path.join(files.path,file)}")
+        os.remove(os.path.join(files.path,file))

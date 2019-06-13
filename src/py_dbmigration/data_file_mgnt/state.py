@@ -7,6 +7,12 @@ logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
 logging.setLevel(log.DEBUG)
 
 #enums to classify various states if a file
+class WorkState(Enum):
+    HAVE_MORE_WORK = 0
+    NO_MORE_WORK = 1
+    SLEEP = 2
+    
+
 class FileStateEnum(Enum):
     RAW = 'RAW'
     PREACTION = 'PREACTION' #logic(sql) before custom logic starts to run
