@@ -10,7 +10,9 @@
   format_extracted_date: 'YYYYMM'
   process_logic: # this will get executed for all files
     
-    - logic: 'custom_logic.generate_checksum'
+    - logic: 
+        name: 'custom_logic.generate_checksum'
+        check_cache: True
     - logic: 'custom_logic.log_file_size'
     - logic: 'custom_logic.abort_if_duplicate'
   reset_failed: False

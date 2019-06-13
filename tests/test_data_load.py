@@ -37,8 +37,8 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
             sql="""select count(*) from logging.meta_source_files where file_process_state='DUPLICATE'"""
             count,=db.get_a_row(sql)
             self.assertTrue(int(count)>0)
-        except:
-            pass
+        except Exception as e:
+            logging.error(f'Unknown Error: {e}')
         import time
         db.__del__()
         print("sleeeping for 500")

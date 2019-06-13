@@ -135,7 +135,7 @@ class LogicState:
     error_msg = None
     continue_processing_logic=None
     file_state = None
-    
+    logic_options = {}
     def __init__(self, file,file_state):
         self.file_path=file
         self.name=os.path.basename(file)

@@ -82,7 +82,7 @@ def main():
                             reprocess=TRUE
                             where {} file_process_state='{}'
                     """.format(where_clause_project, args.r))
-        if args.r in ('STUCK') :
+        elif args.r in ('STUCK') :
             db.execute("""update logging.meta_source_files
                         set file_process_state='RAW',
                             process_start_dtm=NULL,
@@ -92,13 +92,25 @@ def main():
                             reprocess=TRUE
                             where {} (file_process_state not in ('FAILED', 'PROCESSED','OBSOLETE','DUPLICATE'))
                     """.format(where_clause_project))
-        if args.r=='CLEAN':
+
+        elif args.r=='CLEAN':
             if args.p=='ALL':
                 print('ERROR: For your protection, Clean ALL is not permitted, Clean each project individually')
                 sys.exit(1)
             else:
                 db.execute("""delete from logging.meta_source_files where {}  1=1""".format(where_clause_project))
                 #print("""delete from logging.meta_source_files where {}  1=1""".format(where_clause_project))
+        else: 
+            db.execute(F"""update logging.meta_source_files
+                        set file_process_state='RAW',
+                            process_start_dtm=NULL,
+                            process_end_dtm=NULL,
+                            current_worker_host=NULL,
+                            current_worker_host_pid=NULL,
+                            reprocess=TRUE
+                            where {where_clause_project} (file_process_state ='{args.r}')
+                    """ )
+   
         print(args.p,args.r)
         print_table_state(db)
 

@@ -123,7 +123,7 @@ class DataFile:
         # the  files found walking the source directory based on the regex
         # passed in
         self.source_files = None
-        self.processed_file_count = None
+      
         self.files = None  # The contents of the zip files for the last file unzipped
         self.curr_pid = os.getpid()
         self.host = socket.gethostname()
@@ -131,7 +131,7 @@ class DataFile:
         self.work_file_type = 0
         self.total_files = 0
         self.curr_file_success = False
-        self.processed_file_count = 0
+       
         self.total_data_file_count = 0
         self.foi_list = foi_list
         self.rows_inserted = 0  # initialzed in constructor
@@ -494,7 +494,7 @@ class DataFile:
 
     def reset_stat(self):
         self.rows_inserted = 0
-        self.processed_file_count = 0
+       
         self.total_data_file_count = 0
         self.curr_file_success = False  # reset status of file
         self.rows_inserted = 0
