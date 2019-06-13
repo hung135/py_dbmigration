@@ -8,7 +8,8 @@ import py_dbmigration.migrate_utils as migrate_utils
 from py_dbmigration.data_file_mgnt.state import *
  
 import os, logging as log
-logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+runtime_pid=os.getpid()
+logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
 logging.setLevel(log.DEBUG)
 
 '''

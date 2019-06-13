@@ -1,11 +1,12 @@
 
 import os, logging as log
+runtime_pid=os.getpid()
  
  
 from py_dbutils import parents as db_utils 
 import py_dbmigration.migrate_utils as migrate_utils
 from py_dbmigration.data_file_mgnt.state import *
-logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
 logging.setLevel(log.DEBUG)
 
 '''

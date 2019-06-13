@@ -1,5 +1,6 @@
 import yaml
 import os, logging as log
+runtime_pid=os.getpid()
  
 import sys
 import pandas as pd
@@ -11,7 +12,7 @@ from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 
 import re
  
-logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
 logging.setLevel(log.DEBUG)
 
 # leveraging pandas libraries to read csv into a dataframe and let pandas

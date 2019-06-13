@@ -7,7 +7,8 @@ import pprint
 from prettytable import PrettyTable
 
 import os, logging as log
-logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+runtime_pid=os.getpid()
+logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
 logging.setLevel(log.DEBUG) 
 
 def print_table_state(db):
@@ -46,7 +47,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--p', required=True, help='Project Name, ''ALL'' or Project Name')
-    parser.add_argument('--r',  help='Reset Project, FAILED, STUCK (or in progress), ALL , CLEAN = Delete records from meta source')
+    parser.add_argument('--reset',  help='Reset Project, FAILED, STUCK (or in progress), ALL , CLEAN = Delete records from meta source')
     parser.add_argument('--s',  help='List all files in these states, FAILED, PROCESSED, OBSOLETE, Processing,DUPLICATE')
     parser.add_argument('--f', default='', help='addition fields from meta_source to display')
     
@@ -71,8 +72,8 @@ def main():
     
     if args.s is not None:
         print_table_file_state(db,args.p,args.s,add_fields)
-    if args.r is not None:
-        if args.r in ('FAILED', 'Processing'):
+    if args.reset is not None:
+        if args.reset in ('FAILED', 'Processing'):
             db.execute("""update logging.meta_source_files
                         set file_process_state='RAW',
                             process_start_dtm=NULL,
@@ -82,7 +83,7 @@ def main():
                             reprocess=TRUE
                             where {} file_process_state='{}'
                     """.format(where_clause_project, args.r))
-        elif args.r in ('STUCK') :
+        elif args.reset in ('STUCK') :
             db.execute("""update logging.meta_source_files
                         set file_process_state='RAW',
                             process_start_dtm=NULL,
@@ -93,7 +94,7 @@ def main():
                             where {} (file_process_state not in ('FAILED', 'PROCESSED','OBSOLETE','DUPLICATE'))
                     """.format(where_clause_project))
 
-        elif args.r=='CLEAN':
+        elif args.reset=='CLEAN':
             if args.p=='ALL':
                 print('ERROR: For your protection, Clean ALL is not permitted, Clean each project individually')
                 sys.exit(1)
@@ -111,8 +112,7 @@ def main():
                             where {where_clause_project} (file_process_state ='{args.r}')
                     """ )
    
-        print(args.p,args.r)
-        print_table_state(db)
+       
 
 if __name__ == '__main__':
     main()

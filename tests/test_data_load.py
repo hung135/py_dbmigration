@@ -10,6 +10,7 @@ from config_parent import Config
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 import shutil
 import os, logging as log
+runtime_pid=os.getpid()
 logging = log.getLogger(f'P:{os.getpid()}{os.path.basename(__file__)}')
 logging.setLevel(log.DEBUG)
  

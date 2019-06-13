@@ -1,5 +1,6 @@
 
 import os, logging as log
+runtime_pid=os.getpid()
  
 import sys
 from py_dbutils.rdbms import postgres as db_utils
@@ -12,7 +13,7 @@ import py_dbmigration.migrate_utils.static_func as static_func
 
 
 import pprint
-logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
 logging.setLevel(log.DEBUG)
 #def bulk_load_dataframe(self, dataframe, table_name_fqn, encoding='utf8', workingpath='MEMORY'):
 # leveraging pandas libraries to read csv into a dataframe and let pandas
