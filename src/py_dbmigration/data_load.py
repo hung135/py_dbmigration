@@ -1,5 +1,4 @@
 import yaml
-import os
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as dfm
 import py_dbmigration.migrate_utils.static_func as static_func
@@ -9,11 +8,8 @@ import multiprocessing as mp
 
 import pprint
 
-
-import logging as log
-log.basicConfig()
-logging = log.getLogger()
-logging.setLevel(log.INFO)
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
 logging.setLevel(log.DEBUG)
 
 
@@ -91,7 +87,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
         df = dfm.data_files.DataFile(writable_path, db, datafiles)
         df.init_db()
         df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
-        db.commit()
+        
         if sub_proc_count==1:
             df.do_work(db, cleanup=False,    skip_ifexists=False)
             #db.execute('vacuum analyze logging.meta_source_files')

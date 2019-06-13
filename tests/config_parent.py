@@ -1,6 +1,8 @@
-import os
+ 
 import inspect
-
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 class Config(object):
 
     TEST_SCHEMA = 'test'

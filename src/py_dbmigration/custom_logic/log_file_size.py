@@ -1,13 +1,16 @@
 
-import logging
-import os
+ 
+
 import sys
 from py_dbutils import parents as db_utils
 from .. import data_file_mgnt
 from .. import migrate_utils
 
 from py_dbmigration.data_file_mgnt.state import *
-logging.basicConfig(level='DEBUG')
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
+
 
 '''
     File name: generate_checksum.py

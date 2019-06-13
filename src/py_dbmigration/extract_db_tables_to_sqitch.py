@@ -1,17 +1,17 @@
 #!python
 
 # import csv, pandas,        sqlalchemy, os
-import os
+ 
 import argparse
 import py_dbutils.rdbms.postgres as db_utils
 import sys
 
 import py_dbmigration.migrate_utils.static_func as static_func
 
-import logging as lg
-lg.basicConfig()
-logging = lg.getLogger()
-logging.setLevel(lg.INFO)
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
+
 
 
 pghost = os.environ['PGHOST']

@@ -1,6 +1,6 @@
 
 import logging
-import os
+ 
 import sys
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
@@ -10,7 +10,9 @@ import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
 import subprocess
 import datetime
-logging.basicConfig(level='DEBUG')
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
 
 '''

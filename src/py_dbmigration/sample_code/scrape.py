@@ -1,5 +1,5 @@
 # import csv, pandas,        sqlalchemy, os
-import os
+ 
 import py_dbmigration.scrape_utils
 from py_dbutils.rdbms import postgres as  db_utils
 import requests
@@ -9,7 +9,9 @@ import py_dbmigration.db_logging as lg
 import datetime as dt
 from bs4 import BeautifulSoup
 from pprint import pprint
-
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 class getUrl:
 	url =None
 	payload =None

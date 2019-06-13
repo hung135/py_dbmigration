@@ -1,10 +1,12 @@
 import json
-import logging
+ 
 from lxml import html
 
 import requests
 from bs4 import BeautifulSoup
-
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
 def getUrl(urlObj, session):
     r = session.post(urlObj.url, data=urlObj.payload)
@@ -32,7 +34,7 @@ def getSoupLinks(soup):
 # Goes out to the supplied URL and downloads a file
 # will return error code if error occurs
 def getUrlFile(session, url, file_name, download=True):
-    import os.path
+     
     error_status = None
     if os.path.isfile(file_name):
         print("File already exists Not Downloading", file_name)

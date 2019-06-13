@@ -1,13 +1,13 @@
 
-import logging
-import os
+import os, logging as log
 import sys
 import py_dbutils.parents as db_utils
  
 from py_dbmigration.data_file_mgnt.state import *
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbmigration.db_table as db_table
-logging.basicConfig(level='DEBUG')
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
 ''' 
     Author: Hung Nguyen

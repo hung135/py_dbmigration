@@ -1,13 +1,15 @@
 #!/usr/bin/python
 
 from sas7bdat import SAS7BDAT
-import os
+ 
 import re
 import io
 
 import zipfile
 import pandas as pd
-
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 file_dir = "/Users/hung/Downloads/acs2013_5yr/5-Year/"
 
 fqn = os.path.join(file_dir, 'psam_p56.sas7bdat')

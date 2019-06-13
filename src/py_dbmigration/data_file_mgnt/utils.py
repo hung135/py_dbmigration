@@ -2,16 +2,17 @@
  
 import py_dbmigration.migrate_utils as migrate_utils
 from py_dbmigration.data_file_mgnt.state import *
-import os
 import datetime
-import logging as log
+ 
 import re
 import sys
 from py_dbmigration.custom_logic import purge_temp_file as purge
 import yaml
 import py_dbmigration.db_table as db_table
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
-logging = log.getLogger()
 
 
 # list of key values to replace in sql with runtime data values

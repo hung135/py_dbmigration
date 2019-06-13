@@ -1,10 +1,12 @@
 import zipfile
 import tarfile
 import gzip
-import os
+ 
 import logging
 import shutil
-
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
 class object:
     pass

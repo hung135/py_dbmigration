@@ -1,5 +1,5 @@
 # import csv, pandas,        sqlalchemy, os
-import os
+ 
 import py_dbutils.rdbms.postgres as db_utils
 import data_file_mgnt as dfm
 import migrate_utils as migu
@@ -10,9 +10,10 @@ import sys
 
 
 import pandas as pd
-import logging
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
-logging.basicConfig(level='DEBUG')
 FILE_PATH = os.environ['RAWFILEPATH']
 writable_path = os.environ['WORKINGPATH']
 """

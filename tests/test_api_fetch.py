@@ -4,8 +4,8 @@ import unittest
 from py_dbmigration.data_file_mgnt import *
 from py_dbmigration.migrate_utils import static_func
 import py_dbmigration.db_table as db_table
-import logging as log
-import os
+import os, logging as log
+ 
 import pprint
 from py_dbutils.rdbms import postgres as db_utils
 import requests 
@@ -14,8 +14,8 @@ from config_parent import Config
 from bs4 import BeautifulSoup
 
 
-logging = log.getLogger()
-logging.setLevel(log.ERROR)
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
 TEST_SCHEMA = 'test'
 LOGGING_SCHEMA = 'logging'

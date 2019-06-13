@@ -1,6 +1,6 @@
 
-import logging
-import os
+ 
+ 
 import sys
 import py_dbutils.parents as db_utils
 import py_dbmigration.data_file_mgnt.data_files as data_files
@@ -21,6 +21,9 @@ from py_dbmigration.data_file_mgnt.state import *
     #  
     #  
 '''
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
 
 def custom_logic(db, foi, df,logic_status):

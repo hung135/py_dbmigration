@@ -6,12 +6,12 @@ from py_dbmigration.data_file_mgnt.data_files import *
 from py_dbmigration.migrate_utils import *
 import py_dbmigration.db_table
 from  py_dbutils.rdbms import postgres as db_utils
-import logging as log
+import os, logging as log
 import boto3
 from config_parent import Config
 #import boto3
 
-logging = log.getLogger()
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
 logging.setLevel(log.DEBUG)
 
 

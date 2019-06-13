@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from sas7bdat import SAS7BDAT
-import os
+ 
 import re
 import io
 from smart_open import smart_open
@@ -10,6 +10,9 @@ import pandas as pd
 import boto3
 import gc
 
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
 rx = re.compile(r'.*un.*.zip')
 rx_sas = re.compile(r'.*sas7bdat')

@@ -1,6 +1,6 @@
 import yaml
 import logging
-import os
+ 
 import sys
 import pandas as pd
 import numpy as np
@@ -13,8 +13,10 @@ import py_dbmigration.db_table as db_table
 from openpyxl import load_workbook
 
 import pprint
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
-logging.basicConfig(level='DEBUG')
 HEADER_location = 0
 UNITS_location = 1
 COLUMN_location = 2

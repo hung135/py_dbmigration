@@ -4,14 +4,14 @@ import unittest
 import py_dbmigration.data_file_mgnt.data_files as data_files
 import py_dbmigration.migrate_utils.static_func as static_func
 import py_dbmigration.db_table as db_table
-import logging as log
-import os
+import os, logging as log
+ 
 from py_dbutils.rdbms import postgres as db_utils
 from config_parent import Config
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-logging = log.getLogger()
-logging.setLevel(log.ERROR)
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
  
 class Test_db_utils_postgres(unittest.TestCase,Config):
      

@@ -1,14 +1,14 @@
 import sys
 import unittest
  
-import logging as log
+import os, logging as log
  
  
 from config_parent import Config
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-logging = log.getLogger()
-logging.setLevel(log.ERROR)
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
  
 class Test_extract_sqitch(unittest.TestCase,Config):
       

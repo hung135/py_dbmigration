@@ -1,7 +1,10 @@
 from enum import Enum
-import os, sys
+import sys
 import py_dbmigration.db_table as db_table
 from py_dbmigration.data_file_mgnt import utils
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
 #enums to classify various states if a file
 class FileStateEnum(Enum):

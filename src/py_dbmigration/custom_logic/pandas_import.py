@@ -1,6 +1,6 @@
 import yaml
-import logging
-import os
+import os, logging as log
+ 
 import sys
 import pandas as pd
 import numpy as np
@@ -11,8 +11,8 @@ from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 
 import re
  
-
-logging.basicConfig(level='DEBUG')
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
 # leveraging pandas libraries to read csv into a dataframe and let pandas
 # insert into database

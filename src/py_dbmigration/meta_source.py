@@ -1,15 +1,14 @@
  
-import os
+
 import py_dbutils.rdbms.postgres as db_utils
  
 
 import pprint
 from prettytable import PrettyTable
 
-import logging as log
-log.basicConfig()
-logging = log.getLogger()
-logging.setLevel(log.INFO) 
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG) 
 
 def print_table_state(db):
         proj , _=(db.query("""select distinct project_name,file_process_state,count(*) as files 

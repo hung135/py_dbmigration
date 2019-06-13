@@ -1,5 +1,5 @@
 # import csv, pandas,        sqlalchemy, os
-import os
+ 
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
@@ -8,10 +8,9 @@ import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
  
 
-
-import logging
-
-logging.basicConfig(level='DEBUG')
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 file_path = os.environ['RAWFILEPATH']
 writable_path = os.environ['WORKINGPATH']
 host = os.environ['MSSQLHOST']

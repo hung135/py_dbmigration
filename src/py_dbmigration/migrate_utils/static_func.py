@@ -1,8 +1,10 @@
-import logging
+ 
 import re
-import os
-import datetime
 
+import datetime
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 
 # decorator function to time a function
 def timer(f):
@@ -69,7 +71,7 @@ def sed_file_delimiter(orgfile, newfile=None, delimiter=',', new_delimiter=','):
 def insert_each_line(orgfile, newfile, pre_pend_data, delimiter, use_header=True, has_header=True, quoted_header=False, append_file_id=True,
                      append_crc=False, db=None, table_schema=None, table_name=None, limit_rows=None,
                      header_row_location=None):
-    import os
+    
     import errno
     import hashlib
     header_added = False
@@ -388,7 +390,7 @@ ORDER BY table_schema, table_name;
 
 
 def print_sqitch_files(folder, file_type, trg_folder):
-    import os
+    
     from os import listdir
     from os.path import isfile, join, basename
 
@@ -551,7 +553,7 @@ def appdend_to_readme(db, folder=None, targetschema=None):
 
 
 def print_postgres_table(db, folder=None, targetschema=None):
-    import os
+    
 
     import subprocess
 
@@ -587,7 +589,7 @@ def print_postgres_table(db, folder=None, targetschema=None):
 
 
 def print_create_table_upsert(db, folder=None, targetschema=None):
-    import os
+    
 
     con, meta = db.connect_SqlAlchemy(db.schema)
     # print dir(meta.tables)
@@ -746,7 +748,7 @@ def print_table_dict(db, folder='.', targetschema=None):
 """def print_create_db_obj(db, folder=None, targetschema=None, file_prefix=None,object='Tables'):
     import migrate_utils as mig
     import sqlalchemy
-    import os
+    
     sql_get_routines="SELECT routines.routine_name FROM information_schema.routines where routines.specific_schema='{}'"sql="SELECT pg_get_functiondef('{}.{}'::regproc)"
     routine_list=db.query(sql_get_routines.format(db.schema))
     for r in routine_list:
@@ -842,7 +844,7 @@ def print_table_dict(db, folder='.', targetschema=None):
 
 def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
     import sqlalchemy
-    import os
+    
      
     sql_list = """SELECT routine_name FROM information_schema.routines 
         WHERE routine_type='FUNCTION' AND specific_schema='{}'"""
@@ -951,7 +953,7 @@ def print_create_functions(db, folder=".", targetschema=None, file_prefix=None):
 
 def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
     import sqlalchemy
-    import os
+    
     from sqlalchemy.dialects import postgresql
      
     con = db.connect_SqlAlchemy()
@@ -1051,7 +1053,7 @@ def print_create_table(db, folder=None, targetschema=None, file_prefix=None):
 
 def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
     import sqlalchemy
-    import os
+    
     print("print_create_views")
     sql_view_list = """select table_name from information_schema.tables 
                         where table_schema='{}' and table_type='VIEW'
@@ -1665,7 +1667,7 @@ def check_file_for_carriage_return(full_file_path):
 
 # @timer
 def profile_csv_directory(path, delimiter=',', file_pattern=None, header_row_location=0):
-    import os
+    
     # path = './_sample_data'
     file_list = []
     total_cols_profile = {}

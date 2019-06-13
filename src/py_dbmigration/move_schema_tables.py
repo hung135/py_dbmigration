@@ -1,21 +1,22 @@
 import yaml
 import multiprocessing as mp
 import argparse
-import os
+ 
 import shutil
 from py_dbutils.parents import postgres as db_utils
 import socket
 import traceback
 import sys
 import pprint
-import logging as lg
+ 
  
 from datetime import datetime
 import copy
 import pprint
-lg.basicConfig()
-logging = lg.getLogger()
-# logging.setLevel(lg.INFO)
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
+
 logging.setLevel(lg.DEBUG)
 # target_table:
 # target_db_type:

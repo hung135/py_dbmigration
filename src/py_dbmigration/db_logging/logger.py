@@ -1,5 +1,4 @@
-import os
-# import logging
+ 
 # import datetime
 from py_dbutils.rdbms import postgres as db_utils
 import datetime
@@ -8,7 +7,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from pprint import pprint
 
-
+import os, logging as log
+logging = log.getLogger(f'PID:{os.getpid()} - {os.path.basename(__file__)}')
+logging.setLevel(log.DEBUG)
 class ImportLogger:
     # Reflect each database table we need to use, using metadata
     # LoadStatus=None
