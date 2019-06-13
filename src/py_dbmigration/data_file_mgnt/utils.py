@@ -102,7 +102,7 @@ def inject_frame_work_data(string_text, foi, df):
     return x
 
 
-def execute_sql(db, sql_list, foi, df):
+def execute_sql(db, sql_list, foi, df,label=''):
 
     for id, sql in enumerate(sql_list):
         # print(sql['sql'], "executing sike", type(sql))
@@ -110,7 +110,7 @@ def execute_sql(db, sql_list, foi, df):
         modified_sql = inject_frame_work_data(sql['sql'], foi, df)
         shorten_sql = (
             modified_sql[:50] + "...") if len(modified_sql) > 75 else modified_sql
-        logging.info("\tSQL Step #: {} {}".format( id, shorten_sql))
+        logging.info(f"\t{label}SQL Step #: {id} {shorten_sql}")
 
         t = datetime.datetime.now()
 
@@ -118,7 +118,7 @@ def execute_sql(db, sql_list, foi, df):
         
 
         time_delta = (datetime.datetime.now() - t)
-        logging.info("\t\tExecution Time: {}sec".format(time_delta))
+        logging.info(f"\t\tExecution Time: {time_delta}sec")
 
 # pull the list of modules configured in the yaml file under process_logic
 # it will execute each of the logic on this file in the order it was entered in the yaml file
@@ -147,7 +147,7 @@ def process_logic(foi, db, df):
     try:
         if foi.pre_action is not None:
             logging.info("Executing Pre Load SQL")
-            execute_sql(db, foi.pre_action, foi, df)
+            execute_sql(db, foi.pre_action, foi, df,'PRE ')
         
     except Exception as e:
         logging.error(f"Failed executing Pre Load action: {e}")
@@ -206,7 +206,7 @@ def process_logic(foi, db, df):
         try:
             if foi.post_action is not None:
                 logging.info("Executing Post Load SQL")
-                execute_sql(db, foi.post_action, foi, df)
+                execute_sql(db, foi.post_action, foi, df,'POST ')
         except Exception as e:
             logging.error(f"Failed running post action: {e}")
             df.current_file_state.failed(f'{e}')

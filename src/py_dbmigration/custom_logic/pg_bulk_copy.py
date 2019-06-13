@@ -72,7 +72,7 @@ def custom_logic(db, foi, df,logic_status):
     column_count=len(cols)
      
     #count_column_csv(full_file_path, header_row_location=0, sample_size=200, delimiter=','):
-    logging.debug("Delimiter: {}".format(foi.file_delimiter))
+    #logging.debug("Delimiter: {}".format(foi.file_delimiter))
     file_column_count=static_func.count_column_csv(data_file,header,10,foi.file_delimiter)
 
     
