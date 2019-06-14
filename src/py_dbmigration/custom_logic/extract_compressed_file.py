@@ -26,7 +26,7 @@ from py_dbmigration.data_file_mgnt.state import LogicState,FOI
 
 def custom_logic(db, foi, df, logic_status):
 
-    file_id = df.meta_source_file_id
+    file_id = df.file_id
     skip_ifexists = (not foi.unzip_again)
     abs_file_path = logic_status.file_state.file_path
     abs_writable_path = os.path.join(df.working_path, df.curr_src_working_file)

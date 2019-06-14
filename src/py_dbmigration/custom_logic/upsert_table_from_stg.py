@@ -45,13 +45,13 @@ def custom_logic(db, foi, df,logic_status):
         logging.info("\t\tNo Primary Key found, Loading directly:")
     else:
         upsert_sql = migrate_utils.static_func.generate_postgres_upsert(
-            db, table_name, stage_schema, data_schema, df.meta_source_file_id)
+            db, table_name, stage_schema, data_schema, df.file_id)
 
         update_sql = upsert_sql
         logging.info("\t\tPrimary Found Loading via Upsert: {}".format(primary_key))
 
-    logging.info("\t\tSetting file_id to: {}".format(df.meta_source_file_id))
-    cnt = db.execute("update stg.{} set file_id={}".format(table_name, df.meta_source_file_id),catch_exception=False)
+    logging.info("\t\tSetting file_id to: {}".format(df.file_id))
+    cnt = db.execute("update stg.{} set file_id={}".format(table_name, df.file_id),catch_exception=False)
     logging.info("\t\tLoading...could take a while: {} Records:".format(cnt))
     logging.debug(update_sql)
     x = db.execute(update_sql,catch_exception=False)

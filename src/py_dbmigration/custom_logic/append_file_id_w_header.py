@@ -34,10 +34,10 @@ def append_file_id(orgfile, newfile,   delimiter,  file_id, has_header=False):
 def custom_logic(db, foi, df,logic_status):
 
     continue_processing = False
-    file_id = df.meta_source_file_id
+    file_id = df.file_id
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
 
-    append_file_id(abs_file_path, abs_file_path+"_modified", foi.delimiter, df.meta_source_file_id)
+    append_file_id(abs_file_path, abs_file_path+"_modified", foi.delimiter, df.file_id)
 
     df.curr_src_working_file = df.curr_src_working_file+"_modified"
 

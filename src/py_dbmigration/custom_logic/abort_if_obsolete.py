@@ -40,7 +40,7 @@ def custom_logic(db, foi, df,logic_status):
                 and cur.id!=newer.id
                 and cur.file_type=newer.file_type
                 limit 1
-                    """.format(file_id=df.meta_source_file_id, file_regex=foi.regex))
+                    """.format(file_id=df.file_id, file_regex=foi.regex))
 
     if file_exists:
         # raise execption to continue with the next file

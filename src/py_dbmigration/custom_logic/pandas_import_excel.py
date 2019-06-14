@@ -50,7 +50,7 @@ def custom_logic(db, foi, df, logic_status):
 
             # df = df[1: 10]
             if append_file_id:
-                dataframe['file_id'] = df.meta_source_file_id
+                dataframe['file_id'] = df.file_id
 
             dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
                              index=False, index_label=column_list)

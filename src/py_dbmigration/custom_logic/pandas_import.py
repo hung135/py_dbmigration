@@ -40,7 +40,7 @@ def custom_logic(db, foi, df,logic_status):
     header = foi.header_row
     names =  foi.column_list
     file_type = foi.file_type
-    file_id = df.meta_source_file_id
+    file_id = df.file_id
 
     delim = foi.new_delimiter or foi.file_delimiter
     append_file_id = foi.append_file_id

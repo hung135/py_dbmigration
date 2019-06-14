@@ -1,23 +1,25 @@
 #This file is to configure mapping of files to database tables 
+# {{{value}}}  Anything in triple bracket denotes runtime variables to be populated
+# {{value}}  Anything in double bracket denotes variables reference any up the yaml tree
 - path: '/workspace/tests/sample_data/'
   mp_cores: 2
   write_path: '/workspace/tmp/'
   convert_table_name_snake_case: True
   enabled: True # activates this configration tree
   project_name: test_1
-  reprocess: True
-  extract_file_name_data: '\d\d\d\d\d\d'
-  format_extracted_date: 'YYYYMM'
+  reprocess: True # flag used to identify files we want to attempt to re-run the next go around
+  extract_file_name_data: '\d\d\d\d\d\d'  # regext to extract data from file name and store
+  format_extracted_date: 'YYYYMM'       #postgres format of the regex above
   process_logic: # this will get executed for all files
-    
+    - logic: 'custom_logic.load_status'
     - logic: 'custom_logic.generate_checksum'
-        
     - logic: 'custom_logic.log_file_size'
     - logic: 
         plugin: '/workspace/tests/plugin_logic/plugin_logic_sample.py'
     - logic: 'custom_logic.abort_if_duplicate'
-  reset_failed: False
-  mapping:
+  post_process_logic: #logic to be ran after everything else regarless of exceptions to above
+    - logic: 'custom_logic.load_status_post_import'
+  mapping: #lis of logic to run for each specify file type that matches the file_regex below
     #look for zip files and extract them
     - file_regex: '^.*.zip$'
       file_type: 'zip'
@@ -43,10 +45,11 @@
       file_type: 'CSV'
       schema_name: 'test'
       reprocess: True
-      table_name: test{{{file_id}}}
+      #table_name: test
       file_delimiter: ","
       process_logic:
         - logic: 'custom_logic.count_file_linux_wc'
+        
         - logic: 
             name: 'custom_logic.pandas_import'
       file_encoding: 'ISO-8859-1'
@@ -56,7 +59,7 @@
       file_type: 'XLS'
       schema_name: 'test'
       reprocess: True
-      #table_name: 'test1'
+      #table_name: 'testxls'
       file_delimiter: ","
       process_logic:
         - logic: 

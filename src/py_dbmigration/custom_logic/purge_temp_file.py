@@ -31,7 +31,7 @@ def custom_logic(db, foi, df):
         
         if not 's3://' in df.source_file_path:
 
-            parent_file_id,x=db.query(check_finish_sql.format(df.meta_source_file_id))
+            parent_file_id,x=db.query(check_finish_sql.format(df.file_id))
         #print(parent_file_id)
             for id,file_name,file_path in parent_file_id:
                     delete_path=file_path.split(file_name)

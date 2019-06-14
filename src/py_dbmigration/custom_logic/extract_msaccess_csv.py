@@ -32,7 +32,7 @@ def custom_logic(db, foi, df,logic_status):
     
     table_name = foi.table_name
     #target_schema = foi.schema_name
-    file_id = df.meta_source_file_id
+    file_id = df.file_id
     #skip_ifexists = (not foi.unzip_again)
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
     abs_writable_path = os.path.join(df.working_path, df.curr_src_working_file)

@@ -82,6 +82,7 @@ class DataFile:
     #    SUPPORTED_DATAFILE_TYPES = ['DATA', 'CSV', 'DAT', 'XLSX', 'TXT', 'XLS', 'MDB']
 
     working_path = None
+    full_file_path = None
     db = None
     file_pattern_list = None
     current_file_pattern = None
@@ -91,7 +92,8 @@ class DataFile:
     #                    WHERE  file_name='{1}' and
     #                    """
     current_file_state = None
-    meta_source_file_id = 0
+     
+    file_id = 0
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
         #assert isinstance(foi_list[0], FilesOfInterest)
@@ -136,6 +138,7 @@ class DataFile:
         self.total_data_file_count = 0
         self.foi_list = foi_list
         self.rows_inserted = 0  # initialzed in constructor
+        
         # self.table_file_regex = \
         # self.put_foi_to_db(db, foi_list)
 
@@ -159,7 +162,7 @@ class DataFile:
                         logging.error("Directory from Yaml does not exists: {}".format(
                             files_of_interest.file_path))
                         sys.exit(1)
-                self.FilesOfInterest.parent_file_id = self.meta_source_file_id
+                self.FilesOfInterest.parent_file_id = self.file_id
 
                 if not 0 >= len(list(self.FilesOfInterest.file_list)):
 
@@ -552,9 +555,10 @@ class DataFile:
             self.work_file_type = row.file_type
             self.total_files = row.total_files
             self.file_size = row.file_size
-            self.meta_source_file_id = row.id
-
+            
             self.row_count = row.total_rows
+            self.full_file_path = os.path.join(self.source_file_path,self.curr_src_working_file)
+            self.file_id=row.id
 
              
 
@@ -580,13 +584,13 @@ class DataFile:
                     self.source_file_path, self.curr_src_working_file)
                 foi = get_mapped_table(full_file_name, self.foi_list)
                 self.current_file_state = DataFileState(self.db, os.path.join(
-                self.source_file_path, self.curr_src_working_file), self.meta_source_file_id)
+                self.source_file_path, self.curr_src_working_file), self.file_id)
                 if foi is not None:
                     
 
                     # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
                     logging.info(
-                        "->Processing file_id: {}: --> {}".format(self.meta_source_file_id, self.curr_src_working_file))
+                        "->Processing file_id: {}: --> {}".format(self.file_id, self.curr_src_working_file))
                     logging.info(
                         "->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path, full_file_name))
 
@@ -603,7 +607,7 @@ class DataFile:
                     # self.set_work_file_status(
                     #     db, self.meta_source_file_id, 'FAILED', 'No Matching REGEX Found in yaml')
                 self.current_file_state.table.close()
-                self.release_file_lock(db, self.meta_source_file_id)
+                self.release_file_lock(db, self.file_id)
 
                 if cleanup:
                     self.cleanup_files()  # import_files(files,loan_acquisition)

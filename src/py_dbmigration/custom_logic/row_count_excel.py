@@ -28,7 +28,7 @@ update_sql = """UPDATE logging.meta_source_files set total_rows={}  where id = {
 def custom_logic(db, foi, df,logic_status):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     continue_processing = True
-    file_id = df.meta_source_file_id
+    file_id = df.file_id
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
 
     data_value, dummy_column_count = migrate_utils.static_func.count_excel(abs_file_path)

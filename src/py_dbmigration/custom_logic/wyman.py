@@ -163,7 +163,7 @@ def process(db, foi, df):
     total_rows = 0
     target_dbschema = foi.schema_name
     table_name = foi.table_name
-    file_id = df.meta_source_file_id
+    file_id = df.file_id
     file = os.path.join(df.source_file_path, df.curr_src_working_file)
     # file = '/home/dtdata/source_data/mkts_derived_data_warehouse/experian_mir/text/Experian-Oliver Wyman MIR - Student Loan DataPack.xlsx'
     with open(file, 'rb') as f:

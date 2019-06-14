@@ -343,6 +343,7 @@ class FOI(object):
     limit_rows= None
     
     process_logic= None
+    post_process_logic = [] #these logic will get executed regardless
    
     reprocess=None 
     extract_file_name_data = None
@@ -367,7 +368,7 @@ class FOI(object):
             if str(mapping[key])=='None':
                 setattr(self, key, None)
             elif (key)=='process_logic':
-                self.process_logic=self.process_logic + (mapping[key] or [])
+                self.process_logic=self.process_logic + (mapping[key] or []) 
             else:
                 setattr(self, key, mapping[key])
 
