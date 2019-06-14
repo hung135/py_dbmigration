@@ -7,7 +7,7 @@ import py_dbutils.parents as db_utils
 import py_dbmigration.data_file_mgnt.data_files as data_files 
 import py_dbmigration.db_table as db_table
 import py_dbmigration.zip_utils as zip_utils
-from py_dbmigration.data_file_mgnt.state import *
+from py_dbmigration.data_file_mgnt.state import LogicState,FOI
 #logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
 
 
@@ -16,7 +16,7 @@ from py_dbmigration.data_file_mgnt.state import *
     Author: Hung Nguyen
     Date created: 7/17/2018
     Date last modified: 7/17/2018
-    Python Version: 2.7
+    Python Version: 3.6
     Descripton:
     #  This logic will extract a compressed zip file and inventory the files extracted and link it to the parent_file_id
     #  

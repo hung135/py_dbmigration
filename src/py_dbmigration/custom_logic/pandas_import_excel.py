@@ -1,115 +1,76 @@
-import yaml
-import os, logging
-
- 
+import os
+import logging
 import sys
 import pandas as pd
-import numpy as np
- 
-import py_dbutils.rdbms.postgres as db_utils
+from py_dbutils.rdbms.postgres import DB as db_connection
 import py_dbmigration.migrate_utils as migrate_utils
 from py_dbmigration.data_file_mgnt.state import LogicState, FOI
-
 import re
- 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
 
 
-# leveraging pandas libraries to read csv into a dataframe and let pandas
-# insert into database
-# @migrate_utils.static_func.timer
-#@migrate_utils.static_func.dump_params
-
-
-# def import_file(db, foi, lowercase=True,  chunk_size=10000):
-def custom_logic(db, foi, df,logic_status):
- 
- 
-    chunk_size = 50000
+def custom_logic(db, foi, df, logic_status):
     lowercase = True
     rows_inserted = 0
-     
-    
-     
-    file = os.path.join(df.source_file_path, df.curr_src_working_file)
-   
-    
-    table_name = foi.table_name
-    target_schema = foi.schema_name
-    #table_name_extract = foi.table_name_extract
-    header = foi.header_row
-    names =  foi.column_list
-    file_type = foi.file_type
-    file_id = df.meta_source_file_id
 
-    delim = foi.new_delimiter or foi.file_delimiter
+    file = os.path.join(df.source_file_path, df.curr_src_working_file)
+
+    table_name = foi.table_name
+    column_list = foi.column_list
+    target_schema = foi.schema_name
     append_file_id = foi.append_file_id
- 
+
     if db is not None:
-         
+
         sqlalchemy_conn = db.connect_SqlAlchemy()
 
-         
         if table_name is None:
             table_name = str(os.path.basename((file)))
-         
-        make_snake_case=foi.convert_table_name_snake_case or False
-        if make_snake_case:
-            table_name=migrate_utils.static_func.convert_str_snake_case(table_name)
-        counter = 0
-        # if table_name_extract is not None:
-        #     table_name_regex = re.compile(table_name_extract)
-        #     # table_name = table_name_regex.match(table_name))
-        #     print("----", table_name_extract, table_name)
-        #     table_name = re.search(table_name_extract, table_name).group(1)
 
-        #     logging.info("\t\tExtracted tableName from file: {} ".format(table_name))
+        make_snake_case = foi.convert_table_name_snake_case or False
+        if make_snake_case:
+            table_name = migrate_utils.static_func.convert_str_snake_case(
+                table_name)
+
         if lowercase:
             table_name = str.lower(str(table_name))
-        try: 
+        try:
             foi.table_name = table_name
-        
+
             logging.info("Reading Excel File")
 
-            dataframe = pd.read_excel(file, encoding='unicode',  index_col=None, header=0)
+            dataframe = pd.read_excel(
+                file, encoding='unicode',  index_col=None, header=0)
             # xl = pd.ExcelFile(file)
             # df = xl.parse(1)
             col_list = dataframe.columns.tolist()
+            snaked_columns = [
+                migrate_utils.static_func.convert_str_snake_case(i) for i in col_list]
 
-            # cols_new = [i.split(' ', 1)[1].replace(" ", "_").lower() for i in col_list]
-            cols_new = [migrate_utils.static_func.convert_str_snake_case(i) for i in col_list]
-            # df.columns = df.columns.str.split(' ', 1)
-            dataframe.columns = cols_new
-            dataframe_columns = cols_new
+            dataframe.columns = snaked_columns
+
             # df = df[1: 10]
             if append_file_id:
                 dataframe['file_id'] = df.meta_source_file_id
 
             dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
-                                index=False, index_label=names)
-            dataframe_columns = dataframe.columns.tolist()
-                
+                             index=False, index_label=column_list)
+
             rows_inserted = (len(dataframe))
             logic_status.row.rows_inserted = rows_inserted
-            logic_status.table.session.commit()
-            
 
         except Exception as e:
             logging.exception(e)
-            logic_status.failed(e)  
-                 
-                
-                
-                
+            logic_status.failed(e)
+
     logging.debug("\t\tRows Inserted: {}".format(rows_inserted))
-    
-    
+
     return logic_status
 
-def process(db, foi, df,logic_status):
+
+def process(db, foi, df, logic_status):
     # variables expected to be populated
-  
-    assert isinstance(foi,FOI)
-    assert isinstance(db, db_utils.DB)
-    assert isinstance(logic_status,LogicState)
-    return custom_logic(db, foi, df,logic_status)
+
+    assert isinstance(foi, FOI)
+    assert isinstance(db, db_connection)
+    assert isinstance(logic_status, LogicState)
+    return custom_logic(db, foi, df, logic_status)
