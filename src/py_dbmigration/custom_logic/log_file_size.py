@@ -7,10 +7,10 @@ from .. import data_file_mgnt
 from .. import migrate_utils
 
 from py_dbmigration.data_file_mgnt.state import *
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+import os, logging
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 '''
@@ -31,7 +31,7 @@ def custom_logic(db, foi, df, logic_status):
 
     file_size = os.path.getsize(abs_file_path)
     file_size_mb = round(file_size * 1.0 / 1024 / 1024, 2)
-    logging.info("\t\t\tFile Size: {} MB ".format(file_size_mb))
+    logging.debug("\t\t\tFile Size: {} MB ".format(file_size_mb))
     logic_status.row.file_size = file_size_mb
     
     return logic_status

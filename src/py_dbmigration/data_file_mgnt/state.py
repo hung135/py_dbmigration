@@ -2,10 +2,10 @@ from enum import Enum
 import sys
 import py_dbmigration.db_table as db_table
 from py_dbmigration.data_file_mgnt import utils
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+import os, logging
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 #enums to classify various states if a file
 class WorkState(Enum):

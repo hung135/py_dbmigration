@@ -6,10 +6,10 @@ import py_dbutils.parents as db_utils
 from py_dbmigration import data_file_mgnt
 from py_dbmigration import migrate_utils
 from py_dbmigration.data_file_mgnt.state import LogicState, FOI
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+import os, logging
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 ''' 
     Author: Hung Nguyen
@@ -42,7 +42,7 @@ def custom_logic(db, foi, df, logic_status):
         if crc is None:
         
             crc = migrate_utils.static_func.md5_file_36(abs_file_path)
-        logging.info("\t\t\tMD5: {}".format(crc))
+        logging.debug("\t\t\tMD5: {}".format(crc))
         logic_status.row.crc = crc
         
 

@@ -7,10 +7,10 @@ from py_dbmigration.data_file_mgnt.state import *
 import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
 
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+import os, logging
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 file_path = os.environ['RAWFILEPATH']
 writable_path = os.environ['WORKINGPATH']

@@ -6,10 +6,10 @@ import py_dbmigration.migrate_utils.static_func as static_func
 
 import pprint
 
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+import os, logging
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 def merge_two_dicts(x, y):
@@ -153,10 +153,10 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None):
     logging_set=args.logging or logging_mode
     if logging_set is 'debug':
  
-        logging.setLevel(log.DEBUG)
+        
     else:
  
-        logging.setLevel(log.INFO)
+        
 
     datafiles =None
     if args.yaml is not None:

@@ -1,6 +1,6 @@
 
-import os, logging as log
-runtime_pid=os.getpid()
+import os, logging
+
  
 import sys
 import py_dbutils.parents as db_utils
@@ -8,8 +8,8 @@ import py_dbmigration.data_file_mgnt.data_files as data_files
 import py_dbmigration.db_table as db_table
 import py_dbmigration.zip_utils as zip_utils
 from py_dbmigration.data_file_mgnt.state import *
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 '''
     File name: generate_checksum.py

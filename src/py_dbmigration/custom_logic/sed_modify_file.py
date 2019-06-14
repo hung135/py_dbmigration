@@ -10,10 +10,10 @@ import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
 import subprocess
 import datetime
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+import os, logging
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 '''

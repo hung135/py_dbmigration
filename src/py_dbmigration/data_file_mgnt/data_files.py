@@ -16,11 +16,11 @@ import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
 from py_dbmigration.data_file_mgnt import utils 
 from py_dbmigration.data_file_mgnt.state import FilesOfInterest, DataFileState, FOI,LogicState, WorkState
-import os, logging as log
-runtime_pid=os.getpid()
+import os, logging
 
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 # given 2 data frame this will find all the records do not exist in the
@@ -58,7 +58,7 @@ def get_mapped_table(file_name, foi_list):
         if re.match(i.regex, file_name, re.IGNORECASE):
             # print("***FOI.regex:", i.regex, i.table_name, file_name)
             logging.info(
-                "\tFile->Table mapping found: {} {}".format(i.file_type, i.regex))
+                "File->Table mapping found: {} {}".format(i.file_type, i.regex))
             return copy.copy(i)
     return None
 
@@ -586,9 +586,9 @@ class DataFile:
 
                     # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
                     logging.info(
-                        "\t->Processing file_id: {}: --> {}".format(self.meta_source_file_id, self.curr_src_working_file))
+                        "->Processing file_id: {}: --> {}".format(self.meta_source_file_id, self.curr_src_working_file))
                     logging.info(
-                        "\t->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path, full_file_name))
+                        "->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path, full_file_name))
 
                     # self.set_work_file_status(
                     #     db, self.meta_source_file_id, 'Processing Started', '')

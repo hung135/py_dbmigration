@@ -6,14 +6,14 @@ from py_dbmigration.data_file_mgnt.data_files import *
 from py_dbmigration.migrate_utils import *
 import py_dbmigration.db_table
 from  py_dbutils.rdbms import postgres as db_utils
-import os, logging as log
-runtime_pid=os.getpid()
+import os, logging
+
 import boto3
 from config_parent import Config
 #import boto3
 
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 class Test_db_utils_postgres(unittest.TestCase,Config):

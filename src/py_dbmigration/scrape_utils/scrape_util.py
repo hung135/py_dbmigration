@@ -4,10 +4,10 @@ from lxml import html
 
 import requests
 from bs4 import BeautifulSoup
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+import os, logging
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 def getUrl(urlObj, session):
     r = session.post(urlObj.url, data=urlObj.payload)

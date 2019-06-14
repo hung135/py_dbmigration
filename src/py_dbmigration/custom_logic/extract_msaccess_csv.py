@@ -21,10 +21,10 @@ from py_dbmigration.data_file_mgnt.state import *
     #  
     #  
 '''
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+import os, logging
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 def custom_logic(db, foi, df,logic_status):
@@ -49,7 +49,7 @@ def custom_logic(db, foi, df,logic_status):
         accessdb=msaccess.DB(abs_file_path)
     
         for table_name in accessdb.get_all_tables():
-            logging.info("\t\tExtracting MSACCESS Table: {}".format(table_name))
+            logging.debug("Extracting MSACCESS Table: {}".format(table_name))
             os.makedirs(modified_write_path,exist_ok=True)
             extracted_file_name="{}.csv".format(table_name)
             extracted_file_fqn=os.path.join(modified_write_path,extracted_file_name)

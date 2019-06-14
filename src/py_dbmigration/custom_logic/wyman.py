@@ -13,10 +13,10 @@ import py_dbmigration.db_table as db_table
 from openpyxl import load_workbook
 
 import pprint
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+import os, logging
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 HEADER_location = 0
 UNITS_location = 1

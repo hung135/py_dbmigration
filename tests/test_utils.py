@@ -3,16 +3,16 @@ import unittest
  
 from py_dbmigration.migrate_utils import static_func
  
-import os, logging as log
-runtime_pid=os.getpid()
+import os, logging
+
 from py_dbutils.rdbms import postgres as db_utils
 from config_parent import Config
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 import yaml
 import pprint as pp
 
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
  
 class Test_db_utils_postgres(unittest.TestCase,Config):
      

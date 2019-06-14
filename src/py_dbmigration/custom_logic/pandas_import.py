@@ -1,6 +1,6 @@
 import yaml
-import os, logging as log
-runtime_pid=os.getpid()
+import os, logging
+
  
 import sys
 import pandas as pd
@@ -12,8 +12,8 @@ from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 
 import re
  
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 # leveraging pandas libraries to read csv into a dataframe and let pandas
 # insert into database
@@ -99,7 +99,7 @@ def custom_logic(db, foi, df,logic_status):
                 # cols_new = [i.split(' ', 1)[1].replace(" ", "_").lower() for i in col_list]
                         cols_new = [migrate_utils.static_func.convert_str_snake_case(i) for i in col_list]
                         dataframe.columns = cols_new
-                    logging.info(
+                    logging.debug(
                         "\t\tInserting: {0}->{1}-->Chunk#: {2} Chunk Size: {3}".format(foi.schema_name, table_name,
                                                                                        counter, chunk_size))
                     ####################################################################################################
@@ -148,7 +148,7 @@ def custom_logic(db, foi, df,logic_status):
                 
                 
                 
-    logging.info("\t\tRows Inserted: {}".format(rows_inserted))
+    logging.debug("\t\tRows Inserted: {}".format(rows_inserted))
     
     
     return logic_status

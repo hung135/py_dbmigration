@@ -9,11 +9,11 @@ import sys
 from py_dbmigration.custom_logic import purge_temp_file as purge
 import yaml
 import py_dbmigration.db_table as db_table
-import os, logging as log
-runtime_pid=os.getpid()
+import os, logging
 
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.INFO)
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "ERROR"))
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 
@@ -112,7 +112,7 @@ def execute_sql(db, sql_list, foi, df,label=''):
         modified_sql = inject_frame_work_data(sql['sql'], foi, df)
         shorten_sql = (
             modified_sql[:50] + "...") if len(modified_sql) > 75 else modified_sql
-        logging.info(f"\t{os.getpid()}{label}SQL Step #: {id} {shorten_sql}")
+        logging.info(f"\t{label}SQL Step #: {id} {shorten_sql}")
 
         t = datetime.datetime.now()
 
@@ -120,7 +120,7 @@ def execute_sql(db, sql_list, foi, df,label=''):
         
 
         time_delta = (datetime.datetime.now() - t)
-        logging.info(f"\t\tExecution Time: {time_delta}sec")
+        logging.debug(f"\t\tExecution Time: {time_delta}sec")
 
 # pull the list of modules configured in the yaml file under process_logic
 # it will execute each of the logic on this file in the order it was entered in the yaml file
@@ -179,7 +179,7 @@ def process_logic(foi, db, df):
 
                 imp = getattr(module, logic_name)
 
-                logging.info('\tCustom Logic Start: {}'.format(custom_logic))
+                logging.info('Custom Logic Start: {}'.format(custom_logic))
                 df.set_work_file_status(db, df.meta_source_file_id, custom_logic)
 
                 time_started = datetime.datetime.now()
@@ -188,17 +188,17 @@ def process_logic(foi, db, df):
                 imp.process(db, foi, df, logic_status)
                 logic_status.completed()
             except Exception as e:
-                logging.error(f"Syntax Error Importing or Running Custom Logic: {fqn_logic}\n{e}")
+                logging.exception(f"Syntax Error Importing or Running Custom Logic: {fqn_logic}\n{e}")
                 logic_status.hardfail(f'{__file__}: {e}')
             # *************************************************************************
 
             time_delta = (datetime.datetime.now() - time_started)
-            logging.info(f"\t\t\tExecution Time: {time_delta}sec".format())
-            logging.debug(f'\t->Dynamic Module Ended: {custom_logic}')
+            logging.debug(f"\t\tExecution Time: {time_delta}sec".format())
+            logging.debug(f'->Dynamic Module Ended: {custom_logic}')
 
             if not logic_status.continue_processing_logic:
                 logging.error(
-                    '\tAbort Processing for this file Because of Error: {}'.format(df.curr_src_working_file))
+                    'Abort Processing for this file Because of Error: {}'.format(df.curr_src_working_file))
 
                 #df.set_work_file_status(db, df.meta_source_file_id, 'FAILED', custom_logic+'\n'+str(df.load_status_msg or ''))
                 break
@@ -210,7 +210,7 @@ def process_logic(foi, db, df):
                 logging.info("Executing Post Load SQL")
                 execute_sql(db, foi.post_action, foi, df,'POST ')
         except Exception as e:
-            logging.error(f"Failed running post action: {e}")
+            logging.exception(f"Failed running post action: {e}")
             df.current_file_state.failed(f'{e}')
 
         #row.file_process_state = FileStateEnum.PROCESSED.value

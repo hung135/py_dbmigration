@@ -1,18 +1,19 @@
+import os, logging
+import logging.handlers
+#using root logger so this need to come before any other logger that may get call inside one of the imports below
+##############################################
+
 import sys
 import unittest
-
-from py_dbmigration.data_file_mgnt import *
+ 
 from py_dbmigration.migrate_utils import static_func
 import py_dbmigration.db_table as db_table
 
-from py_dbutils.rdbms import postgres as db_utils
+#from py_dbutils.rdbms import postgres as db_utils
 from config_parent import Config
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 import shutil
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'P:{os.getpid()}{os.path.basename(__file__)}')
-logging.setLevel(log.DEBUG)
+ 
  
 class Test_db_utils_postgres(unittest.TestCase,Config):
      
@@ -45,4 +46,14 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         print("sleeeping for 500")
         #time.sleep(500)
 if __name__ == '__main__':
+
+    LOGFORMAT=f'%(process)d, %(levelname)s,%(filename)s," \t%(message)s"'
+    logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),format=LOGFORMAT)
+    handler = logging.handlers.WatchedFileHandler(
+        os.environ.get("LOGFILE", ".dataload_log.csv"))
+    formatter = logging.Formatter(LOGFORMAT)
+    handler.setFormatter(formatter)
+    root = logging.getLogger()
+    root.setLevel(os.environ.get("LOGLEVEL", "INFO"))
+    root.addHandler(handler)
     unittest.main()

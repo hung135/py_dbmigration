@@ -1,14 +1,14 @@
 
-import os, logging as log
-runtime_pid=os.getpid()
+import os, logging
+
 import sys
 import py_dbutils.parents as db_utils
  
 from py_dbmigration.data_file_mgnt.state import *
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbmigration.db_table as db_table
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 ''' 
     Author: Hung Nguyen
@@ -36,13 +36,13 @@ def custom_logic(db, foi, df, logic_status):
     if already_processed:
         # raise execption to continue with the next file
         # raise valuerror to abort process
-        logging.info("\t\tDuplicate File Found")
+        logging.debug("\t\tDuplicate File Found")
 
         # let file state machine determin if we can continue
         logic_status.continue_to_next_logic(
             logic_status.file_state.duplicate())
     else:
-        logging.info("\t\tDuplicate NOT File Found")
+        logging.debug("\t\tDuplicate NOT File Found")
     return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 

@@ -1,3 +1,7 @@
+import os, logging
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "ERROR"))
+#using root logger so this need to come before any other logger that may get call inside one of the imports below
+##############################################
 import yaml
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as dfm
@@ -8,10 +12,10 @@ import multiprocessing as mp
 
 import pprint
 
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 def merge_two_dicts(x, y):
@@ -65,12 +69,9 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
     parser.add_argument('--logging' , help='set logging mode: debug, info, warning, error ')
     args = parser.parse_args()
     logging_set=args.logging or logging_mode
-    if logging_set is 'debug':
+    
  
-        logging.setLevel(log.DEBUG)
-    else:
- 
-        logging.setLevel(log.INFO)
+        
 
     datafiles =None
     if args.yaml is not None:
@@ -141,6 +142,6 @@ def multi_process(funct, list_params, max_cores, p_return_dict=None):
         logging.info("Process Done: {} PID: {}".format(i, proc.pid))
 
 if __name__ == '__main__':
-    runtime_pid=os.getpid()
-    runtime_pid=os.getpid()
+    
+    
     main()

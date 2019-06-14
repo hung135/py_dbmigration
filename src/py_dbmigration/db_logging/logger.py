@@ -7,10 +7,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from pprint import pprint
 
-import os, logging as log
-runtime_pid=os.getpid()
-logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
-logging.setLevel(log.DEBUG)
+import os, logging
+
+#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 class ImportLogger:
     # Reflect each database table we need to use, using metadata
     # LoadStatus=None
