@@ -10,10 +10,11 @@
   format_extracted_date: 'YYYYMM'
   process_logic: # this will get executed for all files
     
-    - logic: 
-        name: 'custom_logic.generate_checksum'
-        check_cache: True
+    - logic: 'custom_logic.generate_checksum'
+        
     - logic: 'custom_logic.log_file_size'
+    - logic: 
+        plugin: '/workspace/tests/sample_plugin_logic_log_file_size.py'
     - logic: 'custom_logic.abort_if_duplicate'
   reset_failed: False
   mapping:
@@ -29,11 +30,11 @@
         #- logic: 'custom_logic.abort_if_obsolete'
         - logic: 'custom_logic.count_file_linux_wc'
         - logic: 'custom_logic.extract_msaccess_csv'
-    - file_regex: '^.*.gz$'
-      file_type: 'gzip'
-      process_logic:
-        #- logic: 'custom_logic.abort_if_obsolete'
-        - logic: 'custom_logic.extract_compressed_file'
+    # - file_regex: '^.*.gz$'
+    #   file_type: 'gzip'
+    #   process_logic:
+    #     #- logic: 'custom_logic.abort_if_obsolete'
+    #     - logic: 'custom_logic.extract_compressed_file'
     
     #################################################################################################################################################################
     #look for data files and import them
@@ -46,11 +47,9 @@
       file_delimiter: ","
       process_logic:
         - logic: 'custom_logic.count_file_linux_wc'
-        - logic: 'custom_logic.pandas_import'
+        - logic: 
+            name: 'custom_logic.pandas_import'
       file_encoding: 'ISO-8859-1'
-      limit_rows: None
-      has_header: False
-      user_header: False
       post_action: 
         - sql: "vacuum analyze {{schema_name}}.{{table_name}}"
     - file_regex: '.*.xlsx$'
@@ -58,15 +57,11 @@
       schema_name: 'test'
       reprocess: True
       #table_name: 'test1'
-      
       file_delimiter: ","
       process_logic:
-        - logic: 'custom_logic.pandas_import_excel'
+        - logic: 
+            name: 'custom_logic.pandas_import_excel'
       file_encoding: 'ISO-8859-1'
-      limit_rows: None
-      has_header: True
-      user_header: True
-       
       post_action: 
         - sql: "vacuum analyze {{schema_name}}.{{table_name}}"
         - sql: "select 1 from logging.meta_source_files where id={{{file_id}}}"
