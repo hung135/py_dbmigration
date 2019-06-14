@@ -1631,7 +1631,7 @@ def count_column_csv(full_file_path, header_row_location=0, sample_size=200, del
          
         column_count = statistics.median(count_list)
     except Exception as e:
-        logging.error("Error Counting csv columns:{} \nReturning: 0".format(e))
+        logging.exception("Error Counting csv columns:{} \nReturning: 0".format(e))
 
     return int(column_count)
 
@@ -1695,7 +1695,7 @@ def profile_csv_directory(path, delimiter=',', file_pattern=None, header_row_loc
                     if total_cols_profile.get(key, 0) < val:
                         total_cols_profile[key] = val
             except Exception as e:
-                logging.error("Error for file:{}".format(e))
+                logging.exception("Error for file:{}".format(e))
     for key, value in sorted(total_cols_profile.items(), key=lambda x: x[1]):
         logging.info("Total: {}:{}".format( key, value))
 

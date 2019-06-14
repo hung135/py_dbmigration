@@ -152,7 +152,7 @@ def process_logic(foi, db, df):
             execute_sql(db, foi.pre_action, foi, df,'PRE ')
         
     except Exception as e:
-        logging.error(f"Failed executing Pre Load action: {e}")
+        logging.exception(f"Failed executing Pre Load action: {e}")
         df.current_file_state.failed(e)
         continue_processing=False
     #if preaction all executed
@@ -197,7 +197,7 @@ def process_logic(foi, db, df):
             logging.debug(f'->Dynamic Module Ended: {custom_logic}')
 
             if not logic_status.continue_processing_logic:
-                logging.error(
+                logging.info(
                     'Abort Processing for this file Because of Error: {}'.format(df.curr_src_working_file))
 
                 #df.set_work_file_status(db, df.meta_source_file_id, 'FAILED', custom_logic+'\n'+str(df.load_status_msg or ''))

@@ -61,7 +61,7 @@
       
       file_delimiter: ","
       process_logic:
-        - logic: 'custom_logic.pandas_import'
+        - logic: 'custom_logic.pandas_import_excel'
       file_encoding: 'ISO-8859-1'
       limit_rows: None
       has_header: True
@@ -69,4 +69,4 @@
        
       post_action: 
         - sql: "vacuum analyze {{schema_name}}.{{table_name}}"
-        - sql: "select 1 from logging.meta_source_files where id={{file_id}}"
+        - sql: "select 1 from logging.meta_source_files where id={{{file_id}}}"

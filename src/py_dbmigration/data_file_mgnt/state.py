@@ -168,7 +168,7 @@ class LogicState:
     #This logic has ran to comletion
     def continue_to_next_logic(self,TrueFalse):
         assert isinstance(TrueFalse,bool)
-        print("\t\tSet Continue to Next Logic: {}".format(TrueFalse))
+        logging.info("\t\tSet Continue to Next Logic: {}".format(TrueFalse))
         self.continue_processing_logic=TrueFalse
     #This logic has ran to comletion
     def completed(self):

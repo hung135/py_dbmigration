@@ -118,7 +118,7 @@ def custom_logic(db, foi, df,logic_status):
             logic_status.row.database_table=table_name_fqn
         except Exception as e:
             logging.error(__file__)
-            logging.error(e)
+            logging.exception(e)
             logic_status.row.reprocess=foi.reprocess or False
             logic_status.failed(e) 
 

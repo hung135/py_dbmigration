@@ -40,7 +40,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
             count,=db.get_a_row(sql)
             self.assertTrue(int(count)>0)
         except Exception as e:
-            logging.error(f'Unknown Error: {e}')
+            logging.exception(f'Unknown Error: {e}')
         import time
         db.__del__()
         print("sleeeping for 500")

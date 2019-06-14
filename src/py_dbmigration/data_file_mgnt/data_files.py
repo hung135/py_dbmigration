@@ -257,7 +257,7 @@ class DataFile:
         try:
             compiled_regex = re.compile(regex, re.IGNORECASE)
         except Exception as e:
-            logging.error("Invalid Regex: {}, Exception:\{}".format(regex, e))
+            logging.exception("Invalid Regex: {}, Exception:\{}".format(regex, e))
             raise
         else:
             pass
@@ -365,7 +365,7 @@ class DataFile:
         try:
             regex = re.compile(foi.regex)
         except Exception as e:
-            logging.error(
+            logging.exception(
                 "Bad Regex Pattern for Walking Directory: '{}'".format(foi.regex))
             raise
 
@@ -412,7 +412,7 @@ class DataFile:
         try:
             regex = re.compile(foi.regex)
         except Exception as e:
-            logging.error(
+            logging.exception(
                 "Bad Regex Pattern for Walking Directory: '{}' \n{}".format(foi.regex, e))
             raise
 

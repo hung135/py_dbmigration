@@ -79,8 +79,8 @@ class RecordKeeper():
                 self.session.commit()
 
             except Exception as e:
-                logging.error(e)
-                print(e)
+                logging.exception(e)
+                 
                 self.session.rollback()
 
     def print_row(self, row):
@@ -125,6 +125,6 @@ class RecordKeeper():
             logging.debug("Closing db_table Session: {} {} {}".format(
                 self.host, self.database, self.dbschema))
         except Exception as e:
-            logging.error(
+            logging.exception(
                 "Error Occured Closing db_table Session: {}".format(e))
             # print(e)

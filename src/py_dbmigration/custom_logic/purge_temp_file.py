@@ -46,7 +46,7 @@ def custom_logic(db, foi, df):
             logging.info("Will not delete from s3")
 
     except Exception as e:
-        logging.error("Error in purge_temp_file : {}".format(e))
+        logging.exception("Error in purge_temp_file : {}".format(e))
         continue_processing=False
     return continue_processing
 

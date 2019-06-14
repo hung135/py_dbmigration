@@ -53,7 +53,7 @@ def process_yaml(yaml_file=None):
                                              
 
     except Exception as e:
-        logging.error("Error processing YAML Files: {}\n Error Message: {}".format(yaml_file, e))
+        logging.exception("Error processing YAML Files: {}\n Error Message: {}".format(yaml_file, e))
         datafiles = []
     return datafiles
 

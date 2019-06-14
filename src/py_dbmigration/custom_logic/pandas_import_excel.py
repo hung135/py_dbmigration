@@ -32,7 +32,7 @@ def custom_logic(db, foi, df,logic_status):
     
      
     file = os.path.join(df.source_file_path, df.curr_src_working_file)
-    limit_rows = (foi.limit_rows)
+   
     
     table_name = foi.table_name
     target_schema = foi.schema_name
@@ -66,54 +66,30 @@ def custom_logic(db, foi, df,logic_status):
         #     logging.info("\t\tExtracted tableName from file: {} ".format(table_name))
         if lowercase:
             table_name = str.lower(str(table_name))
-        try:
-
-            if limit_rows is not None:
-                logging.debug("Pandas Read Limit SET: {0}:ROWS".format(limit_rows))
+        try: 
             foi.table_name = table_name
-       
+        
+            logging.info("Reading Excel File")
 
-            logging.debug(sys._getframe().f_code.co_name + " : " + file)
- 
-            for counter, dataframe in enumerate(
-                    pd.read_csv(file, sep=delim, nrows=limit_rows, encoding=foi.encoding, chunksize=chunk_size, 
-                                header=header, index_col=False, dtype=object)):
-                
-                if foi.column_list is None:
-                    foi.column_list=[]
-                    
-                if not foi.use_header and len(foi.column_list) > 0:
-                    dataframe.rename(columns=lambda x: str(x).strip(), inplace=True)
-                    dataframe.columns = map(str,
-                                            # foi.column_list
-                                            names
-                                            )  # dataframe.columns = map(str.lower, dataframe.columns)  # print("----- printing3",dest.column_list, dataframe.columns)
-                else:
-                        
-                        
-                    col_list = [str(col).strip() for col in dataframe.columns]
-                        
+            dataframe = pd.read_excel(file, encoding='unicode',  index_col=None, header=0)
+            # xl = pd.ExcelFile(file)
+            # df = xl.parse(1)
+            col_list = dataframe.columns.tolist()
 
             # cols_new = [i.split(' ', 1)[1].replace(" ", "_").lower() for i in col_list]
-                    cols_new = [migrate_utils.static_func.convert_str_snake_case(i) for i in col_list]
-                    dataframe.columns = cols_new
-                logging.debug(
-                    "\t\tInserting: {0}->{1}-->Chunk#: {2} Chunk Size: {3}".format(foi.schema_name, table_name,
-                                                                                    counter, chunk_size))
-                ####################################################################################################
-                if counter == 0 and append_file_id:
-                    dataframe['file_id'] = file_id
-                dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
-                                    index=False, index_label=names)
-                ####################################################################################################
-            if counter == 0:
-                    
-                rows_inserted = (len(dataframe))
-            else:
-                rows_inserted = (counter) * chunk_size + (len(dataframe))
+            cols_new = [migrate_utils.static_func.convert_str_snake_case(i) for i in col_list]
+            # df.columns = df.columns.str.split(' ', 1)
+            dataframe.columns = cols_new
+            dataframe_columns = cols_new
+            # df = df[1: 10]
+            if append_file_id:
+                dataframe['file_id'] = df.meta_source_file_id
 
+            dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
+                                index=False, index_label=names)
             dataframe_columns = dataframe.columns.tolist()
-             
+                
+            rows_inserted = (len(dataframe))
             logic_status.row.rows_inserted = rows_inserted
             logic_status.table.session.commit()
             

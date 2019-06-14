@@ -57,7 +57,7 @@ def custom_logic(db, foi, df, logic_status):
         data_files.DataFile(
             new_src_dir, db, file_table_map, parent_file_id=file_id)
     except Exception as e:
-        logging.error(f"Failed Extracting: {e}")
+        logging.exception(f"Failed Extracting: {e}")
         logic_status.failed(e)
     
     return logic_status
