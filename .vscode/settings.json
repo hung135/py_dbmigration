@@ -1,0 +1,11 @@
+{
+    "database.connections": [
+        {
+            "type": "postgres",
+            "name": "DOCKER_PG_DB",
+            "host": "pgdb:5432",
+            "username": "docker",
+            "database": "postgres",
+            "password": "docker"
+        }]
+}

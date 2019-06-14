@@ -14,7 +14,7 @@
         
     - logic: 'custom_logic.log_file_size'
     - logic: 
-        plugin: '/workspace/tests/sample_plugin_logic_log_file_size.py'
+        plugin: '/workspace/tests/plugin_logic/plugin_logic_sample.py'
     - logic: 'custom_logic.abort_if_duplicate'
   reset_failed: False
   mapping:

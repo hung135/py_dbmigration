@@ -1,5 +1,6 @@
 import os, logging
-logging.basicConfig(level=os.environ.get("LOGLEVEL", "ERROR"))
+import logging.handlers
+ 
 #using root logger so this need to come before any other logger that may get call inside one of the imports below
 ##############################################
 import yaml
@@ -11,7 +12,6 @@ from  py_dbmigration.data_file_mgnt.state import  FOI
 import multiprocessing as mp
 
 import pprint
-
 
 
 #logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
@@ -57,6 +57,26 @@ def process_yaml(yaml_file=None):
         datafiles = []
     return datafiles
 
+#configure the root logger
+def configure_logging(loglevel=None,logfile=None):
+    
+    
+    log_file= logfile or os.environ.get('LOGFILE',None)
+    log_level=str(loglevel or os.environ.get("LOGLEVEL", "INFO")).upper()
+    LOGFORMAT=f'%(process)d, %(levelname)s,%(filename)s," \t%(message)s"'
+
+    logging.basicConfig(level=log_level, format=LOGFORMAT)
+    if log_file is not None:
+        handler = logging.handlers.WatchedFileHandler(
+            os.environ.get("LOGFILE", ".dataload_log.csv"),'w')
+        formatter = logging.Formatter(LOGFORMAT)
+        handler.setFormatter(formatter)
+        handler.setLevel(log_level)
+        
+        root = logging.getLogger()
+        root.setLevel(log_level)
+        root.addHandler(handler)
+
 def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None):
 
 
@@ -66,11 +86,10 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
     parser = argparse.ArgumentParser()
     parser.add_argument('--yaml', help="yaml file")
     parser.add_argument('--cores',default=1, help='Number of Cores(Subprocess) to use')
-    parser.add_argument('--logging' , help='set logging mode: debug, info, warning, error ')
+    parser.add_argument('--ll' , help='set logging mode: debug, info, warn, error ')
+    parser.add_argument('--lf' , help='path to loging file')
     args = parser.parse_args()
-    logging_set=args.logging or logging_mode
-    
- 
+    configure_logging( args.ll or logging_mode,args.lf )
         
 
     datafiles =None

@@ -27,15 +27,7 @@
             "console": "integratedTerminal",
             "args": ["--yaml=tests/data_load.yaml","--cores=1"]
             
-        } ,
-          {
-            "type": "bashdb",
-            "request": "launch",
-            "name": "truncate_meta",
-            "cwd": "${workspaceFolder}",
-            "program": "/usr/bin/psql",
-            "args": ["-c","'trunate table logging.meta_source_files'"]
-        }
+        }  
     ],
     "compounds": [
         {

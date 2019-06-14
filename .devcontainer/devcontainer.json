@@ -5,6 +5,6 @@
 	"service": "app",
 	"workspaceFolder": "/workspace",
 	"extensions": [
-		"ms-python.python","himanoa.python-autopep8"
+		"ms-python.python","himanoa.python-autopep8","bajdzis.vscode-database"
 	]
 }
