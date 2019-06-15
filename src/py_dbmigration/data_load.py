@@ -62,6 +62,8 @@ def configure_logging(loglevel=None,logfile=None):
     
     
     log_file= logfile or os.environ.get('LOGFILE',None)
+    log_file_write_mode= os.environ.get('LOGWRITEMODE','w')
+    
     print("--------",os.environ.get("LOGLEVEL", "INFO"))
 
     log_level=str(loglevel or os.environ.get("LOGLEVEL", "INFO")).upper()
@@ -71,7 +73,7 @@ def configure_logging(loglevel=None,logfile=None):
     logging.basicConfig(level=log_level, format=LOGFORMAT)
     if log_file is not None:
         handler = logging.handlers.WatchedFileHandler(
-            os.environ.get("LOGFILE", "dataload_log.txt"),'w')
+            os.environ.get("LOGFILE", "dataload_log.txt"),log_file_write_mode)
         formatter = logging.Formatter(LOGFORMAT)
         handler.setFormatter(formatter)
         handler.setLevel(log_level)
