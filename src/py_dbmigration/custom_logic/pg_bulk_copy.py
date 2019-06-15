@@ -104,7 +104,7 @@ def custom_logic(db, foi, df,logic_status):
 
  
         ###############THERE EXEC COMMAND LOGIC HERE########################################################
-        
+        df.curr_table_row_count=df.get_curr_table_row_count(f'{table_name_fqn}')
         logging.info("\t\tCopy Command STARTED: {0}".format(table_name_fqn))
         cmd_string = """COPY {table} ({columns}) FROM STDIN WITH ({header} FORMAT CSV, ENCODING '{encoding}')""".format(
                 table=table_name_fqn, columns=cols,header=header,encoding=encoding)

@@ -38,7 +38,7 @@ class LoadStatusTblStruct():
     current_record_count = None
 
     def build_sql_insert(self):
-        sql = 'INSERT INTO logging.load_status({columns}) values({values})'
+        sql = 'INSERT INTO logging.load_status \n({columns}) \nvalues({values})'
         obj = self
         self_attributes = [a for a in dir(obj) if not a.startswith(
             '__') and not callable(getattr(obj, a))]
@@ -62,16 +62,18 @@ class LoadStatusTblStruct():
 def custom_logic(db, foi, df, logic_status):
     #going through and pulling values and setting the object above
     create_date=datetime.datetime.now()
-
+    x = LoadStatusTblStruct()
     fqn_table_name=f'{foi.schema_name}.{foi.table_name}'
-    curr_row_count=None
+     
     if foi.table_name is not None:
         try:
             curr_row_count,=db.get_a_row(f'select count(1) from {fqn_table_name}')
+            x.previous_record_count = int(curr_row_count)
+            x.current_record_count = int(curr_row_count)
         except Exception as e:
             logging.exception(e)
 
-    x = LoadStatusTblStruct()
+    
     x.table_name = foi.table_name
     x.program_unit = os.path.basename(df.full_file_path)
     x.program_unit_type_code = int(df.file_id)
@@ -81,11 +83,9 @@ def custom_logic(db, foi, df, logic_status):
     x.success = 0
     x.start_date = datetime.datetime.now()
     x.end_date = None
-    x.previous_record_count = curr_row_count
-    x.records_inserted = (int(logic_status.row.total_rows))
+    x.records_inserted = (int(logic_status.row.rows_inserted))
     x.records_deleted = 0
     x.records_updated = 0
-    x.current_record_count = 1000
     db.execute(x.build_sql_insert())
     sql=f"""select id from logging.load_status where created_date='{x.created_date}' 
                         and program_unit_type_code='{x.program_unit_type_code}' order by id desc limit 1"""

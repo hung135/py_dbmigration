@@ -62,13 +62,16 @@ def configure_logging(loglevel=None,logfile=None):
     
     
     log_file= logfile or os.environ.get('LOGFILE',None)
+    print("--------",os.environ.get("LOGLEVEL", "INFO"))
+
     log_level=str(loglevel or os.environ.get("LOGLEVEL", "INFO")).upper()
+    print("----logggg",log_level)
     LOGFORMAT=f'%(process)d, %(levelname)s,%(filename)s," \t%(message)s"'
 
     logging.basicConfig(level=log_level, format=LOGFORMAT)
     if log_file is not None:
         handler = logging.handlers.WatchedFileHandler(
-            os.environ.get("LOGFILE", ".dataload_log.csv"),'w')
+            os.environ.get("LOGFILE", "dataload_log.txt"),'w')
         formatter = logging.Formatter(LOGFORMAT)
         handler.setFormatter(formatter)
         handler.setLevel(log_level)
@@ -91,6 +94,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
     args = parser.parse_args()
     configure_logging( args.ll or logging_mode,args.lf )
         
+    print("logg",args.ll or logging_mode,args.lf )
 
     datafiles =None
     if args.yaml is not None:

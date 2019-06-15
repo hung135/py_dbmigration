@@ -9,6 +9,7 @@ import numpy as np
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.migrate_utils as migrate_utils
 from py_dbmigration.data_file_mgnt.state import LogicState, FOI
+from py_dbmigration.data_file_mgnt.data_files import DataFile
 
 import re
  
@@ -103,6 +104,7 @@ def custom_logic(db, foi, df,logic_status):
                 ####################################################################################################
                 if counter == 0 and append_file_id:
                     dataframe['file_id'] = file_id
+                df.curr_table_row_count=df.get_curr_table_row_count(f'{target_schema}.{table_name}')
                 dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',
                                     index=False, index_label=names)
                 ####################################################################################################
@@ -136,4 +138,5 @@ def process(db, foi, df,logic_status):
     assert isinstance(foi,FOI)
     assert isinstance(db, db_utils.DB)
     assert isinstance(logic_status,LogicState)
+    assert isinstance(df, DataFile)
     return custom_logic(db, foi, df,logic_status)

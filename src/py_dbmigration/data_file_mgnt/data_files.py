@@ -86,6 +86,7 @@ class DataFile:
     db = None
     file_pattern_list = None
     current_file_pattern = None
+    curr_table_row_count = None
     # update_query = """Update meta_source_files
     #                    set file_process_state='{0}',
     #                        process_end_dtm = now()
@@ -94,6 +95,18 @@ class DataFile:
     current_file_state = None
      
     file_id = 0
+
+    def get_curr_table_row_count(self,fqn_table_name):
+        current_table_row_count=0
+        sql = f'select count(1) from {fqn_table_name}'
+        logging.info(f'Counting table, This could take sometime: {fqn_table_name}')
+        try:
+            current_table_row_count,=self.db.get_a_row(sql)
+        except Exception as e:
+            logging.exception(e)
+        logging.info(f'Counting table, Returned: {current_table_row_count} rows')
+        return current_table_row_count
+
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
         #assert isinstance(foi_list[0], FilesOfInterest)

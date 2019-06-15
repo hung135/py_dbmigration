@@ -52,6 +52,7 @@
         
         - logic: 
             name: 'custom_logic.pandas_import'
+            save_previous_row_count: True
       file_encoding: 'ISO-8859-1'
       post_action: 
         - sql: "vacuum analyze {{schema_name}}.{{table_name}}"
