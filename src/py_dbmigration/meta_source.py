@@ -47,7 +47,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--p', required=True, help='Project Name, ''ALL'' or Project Name')
-    parser.add_argument('--reset',  help='Reset Project, FAILED, STUCK (or in progress), ALL , CLEAN = Delete records from meta source')
+    parser.add_argument('--reset',  help='Reset Project, CHILDREN, FAILED, STUCK (or in progress), ALL , CLEAN = Delete records from meta source')
     parser.add_argument('--s',  help='List all files in these states, FAILED, PROCESSED, OBSOLETE, Processing,DUPLICATE')
     parser.add_argument('--f', default='', help='addition fields from meta_source to display')
     
@@ -82,7 +82,7 @@ def main():
                             current_worker_host_pid=NULL,
                             reprocess=TRUE
                             where {} file_process_state='{}'
-                    """.format(where_clause_project, args.r))
+                    """.format(where_clause_project, args.reset))
         elif args.reset in ('STUCK') :
             db.execute("""update logging.meta_source_files
                         set file_process_state='RAW',
@@ -100,6 +100,13 @@ def main():
                 sys.exit(1)
             else:
                 db.execute("""delete from logging.meta_source_files where {}  1=1""".format(where_clause_project))
+                #print("""delete from logging.meta_source_files where {}  1=1""".format(where_clause_project))
+        elif args.reset=='CHILDREN':
+            if args.p=='ALL':
+                print('ERROR: For your protection, Clean ALL is not permitted, Clean each project individually')
+                sys.exit(1)
+            else:
+                db.execute("""delete from logging.meta_source_files where {}  1=1 and parent_file_id>0""".format(where_clause_project))
                 #print("""delete from logging.meta_source_files where {}  1=1""".format(where_clause_project))
         else: 
             db.execute(F"""update logging.meta_source_files

@@ -17,8 +17,8 @@
     - logic: 
         plugin: '/workspace/tests/plugin_logic/plugin_logic_sample.py'
     - logic: 'custom_logic.abort_if_duplicate'
-  post_process_logic: #logic to be ran after everything else regarless of exceptions to above
-    - logic: 'custom_logic.load_status_post_import'
+  #post_process_logic: #logic to be ran after everything else regarless of exceptions to above
+  #  - logic: 'custom_logic.load_status_post_import'
   mapping: #lis of logic to run for each specify file type that matches the file_regex below
     #look for zip files and extract them
     - file_regex: '^.*.zip$'
@@ -65,6 +65,7 @@
       process_logic:
         - logic: 
             name: 'custom_logic.pandas_import_excel'
+            count_table_name_regex: '\.(.*)\d'
       file_encoding: 'ISO-8859-1'
       post_action: 
         - sql: "vacuum analyze {{schema_name}}.{{table_name}}"

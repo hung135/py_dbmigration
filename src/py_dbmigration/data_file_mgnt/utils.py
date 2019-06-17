@@ -128,6 +128,7 @@ def execute_sql(db, sql_list, foi, df,label=''):
 
 
 def loop_through_logic(foi, db, df,process_logic):
+    logic_status = LogicState(df.curr_src_working_file, df.current_file_state)
     for logic in process_logic:
         fqn_logic = None
         custom_logic = logic['logic']

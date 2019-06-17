@@ -18,7 +18,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
       
     
     def test_data_load_pg_bulkcopy(self):
-        file_name=__file__
+         
         db=self.get_pg_database(appname=self.whoami())
          
         db.execute("truncate table logging.meta_source_files")
@@ -26,7 +26,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         try:
             import py_dbmigration.data_load as data_load
             data_load.main(yamlfile='/workspace/tests/data_load_pg_bulkcopy.yaml',logging_mode='info')
-        except:
-            pass
+        except Exception as e:
+            logging.exception(e)
 if __name__ == '__main__':
     unittest.main()
