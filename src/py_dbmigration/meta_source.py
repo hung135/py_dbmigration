@@ -109,7 +109,7 @@ def main():
                             current_worker_host=NULL,
                             current_worker_host_pid=NULL,
                             reprocess=TRUE
-                            where {where_clause_project} (file_process_state ='{args.r}')
+                            where {where_clause_project} (file_process_state ='{args.reset}')
                     """ )
    
        
