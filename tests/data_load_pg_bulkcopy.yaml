@@ -17,20 +17,23 @@
     #################################################################################################################################################################
     #look for data files and import them
     #Files from Master table is full re-load so we want to delete everything and load whatever is in this
-    - file_regex: '.*.csv$'
+    - file_regex: '.*test.csv$'
       file_type: 'CSV'
       schema_name: 'test'
       reprocess: True
       #table_name: 'test1'
-       
-      has_header: True
-      use_header: True
       file_delimiter: ","
       process_logic:
         - logic: 'custom_logic.pg_bulk_copy'
       file_encoding: 'ISO-8859-1'
-      limit_rows: None
-      has_header: True
-      user_header: True
+    - file_regex: '.*test_tab.csv$'
+      file_type: 'CSV'
+      schema_name: 'test'
+      reprocess: True
+      file_delimiter: "\t"
+      process_logic:
+        - logic: 'custom_logic.pg_bulk_copy'
+      file_encoding: 'ISO-8859-1'
+   
  
      
