@@ -128,6 +128,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
                 mp_do_work, [datafiles, PGDATASCHEMA,writable_path], int(sub_proc_count), return_dict)
     else:
         logging.info("No configruation Items found...Exiting.")
+   
     
 
 def mp_do_work(foi_list, data_schema, writable_path,proc_num, return_dict):

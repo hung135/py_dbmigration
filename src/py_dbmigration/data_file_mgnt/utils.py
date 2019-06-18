@@ -235,6 +235,6 @@ def process_logic(foi, db, df):
     except Exception as e:
         logging.exception(f"Failed executing Pre Load action: {e}")
         df.current_file_state.failed(e)
- 
-    logic_status.file_state.processed()
-    purge.process(db, foi, df)
+    else:
+        logic_status.file_state.processed()
+        purge.process(db, foi, df)
