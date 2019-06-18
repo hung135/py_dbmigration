@@ -27,7 +27,7 @@ import pprint
 # standard return will be sucesscode, rows_inserted,description
 
 # def process(db, file, file_id, dbschema):
-def custom_logic(db, foi, df,logic_status):
+def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicState):
  
      
     assert isinstance(foi,FOI)

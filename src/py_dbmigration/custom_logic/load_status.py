@@ -59,7 +59,7 @@ class LoadStatusTblStruct():
         return self.__str__
 
 
-def custom_logic(db, foi, df, logic_status):
+def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicState):
     #going through and pulling values and setting the object above
     create_date=datetime.datetime.now()
     x = LoadStatusTblStruct()

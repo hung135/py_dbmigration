@@ -3,9 +3,9 @@
  
 import hashlib
 import py_dbutils.parents as db_utils
-from py_dbmigration import data_file_mgnt
+from py_dbmigration.data_file_mgnt.data_files import DataFile 
 from py_dbmigration import migrate_utils
-from py_dbmigration.data_file_mgnt.state import LogicState, FOI
+from py_dbmigration.data_file_mgnt.state import LogicState, FOI, LogicState
 import os, logging
 
 #logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
@@ -26,7 +26,7 @@ update_sql = """UPDATE logging.meta_source_files set  crc='{}'  where id = {}"""
 
 def fetch_cached_crc(file_path_hash):
     return global_hash.get(file_path_hash,None)
-def custom_logic(db, foi, df, logic_status):
+def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicState):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     logic_status.table.session.commit()
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)

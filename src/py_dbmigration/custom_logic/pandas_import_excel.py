@@ -8,7 +8,7 @@ from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 import re
 
 
-def custom_logic(db, foi, df, logic_status):
+def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicState):
     lowercase = True
     rows_inserted = 0
 

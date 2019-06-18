@@ -1,8 +1,10 @@
 
 
 import sys
-from py_dbutils.parents import DB as dbconnection
+from py_dbutils.rdbms.postgres import DB 
 from py_dbmigration.data_file_mgnt.state import FOI, LogicState
+from py_dbmigration.data_file_mgnt.data_files import DataFile
+
 import os
 import logging
 
@@ -19,7 +21,7 @@ import logging
 '''
 
 
-def custom_logic(db, foi, df, logic_status):
+def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
     abs_file_path = logic_status.file_state.file_path
     file_size = os.path.getsize(abs_file_path)
@@ -32,6 +34,6 @@ def custom_logic(db, foi, df, logic_status):
 
 def process(db, foi, df, logic_status):
     assert isinstance(foi, FOI)
-    assert isinstance(db, dbconnection)
+    assert isinstance(db, DB)
     assert isinstance(logic_status, LogicState)
     return custom_logic(db, foi, df, logic_status)

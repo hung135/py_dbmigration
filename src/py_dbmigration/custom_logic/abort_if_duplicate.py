@@ -2,9 +2,10 @@
 import os, logging
 
 import sys
-import py_dbutils.parents as db_utils
+from  py_dbutils.rdbms.postgres import DB
  
-from py_dbmigration.data_file_mgnt.state import *
+from py_dbmigration.data_file_mgnt.state import FOI,LogicState
+from py_dbmigration.data_file_mgnt.data_files import DataFile
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbmigration.db_table as db_table
 #logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
@@ -22,7 +23,7 @@ import py_dbmigration.db_table as db_table
 # sql used to update logging....faster than any framework wrapper
 
 
-def custom_logic(db, foi, df, logic_status):
+def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
 
     already_processed = db.has_record(

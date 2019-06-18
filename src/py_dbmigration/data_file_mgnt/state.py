@@ -191,19 +191,19 @@ class LogicState:
     #         self.status=LogicStateEnum.COMPLETE
     #     self.table.session.commit()
     
-    def failed(self,msg):
+    def failed(self,msg: str):
         self.status=LogicStateEnum.FAILED
         self.continue_processing_logic=False
         
         self.file_state.failed(str(msg))
         
 
-    def failed_continue(self,msg):
+    def failed_continue(self,msg: str ):
         self.status=LogicStateEnum.FAILED
         self.continue_processing_logic=True
-        self.file_state.failed(str(msg))
+        self.file_state.failed((msg))
 
-    def hardfail(self,msg=None):
+    def hardfail(self,msg: str ):
         self.file_state.failed(str(msg))
         sys.exit("Hard Fail Initiated for Logic File: \n\t{}".format(self.file_path))
 

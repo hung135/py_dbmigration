@@ -17,7 +17,7 @@ import logging
 '''
 
 
-def custom_logic(db, foi, df, logic_status):
+def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicState):
     print("------------------------------This Logic does nothing------------------------------")
 
     return logic_status

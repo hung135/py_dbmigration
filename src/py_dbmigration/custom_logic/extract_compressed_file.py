@@ -24,7 +24,7 @@ from py_dbmigration.data_file_mgnt.state import LogicState,FOI
 '''
 
 
-def custom_logic(db, foi, df, logic_status):
+def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicState):
 
     file_id = df.file_id
     skip_ifexists = (not foi.unzip_again)
