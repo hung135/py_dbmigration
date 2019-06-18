@@ -214,53 +214,27 @@ def loop_through_logic(foi, db, df,process_logic):
 
 def process_logic(foi, db, df):
     logic_status=None
-    #table = df.current_file_state.table
-    #row = df.current_file_state.row
-    #assert isinstance(row, db_table.db_table_def.MetaSourceFiles)
+ 
     foi.render_runtime_data(df)
     # store result of action you do in this variable
 
-    if foi.table_name_extract is not None:
-        table_name_regex = re.compile(foi.table_name_extract)
-        # table_name = table_name_regex.match(table_name))
-        #print(foi.table_name_extract, df.curr_src_working_file)
-        foi.table_name = migrate_utils.static_func.convert_str_snake_case(
-            re.search(foi.table_name_extract, df.curr_src_working_file).group(1))
-
-        # print(foi.table_name)
-    #row.reprocess = foi.reprocess
-    #table.session.commit()
-
     process_logic = foi.process_logic
     post_process_logic = foi.post_process_logic
-    continue_processing=True
+ 
     try:
-        if foi.pre_action is not None:
+         
             logging.info("Executing Pre Load SQL")
             execute_sql(db, foi.pre_action, foi, df,'PRE ')
-        
+            logging.info("Executing Process_logic")
+            logic_status=loop_through_logic(foi, db, df,process_logic)
+            logging.info("Executing Post Load SQL")
+            execute_sql(db, foi.post_action, foi, df,'POST ')
+            logging.info("Executing Process_logic")
+            logic_status= loop_through_logic(foi, db, df,post_process_logic)
+
     except Exception as e:
         logging.exception(f"Failed executing Pre Load action: {e}")
         df.current_file_state.failed(e)
-        continue_processing=False
-    #if preaction all executed
-    if continue_processing:
-        
-        logic_status=loop_through_logic(foi, db, df,process_logic)
-    
-    # if everything was kosher else file should have been tailed 'FAILED'
-    if logic_status.continue_processing_logic:
-        try:
-            if foi.post_action is not None:
-                logging.info("Executing Post Load SQL")
-                execute_sql(db, foi.post_action, foi, df,'POST ')
-        except Exception as e:
-            logging.exception(f"Failed running post action: {e}")
-            df.current_file_state.failed(f'{e}')
-    #loop through post_process_logic
-    logic_status= loop_through_logic(foi, db, df,post_process_logic)
-        #row.file_process_state = FileStateEnum.PROCESSED.value
-        #df.set_work_file_status(db, df.file_id, 'PROCESSED')
-    
+ 
     logic_status.file_state.processed()
     purge.process(db, foi, df)

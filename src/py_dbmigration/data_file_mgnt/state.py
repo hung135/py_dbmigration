@@ -105,10 +105,13 @@ class DataFileState:
         self.table.session.commit()
         return False        
     def failed(self,msg):
+        self.table.session.rollback()
+        self.table.session.commit()
         self.status=FileStateEnum.FAILED
         self.row.file_process_state=self.status.value
         self.row.last_error_msg=msg
         self.table.session.commit()
+
         return False
         #logging.error("Data File Processing FAILED: {}".format(self.file_path))
  
