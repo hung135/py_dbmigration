@@ -1,0 +1,43 @@
+#This file is to configure mapping of files to database tables 
+- path: '/workspace/tests/sample_data/'
+  convert_table_name_snake_case: True
+  enabled: True # activates this configration tree
+  project_name: test_1
+  reprocess: True
+  extract_file_name_data: '\d\d\d\d'
+  format_extracted_date: 'YYYY'
+  process_logic: # this will get executed for all files
+    - logic: 'custom_logic.count_file_linux_wc'
+    - logic: 'custom_logic.generate_checksum'
+    - logic: 'custom_logic.log_file_size'
+    - logic: 'custom_logic.abort_if_duplicate'
+  reset_failed: False
+  mapping: 
+    
+    #################################################################################################################################################################
+    #look for data files and import them
+    #Files from Master table is full re-load so we want to delete everything and load whatever is in this
+    - file_regex: '.*test.csv$'
+      file_type: 'CSV'
+      schema_name: 'test'
+      reprocess: True
+      #table_name: 'test1'
+      file_delimiter: ","
+      pre_action:
+        - sql: 'select broke query 1 pre'
+      process_logic:
+        - logic: 'custom_logic.pg_bulk_copy'
+      file_encoding: 'ISO-8859-1'
+    - file_regex: '.*test_tab.csv$'
+      file_type: 'CSV'
+      schema_name: 'test'
+      reprocess: True
+      file_delimiter: "\t"
+      process_logic:
+        - logic: 'custom_logic.pg_bulk_copy'
+      post_action:
+        - sql: 'select broke query 2 post'
+      file_encoding: 'ISO-8859-1'
+   
+ 
+     

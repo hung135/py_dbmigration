@@ -17,7 +17,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
   
       
     
-    def test_data_load_pg_bulkcopy(self):
+    def test_01_data_load_pg_bulkcopy(self):
          
         db=self.get_pg_database(appname=self.whoami())
          
@@ -26,6 +26,17 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         try:
             import py_dbmigration.data_load as data_load
             data_load.main(yamlfile='/workspace/tests/data_load_pg_bulkcopy.yaml',logging_mode='info')
+        except Exception as e:
+            logging.exception(e)
+    def test_02_data_load_pg_bulkcopy_badsql(self):
+         
+        db=self.get_pg_database(appname=self.whoami())
+         
+        db.execute("truncate table logging.meta_source_files")
+        print('# In function:', sys._getframe().f_code.co_name) 
+        try:
+            import py_dbmigration.data_load as data_load
+            data_load.main(yamlfile='/workspace/tests/data_load_bad_sql.yaml',logging_mode='info')
         except Exception as e:
             logging.exception(e)
 if __name__ == '__main__':
