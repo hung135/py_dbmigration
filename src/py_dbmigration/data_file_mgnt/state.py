@@ -106,10 +106,10 @@ class DataFileState:
         return False        
     def failed(self,msg):
         self.table.session.rollback()
-        self.refresh()
+        
         self.status=FileStateEnum.FAILED
         self.row.file_process_state=self.status.value
-        self.row.last_error_msg=msg
+        self.row.last_error_msg=str(msg)
         self.table.session.commit()
 
         return False
