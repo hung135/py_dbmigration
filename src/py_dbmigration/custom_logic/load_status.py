@@ -1,7 +1,7 @@
 
 
 import sys
-from py_dbutils.parents import DB as dbconnection
+from py_dbutils.rdbms.postgres import DB 
 from py_dbmigration.data_file_mgnt.state import FOI, LogicState
 from py_dbmigration.data_file_mgnt.data_files import DataFile
 import os
@@ -59,7 +59,7 @@ class LoadStatusTblStruct():
         return self.__str__
 
 
-def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicState):
+def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     #going through and pulling values and setting the object above
     create_date=datetime.datetime.now()
     x = LoadStatusTblStruct()
@@ -99,10 +99,10 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
 # Framework Hook Below
 ###############################################################################################################################################
 def process(db, foi, df, logic_status):
-    assert isinstance(foi, FOI)
-    assert isinstance(db, dbconnection)
-    assert isinstance(logic_status, LogicState)
-    assert isinstance(df, DataFile)
+    # assert isinstance(foi, FOI)
+    # assert isinstance(db, DB)
+    # assert isinstance(logic_status, LogicState)
+    # assert isinstance(df, DataFile)
     return custom_logic(db, foi, df, logic_status)
 
 

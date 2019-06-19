@@ -214,29 +214,29 @@ class DataFile:
                 #    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
                 # time.sleep(5)
 
-    def extract_file_name_data(self, db, files_of_interest):
+    # def extract_file_name_data(self, db, files_of_interest):
 
-        if files_of_interest.yaml is not None:
-            extract_file_name = files_of_interest.yaml.get(
-                'extract_file_name_data', None)
-            project_name = files_of_interest.yaml.get('project_name', None)
-            date_format = files_of_interest.yaml.get(
-                'format_extracted_date', None)
+    #     if files_of_interest.yaml is not None:
+    #         extract_file_name = files_of_interest.yaml.get(
+    #             'extract_file_name_data', None)
+    #         project_name = files_of_interest.yaml.get('project_name', None)
+    #         date_format = files_of_interest.yaml.get(
+    #             'format_extracted_date', None)
 
-            if extract_file_name is not None and date_format is None:
-                sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
-                sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children']
+    #         if extract_file_name is not None and date_format is None:
+    #             sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
+    #             sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children']
 
-            if extract_file_name is not None and date_format is not None:
-                sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
-                sql_update_file_data_date_children = self.sql_yaml[
-                    'sql_update_file_data_date_children_regex']
-            if extract_file_name is not None:
+    #         if extract_file_name is not None and date_format is not None:
+    #             sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
+    #             sql_update_file_data_date_children = self.sql_yaml[
+    #                 'sql_update_file_data_date_children_regex']
+    #         if extract_file_name is not None:
 
-                db.execute(sql_update_file_data_date.format(
-                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
-                db.execute(sql_update_file_data_date_children.format(
-                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
+    #             db.execute(sql_update_file_data_date.format(
+    #                 extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
+    #             db.execute(sql_update_file_data_date_children.format(
+    #                 extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
 
                 # print(sql_update_file_data_date.format(
                 #    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
@@ -284,63 +284,54 @@ class DataFile:
     # id_regex is used to extract some meaning data FROM the name of the file like a year or month or date
     # that id gets stored with the meta data about the file to later use
 
-    def insert_working_files(self, db, file_of_interest_obj, parent_file_id=0):
-        assert isinstance(file_of_interest_obj, FilesOfInterest) or isinstance(
-            file_of_interest_obj, FOI)
+    def insert_working_files(self, db, foi, parent_file_id=0):
+        assert isinstance(foi, FilesOfInterest) or isinstance(
+            foi, FOI)
         file_name = os.path.basename(__file__)+"insert_working_files"
         t = db_table.db_table_func.RecordKeeper(
             db, db_table.db_table_def.MetaSourceFiles, appname=file_name)
-        id_regex = file_of_interest_obj.file_name_data_regex
+         
 
-        for walked_filed_name in file_of_interest_obj.file_list:
-            p = None
-            extracted_id = None
-            file_id = '0'
+        for walked_filed_name,file_name_data in zip(foi.file_list,foi.file_name_data_list):
+         
 
-            if 's3://' in file_of_interest_obj.file_path:
+            if 's3://' in foi.file_path:
                 full_file_path = walked_filed_name
             else:
                 full_file_path = os.path.join(
-                    file_of_interest_obj.file_path, walked_filed_name)
+                    foi.file_path, walked_filed_name)
             file_name = os.path.basename(full_file_path)
             file_path = os.path.dirname(full_file_path)
 
+
+
             # If the file already exists in the database we don't need to
             # insert again
-            x, = db.get_a_row(
-                "select count(*) from logging.meta_source_files where file_name='{}' and file_path='{}' and project_name='{}'".format(
-                    file_name, file_path, file_of_interest_obj.project_name)
+            file_found, = db.get_a_row(
+                "select count(1) from logging.meta_source_files where file_name='{}' and file_path='{}' and project_name='{}'".format(
+                    file_name, file_path, foi.project_name)
             )
-            file_found = x
+          
 
             if file_found == 0:
                 logging.debug("New file found: {}".format(full_file_path))
-                # if get_mapped_table(walked_filed_name,
-                # self.file_pattern_list):
-                if id_regex is not None:
-                    p = re.compile(id_regex)
-
-                # apply regex pattern to extract data FROM the file name (date,
-                # month, year....etc...filename_2018-01-01.csv)
-                if id_regex is not None:
-                    try:
-                        extracted_id = p.findall(walked_filed_name)
-                        if len(extracted_id) > 0:
-                            file_id = extracted_id[0]
-                    except Exception as e:
-                        logging.warning(
-                            "No Embedded ID Found in FileName: id_REGEX = {}".format(id_regex))
-                v_file_type = file_of_interest_obj.file_type
-                if file_of_interest_obj.file_type == 'DATA':
+                v_file_type = foi.file_type
+                if foi.file_type == 'DATA':
                     v_file_type = file_name.split(".")[-1].upper()
-
+                if parent_file_id>0 and file_name_data=='':
+                    # if not file_name data take the parent file's data
+                    if foi.file_name_data_regex is not None:
+                        parent_file_name,=db.get_a_row(f'select file_name from logging.meta_source_files where id={parent_file_id}')
+                        xx=re.search(foi.extract_file_name_data,parent_file_name) or ''
+                        if xx:
+                            file_name_data=xx.group()
                 row = db_table.db_table_def.MetaSourceFiles(file_path=file_path,
                                                             file_name=file_name,
-                                                            file_name_data=file_id,
+                                                            file_name_data=file_name_data,
                                                             file_type=v_file_type,
                                                             parent_file_id=parent_file_id,
                                                             # upsert_function_name=file_of_interest_obj.upsert_function_name,
-                                                            project_name=file_of_interest_obj.project_name
+                                                            project_name=foi.project_name
                                                             )
                 t.add_record(row)
                 t.session.commit()
@@ -433,18 +424,26 @@ class DataFile:
             raise
 
         files_list = []
+        file_name_data_list = []
 
         for root, subdirs, files in os.walk(file_path, topdown=True):
             # print(root)
 
             for x in files:
                 # print('\t\t{}'.format(x))
+                extracted_data=''
                 files_list.append(os.path.join(root, x))
+                if foi.file_name_data_regex is not None:
+                    xx=re.search(foi.extract_file_name_data,x) or ''
+                    if xx:
+                        extracted_data=xx.group()
 
+                file_name_data_list.append(extracted_data)
         # logging.debug("Done Walking Directory:")
         match_list = list(filter(regex.match, files_list))
 
         foi.file_list = match_list
+        foi.file_name_data_list = file_name_data_list
 
         return foi
 
@@ -525,8 +524,8 @@ class DataFile:
         self.reset_stat()
         x = set(self.project_list)
 
-        for foi in self.foi_list:
-            self.extract_file_name_datav2(db, foi)
+        # for foi in self.foi_list:
+        #     self.extract_file_name_datav2(db, foi)
 
         project_list = (','.join("'" + item + "'" for item in x))
 
