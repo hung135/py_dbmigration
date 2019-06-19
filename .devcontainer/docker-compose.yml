@@ -38,6 +38,10 @@ services:
   pgdb:
     image: postgres
     restart: always
+    volumes:
+      # This lets you avoid setting up Git again in the container
+      - ~/init.sql:/docker-entrypoint-initdb.d/1-schema.sql
+    
     # ports: 
     #   - 5432:5432
     environment:
