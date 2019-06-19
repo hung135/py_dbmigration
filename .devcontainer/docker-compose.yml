@@ -40,7 +40,7 @@ services:
     restart: always
     volumes:
       # This lets you avoid setting up Git again in the container
-      - ~/init.sql:/docker-entrypoint-initdb.d/1-schema.sql
+      - ../init.sql:/docker-entrypoint-initdb.d/init.sql
     
     # ports: 
     #   - 5432:5432
