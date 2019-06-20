@@ -591,38 +591,44 @@ class DataFile:
         get_work_status=WorkState.HAVE_MORE_WORK
         while get_work_status in [WorkState.SLEEP, WorkState.HAVE_MORE_WORK]:
             get_work_status=self.get_work(db)
+            
             if get_work_status == WorkState.HAVE_MORE_WORK:
-                full_file_name = os.path.join(
-                    self.source_file_path, self.curr_src_working_file)
-                foi = get_mapped_table(full_file_name, self.foi_list)
-                self.current_file_state = DataFileState(self.db, os.path.join(
-                self.source_file_path, self.curr_src_working_file), self.file_id)
-                if foi is not None:
-                    
+                try:
+                    full_file_name = os.path.join(
+                        self.source_file_path, self.curr_src_working_file)
+                    foi = get_mapped_table(full_file_name, self.foi_list)
+                    self.current_file_state = DataFileState(self.db, os.path.join(
+                    self.source_file_path, self.curr_src_working_file), self.file_id)
+                    if foi is not None:
+                        
 
-                    # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
-                    logging.info(
-                        "->Processing file_id: {}: --> {}".format(self.file_id, self.curr_src_working_file))
-                    logging.info(
-                        "->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path, full_file_name))
+                        # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
+                        logging.info(
+                            "->Processing file_id: {}: --> {}".format(self.file_id, self.curr_src_working_file))
+                        logging.info(
+                            "->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path, full_file_name))
 
-                    # self.set_work_file_status(
-                    #     db, self.meta_source_file_id, 'Processing Started', '')
-                    utils.process_logic(foi, db, self)
+                        # self.set_work_file_status(
+                        #     db, self.meta_source_file_id, 'Processing Started', '')
+                        utils.process_logic(foi, db, self)
 
-                else:
-                    logging.error('No Matching Regex Found for this file: {}'.format(full_file_name))
-                    logic_status = LogicState('NOREGEX', self.current_file_state)
-                    assert isinstance(logic_status,LogicState)
-                    logic_status.row.reprocess=False
-                    logic_status.failed('No Matching REGEX Found in yaml')
-                    # self.set_work_file_status(
-                    #     db, self.meta_source_file_id, 'FAILED', 'No Matching REGEX Found in yaml')
-                self.current_file_state.table.close()
-                self.release_file_lock(db, self.file_id)
+                    else:
+                        logging.error('No Matching Regex Found for this file: {}'.format(full_file_name))
+                        logic_status = LogicState('NOREGEX', self.current_file_state)
+                        assert isinstance(logic_status,LogicState)
+                        logic_status.row.reprocess=False
+                        logic_status.failed('No Matching REGEX Found in yaml')
+                        # self.set_work_file_status(
+                        #     db, self.meta_source_file_id, 'FAILED', 'No Matching REGEX Found in yaml')
+                    self.current_file_state.table.close()
+                    self.release_file_lock(db, self.file_id)
 
-                if cleanup:
-                    self.cleanup_files()  # import_files(files,loan_acquisition)
+                    if cleanup:
+                        self.cleanup_files()  # import_files(files,loan_acquisition)
+                except Exception as e:
+                    msg=f'Un handled Exception: {e}'
+                    self.current_file_state.failed(msg)
+                    logging.exception(msg)
             elif get_work_status == WorkState.NO_MORE_WORK:
                 logging.info(f"No More Work Found Exiting Process")
             elif get_work_status == WorkState.SLEEP:
