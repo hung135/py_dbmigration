@@ -106,22 +106,24 @@ def inject_frame_work_data(string_text, foi, df):
 
 
 def execute_sql(db, sql_list, foi, df,label=''):
+    if sql_list is not None:
+        for id, sql in enumerate(sql_list):
+            # print(sql['sql'], "executing sike", type(sql))
 
-    for id, sql in enumerate(sql_list):
-        # print(sql['sql'], "executing sike", type(sql))
+            modified_sql = inject_frame_work_data(sql['sql'], foi, df)
+            shorten_sql = (
+                modified_sql[:50] + "...") if len(modified_sql) > 75 else modified_sql
+            logging.info(f"\t{label}SQL Step #: {id} {shorten_sql}")
 
-        modified_sql = inject_frame_work_data(sql['sql'], foi, df)
-        shorten_sql = (
-            modified_sql[:50] + "...") if len(modified_sql) > 75 else modified_sql
-        logging.info(f"\t{label}SQL Step #: {id} {shorten_sql}")
+            t = datetime.datetime.now()
 
-        t = datetime.datetime.now()
+            db.execute(modified_sql, catch_exception=False)
+            
 
-        db.execute(modified_sql, catch_exception=False)
-        
-
-        time_delta = (datetime.datetime.now() - t)
-        logging.debug(f"\t\tExecution Time: {time_delta}sec")
+            time_delta = (datetime.datetime.now() - t)
+            logging.debug(f"\t\tExecution Time: {time_delta}sec")
+    else:
+        logging.info('Not Post Action SQL to run')
 
 # pull the list of modules configured in the yaml file under process_logic
 # it will execute each of the logic on this file in the order it was entered in the yaml file

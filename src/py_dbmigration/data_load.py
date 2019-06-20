@@ -68,7 +68,7 @@ def configure_logging(loglevel=None,logfile=None):
 
     log_level=str(loglevel or os.environ.get("LOGLEVEL", "INFO")).upper()
     print("----logggg",log_level)
-    LOGFORMAT=f'%(process)d, %(levelname)s,%(filename)s," \t%(message)s"'
+    LOGFORMAT=f'%(asctime)s, %(process)d, %(levelname)s,%(filename)s," \t%(message)s"'
 
     logging.basicConfig(level=log_level, format=LOGFORMAT)
     if log_file is not None:
