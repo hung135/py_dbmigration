@@ -7,5 +7,18 @@
             "username": "docker",
             "database": "postgres",
             "password": "docker"
-        }]
+        }
+    ],
+    "sqltools.connections": [
+        {
+            "connectionTimeout": 30,
+            "database": "postgres",
+            "dialect": "PostgreSQL",
+            "name": "pgdb",
+            "password": "docker",
+            "port": 5432,
+            "server": "pgdb",
+            "username": "docker"
+        }
+    ]
 }

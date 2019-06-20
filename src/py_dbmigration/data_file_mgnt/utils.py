@@ -98,9 +98,9 @@ def pre_process_yaml(yaml_file):
 def inject_frame_work_data(string_text, foi, df):
 
     x = string_text.replace("{{{file_id}}}", str(df.file_id))
-    x = x.replace("{{schema_name}}", str(foi.schema_name or 'NONE'))
-    x = x.replace("{{table_name}}", str(foi.table_name or 'NONE'))
-    x = x.replace("{{column_list}}", ','.join(foi.column_list or []))
+    x = x.replace("{{{schema_name}}}", str(foi.schema_name or 'NONE'))
+    x = x.replace("{{{table_name}}}", str(foi.table_name or 'NONE'))
+    x = x.replace("{{{column_list}}}", ','.join(foi.column_list or []))
 
     return x
 
@@ -167,10 +167,7 @@ def loop_through_logic(foi, db, df,process_logic):
                 spec = importlib.util.spec_from_file_location(logic_name, abs_plugin)
                 imported_module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(imported_module)
-                
-
-                
-                
+ 
                     
         #simple process logic (built in logic)      
         else:
