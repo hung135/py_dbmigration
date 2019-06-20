@@ -3,11 +3,10 @@ import os, logging
 
  
 import sys
-import py_dbutils.parents as db_utils
-import py_dbmigration.data_file_mgnt.data_files as data_files 
-import py_dbmigration.db_table as db_table
+from py_dbutils.rdbms.postgres import DB
+from py_dbmigration.data_file_mgnt.data_files import DataFile
 import py_dbmigration.zip_utils as zip_utils
-from py_dbmigration.data_file_mgnt.state import LogicState,FOI
+from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 #logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
 
 
@@ -24,7 +23,7 @@ from py_dbmigration.data_file_mgnt.state import LogicState,FOI
 '''
 
 
-def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicState):
+def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
 
     file_id = df.file_id
     skip_ifexists = (not foi.unzip_again)
@@ -67,6 +66,6 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
 def process(db, foi, df, logic_status):
 
     assert isinstance(foi,FOI)
-    assert isinstance(db, db_utils.DB)
+    assert isinstance(db, DB)
     assert isinstance(logic_status, LogicState)
     return custom_logic(db, foi, df, logic_status)
