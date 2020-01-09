@@ -96,7 +96,7 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
         with_options.append("HEADER")
     #header only works for csv
     if foi.use_header:
-        with open(data_file,'r') as f:
+        with open(data_file,'r',encoding=encoding) as f:
             for row in f:
                 cols=row.replace(delim,',')
                 break
@@ -116,7 +116,7 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
             table=table_name_fqn, columns=cols,with_options=with_options)
     db.create_cur()
     try: 
-        with open(data_file,'r') as f:
+        with open(data_file,'r',encoding=encoding) as f:
             db.cursor.copy_expert(cmd_string, f)
             rows_inserted=db.cursor.rowcount
             db.commit()
