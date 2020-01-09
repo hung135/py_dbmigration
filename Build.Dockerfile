@@ -8,7 +8,6 @@ COPY src/ src/
 COPY Makefile .
 COPY version.py src/
 ENV PYTHONPATH="src/"
-RUN pip3 install -r src/requirements.txt
 RUN head -n -1 src/version.py >src/version2.py
 RUN mv src/version2.py src/version.py
 

@@ -16,10 +16,10 @@ cleanbuild: clean build
 clean:
 	rm -rf build/ dist/ exe/
 clean_exe:
-	rm -rf exe/
+	rm -rf exe/ artifacts/
 
 exe: clean_exe
-	pyinstaller src/py_dbmigration/data_load.py -w --onefile --distpath=exe
+	pyinstaller src/py_dbmigration/data_load.py -w --onefile --distpath=exe --add-data 'src/py_dbmigration/data_file_mgnt/logic_sql.yml:py_dbmigration/data_file_mgnt/'
 	tar -czvf artifact.tar -C exe/ .
 
 buildbase:
@@ -30,5 +30,9 @@ buildCentos6:
 	./BuildTarget.sh
 	mv ./artifacts/artifact.tar ./artifacts/py_dbmigration_centos6.tar
 
-move_to_prod:
+move_to_prod: 
 	cp ./artifacts/py_dbmigration_centos6.tar /runtime-exe/
+
+rebuild_move: clean_exe buildCentos6
+	#cp ./artifacts/py_dbmigration_centos6.tar /runtime-exe/
+	tar -xvf ./artifacts/py_dbmigration_centos6.tar -C /runtime-exe/
