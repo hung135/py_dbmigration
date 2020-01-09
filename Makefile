@@ -10,8 +10,8 @@ dist:
 	python setup.py dist
 
 release:
-	python setup.py release
-	#twine upload dist/*
+	#python setup.py release
+	twine upload dist/* --verbose
 clean_build: clean build
 clean:
 	rm -rf build/ dist/
