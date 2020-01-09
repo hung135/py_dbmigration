@@ -10,13 +10,12 @@ services:
       - ..:/workspace
       # This lets you avoid setting up Git again in the container
       - ~/.gitconfig:/root/.gitconfig
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /Volumes/dtwork/applications/static/runtime-exe/:/runtime-exe/
 
     # Overrides default command so things don't shut down after the process ends - useful for debugging
     command: sleep infinity
-    links:
-      - pgdb
-      - mysqldb
-      - mssqldb
+ 
       
     environment:
       PGHOST: pgdb
@@ -47,40 +46,40 @@ services:
     environment:
       POSTGRES_PASSWORD: docker
       POSTGRES_USER: docker
-  mysqldb:
-    image: mariadb
-    restart: always
-    # ports: 
-    #   - 3306:3306
-
-    environment:
-        MYSQL_ROOT_PASSWORD: root
-        MYSQL_DATABASE: test
-        MYSQL_USER: docker
-        MYSQL_PASSWORD: docker
-        MYSQL_HOST: mysqldb
-        MYSQL_PORT: 3306
-  mssqldb:
-    image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
-    restart: always
-    # ports: 
-    #   - 1433:1433
-    environment:
-        ACCEPT_EULA: 'Y'
-        SA_PASSWORD: Docker1234
-        MSSQL_PID: Express
-        
-  # pgadmin4:
-  #   image: dpage/pgadmin4
+  # mysqldb:
+  #   image: mariadb
   #   restart: always
-  #   ports: 
-  #     - 8080:80
-  #   links:
-  #     - pgdb
-  #   volumes:
-  #     - ~/.pgadmincompose:/var/lib/pgadmin
+  #   # ports: 
+  #   #   - 3306:3306
 
   #   environment:
-  #       PGADMIN_DEFAULT_EMAIL: hung135@hotmail.com
-  #       PGADMIN_DEFAULT_PASSWORD: docker
-  #       PGADMIN_LISTEN_PORT: 80  
+  #       MYSQL_ROOT_PASSWORD: root
+  #       MYSQL_DATABASE: test
+  #       MYSQL_USER: docker
+  #       MYSQL_PASSWORD: docker
+  #       MYSQL_HOST: mysqldb
+  #       MYSQL_PORT: 3306
+  # mssqldb:
+  #   image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+  #   restart: always
+  #   # ports: 
+  #   #   - 1433:1433
+  #   environment:
+  #       ACCEPT_EULA: 'Y'
+  #       SA_PASSWORD: Docker1234
+  #       MSSQL_PID: Express
+        
+  pgadmin4:
+    image: dpage/pgadmin4
+    restart: always
+    ports: 
+      - 8080:80
+    links:
+      - pgdb
+    volumes:
+      - ~/.pgadmincompose:/var/lib/pgadmin
+
+    environment:
+        PGADMIN_DEFAULT_EMAIL: hung135@hotmail.com
+        PGADMIN_DEFAULT_PASSWORD: docker
+        PGADMIN_LISTEN_PORT: 80  

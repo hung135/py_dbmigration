@@ -64,10 +64,10 @@ def configure_logging(loglevel=None,logfile=None):
     log_file= logfile or os.environ.get('LOGFILE',None)
     log_file_write_mode= os.environ.get('LOGWRITEMODE','w')
     
-    print("--------",os.environ.get("LOGLEVEL", "INFO"))
+    #print(os.environ.get("LOGLEVEL", "INFO"))
 
     log_level=str(loglevel or os.environ.get("LOGLEVEL", "INFO")).upper()
-    print("----logggg",log_level)
+    #print("----logggg",log_level)
     LOGFORMAT=f'%(asctime)s, %(process)d, %(levelname)s,%(filename)s," \t%(message)s"'
 
     logging.basicConfig(level=log_level, format=LOGFORMAT)
