@@ -51,3 +51,8 @@ MANIFEST
 **/env_vars.rc
 env_vars.rc
 settings.json
+
+artifacts/
+data_load.spec
+exe/
+version.py
