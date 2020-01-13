@@ -25,9 +25,7 @@ exe: clean_exe
 	# --add-data 'src/py_dbmigration/data_file_mgnt/logic_sql.yml:py_dbmigration/data_file_mgnt/' \
 	# --hidden-import=py_dbmigration.custom_logic.load_status \
 	# --hidden-import=py_dbmigration.custom_logic.generate_checksum 	
-	mkdir exe
-	mkdir artifacts
-	pyinstaller ./data_load.spec
+	pyinstaller ./data_load.spec --distpath=exe
 	tar -czvf artifact.tar -C exe/ .
 
 buildbase:

@@ -13,6 +13,8 @@ currently supports POSTGRES
 TODO:
 mssql, mysql, msaccess, sqlite, s3,excel, parquet
 
+Make Bundled Executeable:
+make exe
 
 Note
 ====
