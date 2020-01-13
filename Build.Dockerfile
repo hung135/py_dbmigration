@@ -3,8 +3,9 @@ FROM buildbase
 
 RUN mkdir -p /Build/
 WORKDIR /Build/
-
+COPY *.spec .
 COPY src/ src/
+COPY hooks/ hooks/
 COPY Makefile .
 COPY version.py src/
 ENV PYTHONPATH="src/"

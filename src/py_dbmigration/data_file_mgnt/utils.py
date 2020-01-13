@@ -12,7 +12,7 @@ import py_dbmigration.db_table as db_table
 import os, logging
 import importlib.util
 import copy
- 
+
 #logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
 
 
@@ -178,7 +178,7 @@ def loop_through_logic(foi, db, df,process_logic):
             fqn_logic = f'py_dbmigration.{custom_logic}' 
             module = __import__('py_dbmigration.custom_logic',
                                 fromlist=[logic_name])
-
+             
             imported_module = getattr(module, logic_name)
         # dynmaically import the modeul specified in the yaml file
         # this could be faster if we imported this once but for now it stays here

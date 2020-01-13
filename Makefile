@@ -18,8 +18,16 @@ clean:
 clean_exe:
 	rm -rf exe/ artifacts/
 
+
 exe: clean_exe
-	pyinstaller src/py_dbmigration/data_load.py -w --onefile --distpath=exe --add-data 'src/py_dbmigration/data_file_mgnt/logic_sql.yml:py_dbmigration/data_file_mgnt/'
+	# pyinstaller src/py_dbmigration/data_load.py -w --onefile \
+	# --distpath=exe \
+	# --add-data 'src/py_dbmigration/data_file_mgnt/logic_sql.yml:py_dbmigration/data_file_mgnt/' \
+	# --hidden-import=py_dbmigration.custom_logic.load_status \
+	# --hidden-import=py_dbmigration.custom_logic.generate_checksum 	
+	mkdir exe
+	mkdir artifacts
+	pyinstaller ./data_load.spec
 	tar -czvf artifact.tar -C exe/ .
 
 buildbase:
@@ -36,3 +44,6 @@ move_to_prod:
 rebuild_move: clean_exe buildCentos6
 	#cp ./artifacts/py_dbmigration_centos6.tar /runtime-exe/
 	tar -xvf ./artifacts/py_dbmigration_centos6.tar -C /runtime-exe/
+
+test:
+	/runtime-exe/data_load --yaml=/workspace/tests/data_load.yaml --ll=debug
