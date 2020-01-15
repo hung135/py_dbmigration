@@ -56,3 +56,4 @@ artifacts/
 exe/
 version.py
 *.tar
+.DS_Store

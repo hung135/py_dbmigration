@@ -1,4 +1,4 @@
-version: '3'
+version: '2'
 
 services:
   app:
@@ -11,7 +11,7 @@ services:
       # This lets you avoid setting up Git again in the container
       - ~/.gitconfig:/root/.gitconfig
       - /var/run/docker.sock:/var/run/docker.sock
-      #- /Volumes/dtwork/applications/static/runtime-exe/:/runtime-exe/
+      - /Volumes/dtwork/applications/static/runtime-exe/:/runtime-exe/
 
     # Overrides default command so things don't shut down after the process ends - useful for debugging
     command: sleep infinity
@@ -73,13 +73,37 @@ services:
     image: dpage/pgadmin4
     restart: always
     ports: 
-      - 8080:80
+      - 80:80
     links:
       - pgdb
     volumes:
-      - ~/.pgadmincompose:/var/lib/pgadmin
-
+      # - ~/.pgadmincompose:/var/lib/pgadmin
+      - ./pgadmin4.json:/pgadmin4/servers.json
     environment:
-        PGADMIN_DEFAULT_EMAIL: hung135@hotmail.com
-        PGADMIN_DEFAULT_PASSWORD: docker
-        PGADMIN_LISTEN_PORT: 80  
+      PGADMIN_LISTEN_PORT: 80  
+      PGADMIN_DEFAULT_EMAIL: docker
+      PGADMIN_DEFAULT_PASSWORD: docker
+      PGADMIN_CONFIG_LOGIN_BANNER: "'PGADMIN4 LOGIN: docker : docker'"
+    command:
+        - /usr/local/bin/python /pgadmin4/setup.py --load-servers /pgadmin4/servers.json --user docker
+  
+  sonarqube:
+    image: bitnami/sonarqube:latest
+    depends_on:
+      - pgdb
+    ports:
+      - '8080:9000'
+    environment:
+      - SONARQUBE_DATABASE_USER=docker
+      - SONARQUBE_DATABASE_NAME=bitnami_sonarqube
+      - SONARQUBE_DATABASE_PASSWORD=docker
+      - POSTGRESQL_HOST=pgdb
+      - ALLOW_EMPTY_PASSWORD=yes
+      - POSTGRESQL_ROOT_USER=docker
+      - POSTGRESQL_ROOT_PASSWORD=docker
+      - POSTGRESQL_CLIENT_CREATE_DATABASE_NAME=bitnami_sonarqube
+      - POSTGRESQL_CLIENT_CREATE_DATABASE_USERNAME=docker
+      - POSTGRESQL_CLIENT_CREATE_DATABASE_PASSWORD=docker
+ 
+    # volumes:
+    #   - /path/to/sonarqube-persistence:/bitnami
