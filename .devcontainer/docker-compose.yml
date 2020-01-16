@@ -92,7 +92,7 @@ services:
     depends_on:
       - pgdb
     ports:
-      - '8080:9000'
+      - '9000:9000'
     environment:
       - SONARQUBE_DATABASE_USER=docker
       - SONARQUBE_DATABASE_NAME=bitnami_sonarqube

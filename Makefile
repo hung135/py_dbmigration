@@ -51,3 +51,4 @@ sonar:
 	-Dsonar.host.url=http://sonarqube:9000 \
 	-Dsonar.login=admin \
 	-Dsonar.password=bitnami 
+	echo http://localhost:9000/dashboard?id=3af30f919bc788e20e7130d351c049f184e03844
