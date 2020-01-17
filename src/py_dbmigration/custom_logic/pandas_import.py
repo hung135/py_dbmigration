@@ -13,7 +13,7 @@ from py_dbmigration.data_file_mgnt.data_files import DataFile
 
 import re
  
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 # leveraging pandas libraries to read csv into a dataframe and let pandas

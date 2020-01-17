@@ -9,7 +9,7 @@ from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 import subprocess
 import os, logging
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 '''

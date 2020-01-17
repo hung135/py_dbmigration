@@ -6,7 +6,7 @@ import logging
 import shutil
 import os, logging
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 class object:

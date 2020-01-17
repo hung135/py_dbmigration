@@ -12,7 +12,7 @@ import boto3
 from config_parent import Config
 #import boto3
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 

@@ -4,7 +4,7 @@ import py_dbmigration.db_table as db_table
 from py_dbmigration.data_file_mgnt import utils
 import os, logging
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 #enums to classify various states if a file

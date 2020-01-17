@@ -11,7 +11,7 @@ from config_parent import Config
 import yaml
 import pprint as pp
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
  
 class Test_db_utils_postgres(unittest.TestCase,Config):

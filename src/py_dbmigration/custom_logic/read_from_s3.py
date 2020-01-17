@@ -12,7 +12,7 @@ import gc
 
 import os, logging
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 rx = re.compile(r'.*un.*.zip')

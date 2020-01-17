@@ -15,12 +15,13 @@ from config_parent import Config
 from bs4 import BeautifulSoup
 
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 TEST_SCHEMA = 'test'
 LOGGING_SCHEMA = 'logging'
 PROJECT_NAME= 'test_project'
+@unittest.skip("skipping")
 class Test_api_fetch(unittest.TestCase,Config):
     
     vw_file='/workspace/tests/sql/logging_tables.sql'

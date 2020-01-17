@@ -8,7 +8,7 @@ from py_dbmigration.data_file_mgnt.state import FOI,LogicState
 from py_dbmigration.data_file_mgnt.data_files import DataFile
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbmigration.db_table as db_table
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 ''' 

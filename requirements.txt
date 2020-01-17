@@ -13,3 +13,4 @@ BeautifulSoup4
 prettytable
 autopep8
 pyinstaller
+xlrd

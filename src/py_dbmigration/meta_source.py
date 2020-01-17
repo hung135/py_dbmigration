@@ -8,7 +8,7 @@ from prettytable import PrettyTable
 
 import os, logging
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
  
 
 def print_table_state(db):

@@ -11,7 +11,7 @@ from config_parent import Config
 import hashlib
 import os, logging
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 class TestGlobalHashList(unittest.TestCase,Config):
@@ -31,7 +31,7 @@ class TestGlobalHashList(unittest.TestCase,Config):
             
 
     
-    #@unittest.skip("Skipping for now")
+    @unittest.skip("Skipping for now")
     def test_query_to_dict(self):
         db=self.get_pg_database()
         df=pandas.read_sql('select file_name,file_path,crc from logging.meta_source_files where crc is not NULL',db.connect_SqlAlchemy())

@@ -15,7 +15,7 @@ from openpyxl import load_workbook
 import pprint
 import os, logging
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 HEADER_location = 0

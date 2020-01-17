@@ -13,7 +13,7 @@ import multiprocessing as mp
 
 import pprint 
 import py_dbmigration.custom_logic
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 

@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 import time
 from prettytable import PrettyTable
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 TEST_SCHEMA = 'test'

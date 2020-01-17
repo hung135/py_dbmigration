@@ -7,7 +7,7 @@ from py_dbutils.rdbms.postgres import DB
 from py_dbmigration.data_file_mgnt.data_files import DataFile,FilesOfInterest 
 import py_dbmigration.zip_utils as zip_utils
 from py_dbmigration.data_file_mgnt.state import LogicState, FOI
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 '''

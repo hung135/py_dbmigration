@@ -9,7 +9,7 @@ import os, logging
 from py_dbutils.rdbms import postgres as db_utils
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
  

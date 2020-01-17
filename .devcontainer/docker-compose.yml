@@ -38,7 +38,6 @@ services:
     image: postgres
     restart: always
     volumes:
-      # This lets you avoid setting up Git again in the container
       - ../init.sql:/docker-entrypoint-initdb.d/init.sql
     
     # ports: 
@@ -105,5 +104,5 @@ services:
       - POSTGRESQL_CLIENT_CREATE_DATABASE_USERNAME=docker
       - POSTGRESQL_CLIENT_CREATE_DATABASE_PASSWORD=docker
  
-    # volumes:
-    #   - /path/to/sonarqube-persistence:/bitnami
+    volumes:
+      - ~/.sonar/sonarqube-persistence:/bitnami

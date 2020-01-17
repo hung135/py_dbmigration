@@ -14,7 +14,7 @@ import copy
  
 import os, logging
 
-#logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
+
 
 
 # target_table:
@@ -410,7 +410,7 @@ def add_work(trg_db, src_db, migration_list):
         values = []
 
         work_table = migration_item['db']['target_db']['work_table']
-        # print('querying source db for ids....then breaking')
+        
         # import pprint
         # pprint.pprint(migration_item)
         v_batch_method = table.get('batch_method', None)
