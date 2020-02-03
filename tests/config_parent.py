@@ -2,7 +2,7 @@
 import inspect
 import os, logging
 
-
+logger = logging.getLogger()
 
 class Config(object):
 
@@ -21,6 +21,19 @@ class Config(object):
         'sample_zip_data_dir': "/workspace/_sample_zip_data/",
         'zip_data_dir': "/workspace/_sample_zip_data/"}
     
+    def get_yaml_schemas(self,yaml_file):
+        from yaml import Loader
+        import yaml
+        db=self.get_pg_database()
+        with open(yaml_file,'r') as f:
+            yaml_data = yaml.full_load(f)
+          
+            for x in yaml_data[0]['mapping']:
+                test_schema=x.get('schema_name',None)
+                if test_schema is not None:
+                    db.execute("create schema {}".format(test_schema))
+        return 1
+
     def get_pg_database(self,appname=__file__):
         from py_dbutils.rdbms import postgres as db_utils
         HOST = os.environ['PGHOST'] or 'localhost'
@@ -34,9 +47,10 @@ class Config(object):
         db.execute("create schema {}".format(self.LOGGING_SCHEMA))
         db.execute("drop schema {} cascade".format(self.TEST_SCHEMA))
         db.execute("create schema {}".format(self.TEST_SCHEMA))
-        db.execute("create schema {}".format(self.TEST_SCHEMA))
+        
         sql_files=[]
         sql_files.append('/workspace/tests/sql/create_schema.sql')
+        sql_files.append('/workspace/tests/sql/create_switchboard.sql')
         sql_files.append('/workspace/tests/sql/test_function.sql')
         sql_files.append('/workspace/tests/sql/test_view.sql')
         sql_files.append('/workspace/tests/sql/logging_tables.sql')

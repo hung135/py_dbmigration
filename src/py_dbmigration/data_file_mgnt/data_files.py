@@ -164,12 +164,30 @@ class DataFile:
                 if file_path == 's3://':
                     logging.info("Walking AWS s3")
                     self.FilesOfInterest = self.walk_s3(
-                        files_of_interest,  db=db)
+                        files_of_interest)
+                elif 'switchboard@' in files_of_interest.file_path:
+                    import py_dbutils.rdbms.postgres as dbconn 
+                    switch_db_hostname = files_of_interest.file_path.split('@')[-1]
+                    print("---------",switch_db_hostname)
+                    sw_db=dbconn.DB(host=switch_db_hostname)
+                    file_list=[]
+                    id_list=[]
+                    rs,_=sw_db.query("Select outgoing_path, id from switchboard.switchboard_history where project_name='{0}' and not claimed ".format(files_of_interest.project_name))
+                    
+                    #file_list=get_switch_board_file(files_of_interest.project_name)
+                    for row,id in rs:
+                        file_path=row
+                             
+                        file_list.append(file_path)
+                        id_list.append(id)
+                    self.FilesOfInterest=(self.foi_from_list(files_of_interest,file_list))
+                    for id in id_list:
+                        sw_db.execute("update switchboard.switchboard_history set claimed=True where id={0}".format(id))
                 else:
                     if os.path.isdir(files_of_interest.file_path):
 
                         self.FilesOfInterest = self.walk_dir(
-                            files_of_interest,  db=db)
+                            files_of_interest)
 
                     else:
                         logging.error("Directory from Yaml does not exists: {}".format(
@@ -209,60 +227,7 @@ class DataFile:
                     extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
                 db.execute(sql_update_file_data_date_children.format(
                     extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
-
-                # print(sql_update_file_data_date.format(
-                #    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
-                # time.sleep(5)
-
-    # def extract_file_name_data(self, db, files_of_interest):
-
-    #     if files_of_interest.yaml is not None:
-    #         extract_file_name = files_of_interest.yaml.get(
-    #             'extract_file_name_data', None)
-    #         project_name = files_of_interest.yaml.get('project_name', None)
-    #         date_format = files_of_interest.yaml.get(
-    #             'format_extracted_date', None)
-
-    #         if extract_file_name is not None and date_format is None:
-    #             sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
-    #             sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children']
-
-    #         if extract_file_name is not None and date_format is not None:
-    #             sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
-    #             sql_update_file_data_date_children = self.sql_yaml[
-    #                 'sql_update_file_data_date_children_regex']
-    #         if extract_file_name is not None:
-
-    #             db.execute(sql_update_file_data_date.format(
-    #                 extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
-    #             db.execute(sql_update_file_data_date_children.format(
-    #                 extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
-
-                # print(sql_update_file_data_date.format(
-                #    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name))
-                # time.sleep(5)
-
-    # @migrate_utils.static_func.timer
-    # def put_foi_to_db(self, db, foi_list):
-    #     tfr = []
-    #     assert isinstance(db, db_utils.DB)
-    #     assert isinstance(foi_list, list)
-    #     t = db_table.db_table_func.RecordKeeper(
-    #         db, db_table.db_table_def.MetaSourceFiles)
-    #     for foi in foi_list:
-    #         if foi.regex is not None and foi.table_name is not None:
-    #             row = db_table.db_table_def.TableFilesRegex(
-    #                 regex=foi.regex,
-    #                 db_schema=db.dbschema,
-    #                 table_name=foi.table_name,
-    #                 last_update_time=datetime.datetime.now(),
-    #                 active=True,
-    #                 project_name=foi.project_name
-    #             )
-
-    #             t.add_record(row, commit=True)
-    #     t.session.commit
-    #     t.session.close
+ 
 
     # compiles a given regext and will returned a compiled regex
     # will logg and error and returnx None if regext can not be compiled
@@ -273,7 +238,7 @@ class DataFile:
         try:
             compiled_regex = re.compile(regex, re.IGNORECASE)
         except Exception as e:
-            logging.exception("Invalid Regex: {}, Exception:\{}".format(regex, e))
+            logging.exception(r"Invalid Regex: {}, Exception:{}".format(regex, e))
             raise
         else:
             pass
@@ -371,10 +336,10 @@ class DataFile:
         regex = None
         try:
             regex = re.compile(foi.regex)
-        except Exception as e:
+        except Exception :
             logging.exception(
                 "Bad Regex Pattern for Walking Directory: '{}'".format(foi.regex))
-            raise
+            return none
 
         s3 = boto3.resource('s3')
         split_url = foi.file_path.replace('s3://', '').split('/')
@@ -406,7 +371,28 @@ class DataFile:
         return foi
 
     @staticmethod
-    def walk_dir(foi,  db=None):
+    def foi_from_list(foi, file_path_list):
+        files_list=[]
+        file_name_data_list=[]
+        
+        for file_path in file_path_list:
+          
+            extracted_data=''
+            files_list.append(file_path)
+            if foi.file_name_data_regex is not None:
+                re_extracted_data=re.search(foi.extract_file_name_data,file_path) or ''
+                if re_extracted_data:
+                    extracted_data=re_extracted_data.group()
+
+            file_name_data_list.append(extracted_data)
+        
+
+        foi.file_list = files_list
+        foi.file_name_data_list = file_name_data_list
+
+        return foi
+    @staticmethod
+    def walk_dir(foi):
         """Walks a directory structure and returns all files that match the regex pattern
         :rtype: FilesOfInterest
         """
@@ -426,7 +412,7 @@ class DataFile:
         files_list = []
         file_name_data_list = []
 
-        for root, subdirs, files in os.walk(file_path, topdown=True):
+        for root, _, files in os.walk(file_path, topdown=True):
             # print(root)
 
             for x in files:
@@ -474,7 +460,8 @@ class DataFile:
             with open(newfile, 'w') as f2:
                 f2.write(string_data + f.read())
 
-    def list_current_work(db, host=None):
+    @staticmethod
+    def list_current_work(db:db_utils.DB, host=None):
         assert isinstance(db, db_utils.DB)
         if host is not None:
             logging.info(db.query("""SELECT file_name, current_worker_host FROM meta_source_files,id

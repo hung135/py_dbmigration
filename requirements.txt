@@ -14,3 +14,5 @@ prettytable
 autopep8
 pyinstaller
 xlrd
+openpyxl
+statistics

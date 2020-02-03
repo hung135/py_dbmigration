@@ -45,7 +45,7 @@
       file_type: 'CSV'
       schema_name: 'test'
       reprocess: True
-      #table_name: test
+      table_name: 'test_csv'
       file_delimiter: ","
       process_logic:
         - logic: 'custom_logic.count_file_linux_wc'
@@ -60,13 +60,38 @@
       file_type: 'XLS'
       schema_name: 'test'
       reprocess: True
-      #table_name: 'testxls'
+      table_name: 'test_xls'
       file_delimiter: ","
+      sheet_list: Sheet1
       process_logic:
         - logic: 
             name: 'custom_logic.pandas_import_excel'
             count_table_name_regex: '\.(.*)\d'
       file_encoding: 'ISO-8859-1'
+      post_action: 
+        - sql: "vacuum analyze {{schema_name}}.{{table_name}}"
+        - sql: "select 1 from logging.meta_source_files where id={{{file_id}}}"
+    - file_regex: '.*.xml$'
+      file_type: 'XML'
+      schema_name: 'test'
+      reprocess: True
+      table_name: 'test_xml'
+      #file_delimiter: ","
+      #column_list: "date,folder_directory,notes,file_name,adj_rules_count,adj_values_count,arm_info_count,bank_master_count,base_rates_count,mtg_fee_count,plan_exceptions_count,
+      #plan_master_count,plan_x_adj_count,plan_x_rates_count,prod_master_count,region_master_count,region_x_state_count,state_master_count,synthetic_adjustments_count,wamp_count,
+      #file_name2,alerts,contact,email,contact2,phone"
+      xpath_list: 
+        - './ProcessDate'
+        - './Location'
+        - './RecordCounts'
+        - './OtherFiles/OtherFiles'
+        - './AnyConcerns'
+        - './UrgentMatters/UrgentMatters'
+      process_logic:
+        - logic: 
+            name: 'custom_logic.pandas_import_xml'
+            #count_table_name_regex: '\.(.*)\d'
+      #file_encoding: 'ISO-8859-1'
       post_action: 
         - sql: "vacuum analyze {{schema_name}}.{{table_name}}"
         - sql: "select 1 from logging.meta_source_files where id={{{file_id}}}"

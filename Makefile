@@ -1,5 +1,8 @@
 PHONY: build 
-
+version_file=src/py_dbmigration/version.py
+GIT_HASH := $(shell git rev-parse HEAD)
+DATE:= ${shell date}
+GIT_HASH_URL:=$(shell git remote -v | head -n1 | sed -e"s/\t/ /g" | cut -d " " -f 2)
 # all: clean build
 # 	echo "Building ALL"
 build:
@@ -18,13 +21,24 @@ clean:
 clean_exe:
 	rm -rf exe/ artifacts/
 
-
-exe: clean_exe
+version:
+	echo "version = {">${version_file}>${version_file}
+	
+	echo "\"git_hash\":\"${GIT_HASH}\",">>${version_file}
+	echo "\"url\":\"${GIT_HASH_URL}/commit/${GIT_HASH}\",">>${version_file}
+	echo "\"check_out_syntax\":\"git checkout ${GIT_HASH} .\"," >>${version_file}
+	echo "\"build_time\":\"${DATE}\"">>${version_file}
+	  
+	echo "}">>${version_file}
+	cat ${version_file}
+exe: clean_exe 
 	# pyinstaller src/py_dbmigration/data_load.py -w --onefile \
 	# --distpath=exe \
 	# --add-data 'src/py_dbmigration/data_file_mgnt/logic_sql.yml:py_dbmigration/data_file_mgnt/' \
 	# --hidden-import=py_dbmigration.custom_logic.load_status \
-	# --hidden-import=py_dbmigration.custom_logic.generate_checksum 	
+	# --hidden-import=py_dbmigration.custom_logic.generate_checksum 
+
+
 	pyinstaller ./data_load.spec --distpath=exe
 	tar -czvf artifact.tar -C exe/ .
 
@@ -32,7 +46,7 @@ buildbase:
 	docker image rm buildbase:latest
 	docker build -t buildbase -f Build.Dockerfile_base .
 
-buildCentos6:
+buildCentos6: version
 	./BuildTarget.sh
 	mv ./artifacts/artifact.tar ./artifacts/py_dbmigration_centos6.tar
 

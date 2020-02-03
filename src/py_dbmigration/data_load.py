@@ -13,6 +13,7 @@ import multiprocessing as mp
 
 import pprint 
 import py_dbmigration.custom_logic
+import sys 
 
 
 
@@ -95,7 +96,13 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
     parser.add_argument('--cores',default=1, help='Number of Cores(Subprocess) to use')
     parser.add_argument('--ll' , help='set logging mode: debug, info, warn, error ')
     parser.add_argument('--lf' , help='path to loging file')
+    parser.add_argument('--v' , help='print version info',action="store_true")
+     
     args = parser.parse_args()
+    if args.v:
+        from py_dbmigration.version import version
+        print(version)
+        sys.exit(0)
     configure_logging( args.ll or logging_mode,args.lf )
         
     print("logg",args.ll or logging_mode,args.lf )

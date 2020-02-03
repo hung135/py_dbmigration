@@ -1,5 +1,5 @@
 #This file is to configure mapping of files to database tables 
-- path: 'switchboard@pgdb'
+- path: 'switchboard@'
   convert_table_name_snake_case: True
   enabled: True # activates this configration tree
   project_name: switch_board_test
@@ -21,16 +21,16 @@
       file_type: 'CSV'
       schema_name: 'switch_board_test'
       reprocess: True
-      table_name: 'load_via_switchboard1'
+      table_name: 'test'
       file_delimiter: ","
       process_logic:
         - logic: 'custom_logic.pg_bulk_copy'
       file_encoding: 'ISO-8859-1'
     - file_regex: '.*test_tab.csv$'
       file_type: 'CSV'
-      schema_name: 'switch_board_test2'
+      schema_name: 'switch_board_test'
       reprocess: True
-      table_name: 'load_via_switchboard2'
+      table_name: 'test_tab'
       file_delimiter: "\t"
       process_logic:
         - logic: 'custom_logic.pg_bulk_copy'

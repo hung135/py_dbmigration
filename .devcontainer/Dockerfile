@@ -34,3 +34,9 @@ RUN if [ -f "requirements.txt" ]; then pip install -r requirements.txt && rm req
 
 #RUN /bin/bash -c "echo alias meta=/workspace/meta_source.sh>>/root/.bashrc"
 #RUN /bin/bash -c "echo export LS_OPTIONS='--color=auto'>>/root/.bashrc"
+#Default the shell to fish /etc/shells
+#RUN chsh -s /usr/bin/fish
+#RUN echo -e "task goes here\n$(cat /etc/shells)" > /etc/shells
+#vscode settings docker
+#/bin/sh -c "/usr/bin/fish && [ -e /bin/bash ] && /bin/bash || /bin/sh"
+ENV TZ=America/New_York

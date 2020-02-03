@@ -57,3 +57,4 @@ exe/
 version.py
 *.tar
 .DS_Store
+version.py

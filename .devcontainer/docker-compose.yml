@@ -12,7 +12,7 @@ services:
       - ~/.gitconfig:/root/.gitconfig
       - /var/run/docker.sock:/var/run/docker.sock
       - /Volumes/dtwork/applications/static/runtime-exe/:/runtime-exe/
-
+      - ./.bashrc:/root/.bashrc 
     # Overrides default command so things don't shut down after the process ends - useful for debugging
     command: sleep infinity
  
@@ -103,6 +103,5 @@ services:
       - POSTGRESQL_CLIENT_CREATE_DATABASE_NAME=bitnami_sonarqube
       - POSTGRESQL_CLIENT_CREATE_DATABASE_USERNAME=docker
       - POSTGRESQL_CLIENT_CREATE_DATABASE_PASSWORD=docker
- 
     volumes:
       - ~/.sonar/sonarqube-persistence:/bitnami
