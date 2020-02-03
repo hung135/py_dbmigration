@@ -17,5 +17,5 @@ create table switchboard.switchboard_history (
 
 INSERT INTO switchboard.switchboard_history(
 	  project_name, incoming_path, outgoing_path, file_date, file_md5, file_size, file_path_extract, created_date, claimed)
-	VALUES (  'test', 'test.csv', '/workspace/tests/sample_data/test.csv', NULL, NULL, NULL, NULL, NULL, False),
-	(  'switch_board_test', 'test.csv', '/workspace/tests/sample_data/test2.csv', NULL, NULL, NULL, NULL, NULL, False);
+	VALUES (  'switch_board_test', 'test.csv', '/workspace/tests/sample_data/test.csv', NULL, NULL, NULL, NULL, NULL, False),
+	(  'switch_board_test', 'test.csv', '/workspace/tests/sample_data/test_tab.csv', NULL, NULL, NULL, NULL, NULL, False);
