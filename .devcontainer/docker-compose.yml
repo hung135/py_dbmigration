@@ -72,7 +72,7 @@ services:
     image: dpage/pgadmin4
     restart: always
     ports: 
-      - 80:80
+      - 801:80
     links:
       - pgdb
     volumes:
@@ -86,22 +86,22 @@ services:
     command:
         - /usr/local/bin/python /pgadmin4/setup.py --load-servers /pgadmin4/servers.json --user docker
   
-  sonarqube:
-    image: bitnami/sonarqube:latest
-    depends_on:
-      - pgdb
-    ports:
-      - '9000:9000'
-    environment:
-      - SONARQUBE_DATABASE_USER=docker
-      - SONARQUBE_DATABASE_NAME=bitnami_sonarqube
-      - SONARQUBE_DATABASE_PASSWORD=docker
-      - POSTGRESQL_HOST=pgdb
-      - ALLOW_EMPTY_PASSWORD=yes
-      - POSTGRESQL_ROOT_USER=docker
-      - POSTGRESQL_ROOT_PASSWORD=docker
-      - POSTGRESQL_CLIENT_CREATE_DATABASE_NAME=bitnami_sonarqube
-      - POSTGRESQL_CLIENT_CREATE_DATABASE_USERNAME=docker
-      - POSTGRESQL_CLIENT_CREATE_DATABASE_PASSWORD=docker
-    volumes:
-      - ~/.sonar/sonarqube-persistence:/bitnami
+  # sonarqube:
+  #   image: bitnami/sonarqube:latest
+  #   depends_on:
+  #     - pgdb
+  #   ports:
+  #     - '9000:9000'
+  #   environment:
+  #     - SONARQUBE_DATABASE_USER=docker
+  #     - SONARQUBE_DATABASE_NAME=bitnami_sonarqube
+  #     - SONARQUBE_DATABASE_PASSWORD=docker
+  #     - POSTGRESQL_HOST=pgdb
+  #     - ALLOW_EMPTY_PASSWORD=yes
+  #     - POSTGRESQL_ROOT_USER=docker
+  #     - POSTGRESQL_ROOT_PASSWORD=docker
+  #     - POSTGRESQL_CLIENT_CREATE_DATABASE_NAME=bitnami_sonarqube
+  #     - POSTGRESQL_CLIENT_CREATE_DATABASE_USERNAME=docker
+  #     - POSTGRESQL_CLIENT_CREATE_DATABASE_PASSWORD=docker
+  #   volumes:
+  #     - ~/.sonar/sonarqube-persistence:/bitnami

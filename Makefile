@@ -2,6 +2,7 @@ PHONY: build
 version_file=src/py_dbmigration/version.py
 GIT_HASH := $(shell git rev-parse HEAD)
 DATE:= ${shell date}
+#the first remote will be used
 GIT_HASH_URL:=$(shell git remote -v | head -n1 | sed -e"s/\t/ /g" | cut -d " " -f 2)
 # all: clean build
 # 	echo "Building ALL"
@@ -38,6 +39,8 @@ exe: clean_exe
 	# --hidden-import=py_dbmigration.custom_logic.load_status \
 	# --hidden-import=py_dbmigration.custom_logic.generate_checksum 
 
+	# need to make sure all dependency exists so pyinstall can crawl and package them also
+	pip install -r src/py_dbmigration/requirements.txt 
 
 	pyinstaller ./data_load.spec --distpath=exe
 	tar -czvf artifact.tar -C exe/ .

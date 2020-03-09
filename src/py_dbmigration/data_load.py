@@ -4,6 +4,7 @@ import logging.handlers
 #using root logger so this need to come before any other logger that may get call inside one of the imports below
 ##############################################
 import yaml
+import py_dbutils as pdb
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as dfm
 import py_dbmigration.migrate_utils.static_func as static_func
@@ -119,7 +120,9 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
 
     sub_proc_count=int(cores or args.cores)
     if len(datafiles) > 0:
-        db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main_90')
+
+        #so pyinstall will pick it upt
+        db = pdb.rdbms.postgres.db_utils.DB(schema=PGDATASCHEMA,label='data_load_main_90')
         df = dfm.data_files.DataFile(writable_path, db, datafiles)
         df.init_db()
         df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")

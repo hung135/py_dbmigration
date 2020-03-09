@@ -3,6 +3,7 @@ import os, logging
 
  
 import sys
+import py_dbutils as pydb
 from py_dbutils.rdbms import postgres as db_utils
 from py_dbmigration.data_file_mgnt.utils import inject_frame_work_data 
 from py_dbmigration.data_file_mgnt.state import LogicState, FOI
@@ -15,7 +16,7 @@ import py_dbmigration.migrate_utils.static_func as static_func
 
 import pprint
 
-
+x=pydb.rdbms.postgres.DB()
 #def bulk_load_dataframe(self, dataframe, table_name_fqn, encoding='utf8', workingpath='MEMORY'):
 # leveraging pandas libraries to read csv into a dataframe and let pandas
 # insert into database

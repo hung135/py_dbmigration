@@ -8,7 +8,7 @@ COPY src/ src/
 COPY hooks/ hooks/
 COPY Makefile .
 # COPY version.py src/
-ENV PYTHONPATH="src/"
+ENV PYTHONPATH="src/:/usr/local/lib64/python3.6/site-packages/"
 # RUN head -n -1 src/version.py >src/version2.py
 # RUN mv src/version2.py src/version.py
 
