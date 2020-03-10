@@ -6,7 +6,7 @@ DATE:= ${shell date}
 GIT_HASH_URL:=$(shell git remote -v | head -n1 | sed -e"s/\t/ /g" | cut -d " " -f 2)
 # all: clean build
 # 	echo "Building ALL"
-build:
+build: clean
 	#python setup.py sdist bdist_wheel build
 	python setup.py build
 dist:

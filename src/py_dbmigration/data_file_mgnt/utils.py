@@ -116,7 +116,7 @@ def execute_sql(db, sql_list, foi, df,label=''):
             logging.info(f"\t{label}SQL Step #: {id} {shorten_sql}")
 
             t = datetime.datetime.now()
-
+            print(modified_sql)
             db.execute(modified_sql, catch_exception=False)
             
 
