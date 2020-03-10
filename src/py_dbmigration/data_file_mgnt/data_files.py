@@ -255,9 +255,9 @@ class DataFile:
     def insert_working_files(self, db, foi, parent_file_id=0):
         assert isinstance(foi, FilesOfInterest) or isinstance(
             foi, FOI)
-        file_name = os.path.basename(__file__)+"insert_working_files"
+        appname = os.path.basename(__file__)+"insert_working_files"
         t = db_table.db_table_func.RecordKeeper(
-            db, db_table.db_table_def.MetaSourceFiles, appname=file_name)
+            db, db_table.db_table_def.MetaSourceFiles, appname=appname)
          
 
         for walked_filed_name,file_name_data in zip(foi.file_list,foi.file_name_data_list):
@@ -283,6 +283,7 @@ class DataFile:
 
             if file_found == 0:
                 logging.debug("New file found: {}".format(full_file_path))
+                print("New file found: {}".format(full_file_path))
                 v_file_type = foi.file_type
                 if foi.file_type == 'DATA':
                     v_file_type = file_name.split(".")[-1].upper()
