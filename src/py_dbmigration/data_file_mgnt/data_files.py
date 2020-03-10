@@ -214,14 +214,17 @@ class DataFile:
             date_format = getattr(foi, 'format_extracted_date')
 
             if extract_file_name is not None and date_format is None:
+                print('EXTRACT_FILE_NAME EXISTS AND DATE_FORMAT NOT EXISTS')
                 sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
                 sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children']
 
             if extract_file_name is not None and date_format is not None:
+                print('EXTRACT_FILE_NAME EXISTS AND DATE_FORMAT EXISTS')
                 sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
                 sql_update_file_data_date_children = self.sql_yaml[
                     'sql_update_file_data_date_children_regex']
             if extract_file_name is not None:
+                print('EXTRACT_FILE_NAME EXISTS')
 
                 db.execute(sql_update_file_data_date.format(
                     extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
@@ -511,9 +514,11 @@ class DataFile:
         self.reset_stat()
         x = set(self.project_list)
 
-        # for foi in self.foi_list:
-        #     self.extract_file_name_datav2(db, foi)
+        print('BEFORE CALL EXTRACT_FILE_NAME_DATAV2')
+        for foi in self.foi_list:
+            self.extract_file_name_datav2(db, foi)
 
+        print('AFTER CALL EXTRACT_FILE_NAME_DATAV2')
         project_list = (','.join("'" + item + "'" for item in x))
 
         file_name = os.path.basename(__file__)+"get_work"

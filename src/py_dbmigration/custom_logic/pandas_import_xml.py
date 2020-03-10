@@ -136,7 +136,8 @@ def custom_logic(db, foi, df,logic_status):
                 "\t\tInserting: {0}->{1}-->Chunk#: {2} Chunk Size: {3}".format(foi.schema_name, table_name,
                                                                                     counter, chunk_size))
                 ####################################################################################################
-            if counter == 0 and append_file_id:
+            #if counter == 0 and append_file_id:
+            if append_file_id:
                 dataframe['file_id'] = file_id
             df.curr_table_row_count=df.get_curr_table_row_count(f'{target_schema}.{table_name}')
             dataframe.to_sql(table_name, sqlalchemy_conn, schema=target_schema, if_exists='append',

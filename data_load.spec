@@ -24,11 +24,13 @@ a = Analysis(['src/py_dbmigration/data_load.py'],
                 ,'py_dbmigration.custom_logic.load_status_post_import'
                 ,'py_dbmigration.custom_logic.row_count_excel'
                 ,'py_dbmigration.custom_logic.pandas_import_excel'
+                ,'py_dbmigration.custom_logic.pandas_import_xml'
                 ,'py_dbmigration.custom_logic.purge_temp_file'
                 ,'py_dbmigration.custom_logic.log_file_size'
                 ,'py_dbmigration.custom_logic.extract_msaccess_csv'
                 ,'py_dbmigration.custom_logic.abort_if_duplicate'
                 ,'py_dbmigration.custom_logic.upsert_table_from_stg'
+                ,'py_dbmigration.custom_logic.copy_file'
              ],
              hookspath=[],
              runtime_hooks=[],
