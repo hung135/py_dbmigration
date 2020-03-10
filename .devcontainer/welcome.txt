@@ -7,7 +7,11 @@ make sonar - run sonarqube code analysis on current codebase
 How to Deploy:
     1: make buildCentos6
     2: make move_to_prod
-    
+Upload to PyPi:
+    1. commit 
+    2. git tag <next tag number> # git tag --to list all tags
+    3. make build
+    4. make release
 pgadmin:
 http://localhost
 
