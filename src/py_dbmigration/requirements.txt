@@ -15,4 +15,6 @@ RandomWords
 nose_parameterized
 statistics
 pyyaml
+py-dbutils
+prettytable
 #boto3

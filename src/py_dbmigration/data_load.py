@@ -5,7 +5,7 @@ import logging.handlers
 ##############################################
 import yaml
  
-import py_dbutils.rdbms.postgres as db_utils
+from py_dbutils.rdbms import postgres as db_utils
 import py_dbmigration.data_file_mgnt as dfm
 import py_dbmigration.migrate_utils.static_func as static_func
 from  py_dbmigration.data_file_mgnt.utils import  pre_process_yaml as ppy
