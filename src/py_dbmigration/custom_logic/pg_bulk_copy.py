@@ -123,7 +123,9 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
         logic_status.row.rows_inserted=rows_inserted
         logic_status.row.database_table=table_name_fqn
     except Exception as e:
-        logging.error(__file__)
+        #errors also get printed after returning 
+        #logging.error(__file__)
+        #logging.error(f"DataFile Path: {data_file}")
         logging.exception(e)
         logic_status.row.reprocess=foi.reprocess or False
         logic_status.failed(e) 

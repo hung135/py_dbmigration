@@ -204,8 +204,8 @@ def loop_through_logic(foi, db, df,process_logic):
         logging.debug(f'->Dynamic Module Ended: {custom_logic}')
 
         if not logic_status.continue_processing_logic:
-            logging.info(
-                'Abort Processing for this file Because of Error: {}'.format(df.curr_src_working_file))
+            logging.error(
+                'Abort Processing File: \n\t\t{}'.format(os.path.join(df.source_file_path, df.curr_src_working_file)))
 
             #df.set_work_file_status(db, df.file_id, 'FAILED', custom_logic+'\n'+str(df.load_status_msg or ''))
             break
