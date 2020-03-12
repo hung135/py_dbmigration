@@ -379,6 +379,7 @@ class FOI(object):
         self.file_path = self.path or self.file_path
         if not (self.file_path.startswith('S3') or self.file_path.startswith('SWITCHBOARD@')):
             self.file_path = os.path.abspath(self.file_path)
+            
          
         self.regex = self.regex or self.file_regex
         self.file_name_data_regex = self.extract_file_name_data or self.file_name_data_regex
