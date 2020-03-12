@@ -169,10 +169,10 @@ class DataFile:
                     import py_dbutils.rdbms.postgres as dbconn 
                     switch_db_hostname = files_of_interest.file_path.split('@')[-1]
                     print("---------",switch_db_hostname)
-                    sw_db=dbconn.DB(host=switch_db_hostname)
+                    sw_db=dbconn.DB(host=switch_db_hostname,dbname='switchboard')
                     file_list=[]
                     id_list=[]
-                    rs,_=sw_db.query("Select outgoing_path, id from switchboard.switchboard_history where project_name='{0}' and not claimed ".format(files_of_interest.project_name))
+                    rs,_=sw_db.query(f"Select outgoing_path, id from switchboard.switchboard_history where project_name='{files_of_interest.project_name}' and state='M' "
                     
                     #file_list=get_switch_board_file(files_of_interest.project_name)
                     for row,id in rs:
@@ -182,7 +182,7 @@ class DataFile:
                         id_list.append(id)
                     self.FilesOfInterest=(self.foi_from_list(files_of_interest,file_list))
                     for id in id_list:
-                        sw_db.execute("update switchboard.switchboard_history set claimed=True where id={0}".format(id))
+                        sw_db.execute(f"update switchboard.switchboard_history set state='C' where id={id}"
                 else:
                     if os.path.isdir(files_of_interest.file_path):
 
@@ -201,9 +201,9 @@ class DataFile:
                         db, self.FilesOfInterest, self.parent_file_id)
 
     def init_db(self):
-        file_name = os.path.basename(__file__)+"init_db"
+        appname = os.path.basename(__file__)+"init_db"
         t = db_table.db_table_func.RecordKeeper(
-            self.db, db_table.db_table_def.MetaSourceFiles, appname=file_name)
+            self.db, db_table.db_table_def.MetaSourceFiles, appname=appname)
         t.close()
 
     def extract_file_name_datav2(self, db, foi):
@@ -515,16 +515,15 @@ class DataFile:
         self.reset_stat()
         x = set(self.project_list)
 
-        print('BEFORE CALL EXTRACT_FILE_NAME_DATAV2')
+        
         for foi in self.foi_list:
             self.extract_file_name_datav2(db, foi)
-
-        print('AFTER CALL EXTRACT_FILE_NAME_DATAV2')
+ 
         project_list = (','.join("'" + item + "'" for item in x))
 
-        file_name = os.path.basename(__file__)+"get_work"
+        appname = os.path.basename(__file__)+"get_work"
         t = db_table.db_table_func.RecordKeeper(
-            db, db_table.db_table_def.MetaSourceFiles, appname=file_name)
+            db, db_table.db_table_def.MetaSourceFiles, appname=appname)
 
         # to ensure we lock 1 row to avoid race conditions
 
