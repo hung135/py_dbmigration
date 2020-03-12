@@ -30,7 +30,7 @@ def merge_two_dicts(x, y):
 def process_yaml(yaml_file=None):
     if yaml_file is None:
         yaml_file = os.path.join(os.getcwd(),"data_load.yaml")
-    logging.debug("loaind yaml file: {}".format(yaml_file))
+    logging.debug("Loading yaml file: {}".format(yaml_file))
     # paths = None
      
     # with open(yaml_file,'r') as f:

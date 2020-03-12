@@ -16,8 +16,11 @@ import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
 from py_dbmigration.data_file_mgnt import utils 
 from py_dbmigration.data_file_mgnt.state import FilesOfInterest, DataFileState, FOI,LogicState, WorkState
-import os, logging
+import os
+import logging as log
 
+logging = log.getLogger()
+logging.setLevel(log.DEBUG)
 
 
 
@@ -168,20 +171,25 @@ class DataFile:
                 elif 'switchboard@' in files_of_interest.file_path:
                     import py_dbutils.rdbms.postgres as dbconn 
                     switch_db_hostname = files_of_interest.file_path.split('@')[-1]
-                    print("---------",switch_db_hostname)
+                   
                     sw_db=dbconn.DB(host=switch_db_hostname,dbname='switchboard')
+                     
                     file_list=[]
                     id_list=[]
-                    rs,_=sw_db.query(f"Select outgoing_path, id from switchboard.switchboard_history where project_name='{files_of_interest.project_name}' and state='M' ")
-                    
+                    rs,_=sw_db.query(f"Select outgoing_path, id from switchboard.switchboard_history where upper(project_name)=upper('{files_of_interest.project_name}') and state='M' ")
+                    print("------query result ",rs)
                     #file_list=get_switch_board_file(files_of_interest.project_name)
                     for row,id in rs:
                         file_path=row
                              
-                        file_list.append(file_path)
-                        id_list.append(id)
-                    self.FilesOfInterest=(self.foi_from_list(files_of_interest,file_list))
-                    for id in id_list:
+                        # file_list.append(file_path)
+                        # id_list.append(id)
+                        print("----seting switchboard files found")
+                        print(files_of_interest.file_path)
+                        switchboard_foi=(self.foi_from_list(files_of_interest,[file_path]))
+                        switchboard_foi.file_type= file_path.split('.')[-1].upper()
+                        #putting each file into meta_source
+                        self.insert_working_files(  db, switchboard_foi )
                         sw_db.execute(f"update switchboard.switchboard_history set state='C' where id={id}")
                 else:
                     if os.path.isdir(files_of_interest.file_path):
@@ -193,12 +201,12 @@ class DataFile:
                         logging.error("Directory from Yaml does not exists: {}".format(
                             files_of_interest.file_path))
                         sys.exit(1)
-                self.FilesOfInterest.parent_file_id = self.file_id
+                    self.FilesOfInterest.parent_file_id = self.file_id
 
-                if not 0 >= len(list(self.FilesOfInterest.file_list)):
-
-                    self.insert_working_files(
-                        db, self.FilesOfInterest, self.parent_file_id)
+                    if not 0 >= len(list(self.FilesOfInterest.file_list)):
+                        #print(self.FilesOfInterest,"-------------")
+                        self.insert_working_files(
+                            db, self.FilesOfInterest, self.parent_file_id)
 
     def init_db(self):
         appname = os.path.basename(__file__)+"init_db"
@@ -283,7 +291,7 @@ class DataFile:
 
             if file_found == 0:
                 logging.debug("New file found: {}".format(full_file_path))
-                print("New file found: {}".format(full_file_path))
+                print("New file found: {}".format(full_file_path),foi.file_type )
                 v_file_type = foi.file_type
                 if foi.file_type == 'DATA':
                     v_file_type = file_name.split(".")[-1].upper()
@@ -375,7 +383,7 @@ class DataFile:
         return foi
 
     @staticmethod
-    def foi_from_list(foi, file_path_list):
+    def foi_from_list(foi, file_path_list,file_type=None):
         files_list=[]
         file_name_data_list=[]
         
@@ -393,7 +401,7 @@ class DataFile:
 
         foi.file_list = files_list
         foi.file_name_data_list = file_name_data_list
-
+         
         return foi
     @staticmethod
     def walk_dir(foi):
@@ -561,6 +569,7 @@ class DataFile:
             self.file_size = row.file_size
             
             self.row_count = row.total_rows
+            
             self.full_file_path = os.path.join(self.source_file_path,self.curr_src_working_file)
             self.file_id=row.id
 

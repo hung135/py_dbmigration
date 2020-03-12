@@ -55,6 +55,8 @@ buildCentos6: version
 
 move_to_prod: 
 	cp ./artifacts/py_dbmigration_centos6.tar /runtime-exe/
+test_to_prod: buildCentos6
+	tar -xvf ./artifacts/py_dbmigration_centos6.tar -C /runtime-exe/tests/
 
 rebuild_move: clean_exe buildCentos6
 	#cp ./artifacts/py_dbmigration_centos6.tar /runtime-exe/
