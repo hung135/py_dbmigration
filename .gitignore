@@ -58,3 +58,7 @@ version.py
 *.tar
 .DS_Store
 version.py
+tests/sample_data/
+test*.zip
+_sample_working_dir/
+.scannerwork/
