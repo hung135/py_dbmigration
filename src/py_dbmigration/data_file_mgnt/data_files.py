@@ -172,7 +172,7 @@ class DataFile:
                     sw_db=dbconn.DB(host=switch_db_hostname,dbname='switchboard')
                     file_list=[]
                     id_list=[]
-                    rs,_=sw_db.query(f"Select outgoing_path, id from switchboard.switchboard_history where project_name='{files_of_interest.project_name}' and state='M' "
+                    rs,_=sw_db.query(f"Select outgoing_path, id from switchboard.switchboard_history where project_name='{files_of_interest.project_name}' and state='M' ")
                     
                     #file_list=get_switch_board_file(files_of_interest.project_name)
                     for row,id in rs:
@@ -182,7 +182,7 @@ class DataFile:
                         id_list.append(id)
                     self.FilesOfInterest=(self.foi_from_list(files_of_interest,file_list))
                     for id in id_list:
-                        sw_db.execute(f"update switchboard.switchboard_history set state='C' where id={id}"
+                        sw_db.execute(f"update switchboard.switchboard_history set state='C' where id={id}")
                 else:
                     if os.path.isdir(files_of_interest.file_path):
 
