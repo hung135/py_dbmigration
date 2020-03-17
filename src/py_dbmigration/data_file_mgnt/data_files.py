@@ -617,13 +617,12 @@ class DataFile:
                         logging.error('No Matching Regex Found for this file: {}'.format(full_file_name))
                         logic_status = LogicState('NOREGEX', self.current_file_state)
                         assert isinstance(logic_status,LogicState)
-                        logic_status.row.reprocess=False
                         logic_status.failed('No Matching REGEX Found in yaml')
                         # self.set_work_file_status(
                         #     db, self.meta_source_file_id, 'FAILED', 'No Matching REGEX Found in yaml')
                     self.current_file_state.table.close()
                     self.release_file_lock(db, self.file_id)
-
+                    
                     if cleanup:
                         self.cleanup_files()  # import_files(files,loan_acquisition)
                 except Exception as e:

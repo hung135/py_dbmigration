@@ -127,7 +127,6 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
         #logging.error(__file__)
         #logging.error(f"DataFile Path: {data_file}")
         logging.exception(e)
-        logic_status.row.reprocess=foi.reprocess or False
         logic_status.failed(e) 
 
         

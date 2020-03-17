@@ -236,4 +236,5 @@ def process_logic(foi, db, df):
         df.current_file_state.failed(e)
     else:
         logic_status.file_state.processed()
+        logic_status.row.reprocess=foi.reprocess or False
         purge.process(db, foi, df)
