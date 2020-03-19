@@ -16,3 +16,5 @@ pyinstaller
 xlrd
 openpyxl
 statistics
+jaydebeapi
+boto3

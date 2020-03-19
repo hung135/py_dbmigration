@@ -1,8 +1,8 @@
  
 import inspect
-import os, logging
+import os, logging as lg 
 
-logger = logging.getLogger()
+logging = lg.getLogger()
 
 class Config(object):
 
@@ -21,10 +21,12 @@ class Config(object):
         'sample_zip_data_dir': "/workspace/_sample_zip_data/",
         'zip_data_dir': "/workspace/_sample_zip_data/"}
     
-    def get_yaml_schemas(self,yaml_file):
+    def get_yaml_schemas(self,yaml_file,loglevel=None):
         from yaml import Loader
         import yaml
-        db=self.get_pg_database()
+
+        print("----------loglevel",__file__,loglevel)
+        db=self.get_pg_database(loglevel=loglevel)
         with open(yaml_file,'r') as f:
             yaml_data = yaml.full_load(f)
           
@@ -34,7 +36,8 @@ class Config(object):
                     db.execute("create schema {}".format(test_schema))
         return 1
 
-    def get_pg_database(self,appname=__file__):
+    def get_pg_database(self,appname=__file__,loglevel=None):
+        print("----------loglevel",__file__,loglevel)
         from py_dbutils.rdbms import postgres as db_utils
         HOST = os.environ['PGHOST'] or 'localhost'
         DATABASE = os.environ['PGDATABASE'] or 'postgres'
@@ -43,7 +46,7 @@ class Config(object):
         DBPASSWORD = os.environ['PGPASSWORD'] or 'docker'
 
         db = db_utils.DB(host=HOST, userid=USERID, dbname=DATABASE, schema=self.TEST_SCHEMA,
-                                    pwd=DBPASSWORD,  port=DBPORT, label=appname)
+                                    pwd=DBPASSWORD,  port=DBPORT, label=appname,loglevel=loglevel)
         db.execute("create schema {}".format(self.LOGGING_SCHEMA))
         db.execute("drop schema {} cascade".format(self.TEST_SCHEMA))
         db.execute("create schema {}".format(self.TEST_SCHEMA))

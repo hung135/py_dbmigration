@@ -10,9 +10,9 @@ import pandas as pd
 import boto3
 import gc
 
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 rx = re.compile(r'.*un.*.zip')

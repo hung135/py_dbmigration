@@ -1,5 +1,5 @@
 
-import os, logging
+import os, logging as lg
 
 import sys
 from  py_dbutils.rdbms.postgres import DB
@@ -10,6 +10,8 @@ import py_dbmigration.migrate_utils as migrate_utils
 import py_dbmigration.db_table as db_table
 
 
+
+logging=lg.getLogger()
 
 ''' 
     Author: Hung Nguyen

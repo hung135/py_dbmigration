@@ -8,9 +8,9 @@ import sys
 
 import py_dbmigration.migrate_utils.static_func as static_func
 
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 
@@ -43,13 +43,13 @@ def main(o=None,s=None):
         output_directory=os.path.abspath(args.o)
         schemas=[args.s]
     # sqlserver = db_utils.Connection(dbschema='dbo', database='enforce', dbtype='MSSQL', host=host, commit=False)
-    db_postgres = db_utils.DB(schema=logging, dbname=pgdatabase,
-                                        host=pghost)
+    db_postgres = db_utils.DB(schema='logging', dbname=pgdatabase,
+                                        host=pghost,loglevel=logging.level)
 
     #schemas = get_schema_except(db_postgres, ['op_dba', 'public', 'pg_catalog', 'information_schema', 'citus', 'sys', 'sqitch'])
     for s in schemas:
          
-        db_postgres = db_utils.DB(schema=s, dbname=pgdatabase, host=pghost)
+        db_postgres = db_utils.DB(schema=s, dbname=pgdatabase, host=pghost,loglevel=logging.level)
         #migu.change_table_owner(db_postgres, s, 'operational_dba')
         #migu.change_view_owner(db_postgres, s, 'operational_dba')
 

@@ -7,9 +7,9 @@ import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
 from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 import subprocess
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 '''

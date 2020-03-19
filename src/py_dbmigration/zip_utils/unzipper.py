@@ -4,9 +4,9 @@ import gzip
  
 import logging
 import shutil
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 class object:

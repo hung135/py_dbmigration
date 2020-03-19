@@ -6,9 +6,9 @@ import py_dbutils.rdbms.postgres as db_utils
 import pprint
 from prettytable import PrettyTable
 
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
  
 
 def print_table_state(db):

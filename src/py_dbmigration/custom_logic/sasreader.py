@@ -7,9 +7,9 @@ import io
 
 import zipfile
 import pandas as pd
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 file_dir = "/Users/hung/Downloads/acs2013_5yr/5-Year/"
 

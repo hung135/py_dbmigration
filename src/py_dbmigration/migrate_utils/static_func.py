@@ -2,7 +2,8 @@
 import re
 
 import datetime
-import os, logging
+import os, logging as lg
+logging = lg.getLogger()
 
 
 

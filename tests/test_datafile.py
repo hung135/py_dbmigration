@@ -9,9 +9,9 @@ from py_dbutils.rdbms import postgres as db_utils
 from config_parent import Config
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
  
 
 class Test_db_utils_postgres(unittest.TestCase,Config):
@@ -37,7 +37,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
     #@unittest.skip("Skipping for now")
     def test_08_walkdir_data_file(self):
      
-        db=self.get_pg_database(appname=self.whoami())
+        db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
         print('# In function:', sys._getframe().f_code.co_name)
         # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
         print("Truncating Logging Tables:")

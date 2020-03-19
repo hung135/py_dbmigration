@@ -10,9 +10,9 @@ import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
 import subprocess
 import datetime
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 

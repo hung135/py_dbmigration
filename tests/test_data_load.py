@@ -1,4 +1,4 @@
-import os, logging
+import os, logging as lg
 import logging.handlers
 #using root logger so this need to come before any other logger that may get call inside one of the imports below
 ##############################################
@@ -13,20 +13,21 @@ import py_dbmigration.db_table as db_table
 from config_parent import Config
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 import shutil
- 
+logging = lg.getLogger()
+
 log_level=str(os.environ.get("LOGLEVEL", "INFO")).upper()
 class Test_db_utils_postgres(unittest.TestCase,Config):
      
     LOGFORMAT=f'%(process)d, %(levelname)s,%(filename)s," \t%(message)s"'
     log_level=str(os.environ.get("LOGLEVEL", "INFO").upper())
-    logging.basicConfig(level=log_level, format=LOGFORMAT)
+    #logging.basicConfig(level=log_level, format=LOGFORMAT)
   
     def test_data_load_postgres_utils(self):
         print('# In function:', sys._getframe().f_code.co_name) 
         shutil.copyfile("/workspace/tests/sample_data/Contacts_Demo_200101.zip","/workspace/tests/sample_data/Contacts_Demo_200102.zip")
         shutil.copyfile("/workspace/tests/sample_data/Contacts_Demo_200101.zip","/workspace/tests/sample_data/Contacts_Demo_duplicate.zip")
          
-        db=self.get_pg_database(appname=self.whoami())
+        db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
          
         db.execute("truncate table logging.meta_source_files")
 
@@ -55,7 +56,7 @@ if __name__ == '__main__':
     #     os.environ.get("LOGFILE", ".dataload_log.csv"))
     # formatter = logging.Formatter(LOGFORMAT)
     # handler.setFormatter(formatter)
-    # root = logging.getLogger()
+    # root = lg.getLogger()
     # root.setLevel(log_level)
     # root.addHandler(handler)
     unittest.main()

@@ -6,9 +6,9 @@ import py_dbmigration.migrate_utils as migrate_utils
 from py_dbmigration.data_file_mgnt.state import *
 import shutil
 import datetime
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 ''' 

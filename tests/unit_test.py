@@ -4,14 +4,16 @@ import unittest
 import py_dbmigration.data_file_mgnt.data_files as data_files
 import py_dbmigration.migrate_utils.static_func as static_func
 import py_dbmigration.db_table as db_table
-import os, logging
+import os, logging as lg
 
- 
+logging=lg.getLogger() 
 from py_dbutils.rdbms import postgres as db_utils
 from config_parent import Config
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 
+logger = lg.getLogger()
+logger.level = lg.INFO
 
  
 class Test_db_utils_postgres(unittest.TestCase,Config):
@@ -33,7 +35,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
     # this should run first test functions run alphabetically
     #@unittest.skip("only need once")
     def test_00_init(self):
-        self.db=self.get_pg_database(self.whoami)
+        self.db=self.get_pg_database(self.whoami,loglevel=logging.level)
         print('# In function:', sys._getframe().f_code.co_name)
         self.db.execute('create schema if not exists {}'.format(
             self.TEST_SCHEMA))  # db.execute('create  database if not exists testing')
@@ -58,7 +60,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
 
     def test_02_record_keeper(self):
         file_name=sys._getframe().f_code.co_name
-        db=self.get_pg_database(appname=self.whoami())
+        db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
 
         print('# In function:', sys._getframe().f_code.co_name)
         file_name=os.path.basename(__file__)
@@ -70,7 +72,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
 
     def test_03_query(self):
         file_name=sys._getframe().f_code.co_name
-        db=self.get_pg_database(appname=self.whoami())
+        db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
         print('# In function:', sys._getframe().f_code.co_name)
         x=db.query('select 1 from logging.meta_source_files limit 1;')
          
@@ -78,7 +80,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
     #@unittest.skip("Not yet")
     def test_05_upsert(self):
         file_name=sys._getframe().f_code.co_name
-        db=self.get_pg_database(appname=self.whoami())
+        db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
         sql = """insert into table_b (pk_b, b)
                 select pk_a,a from table_a
                 on conflict ({}) do update set b=excluded.b;"""
@@ -89,7 +91,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
     #@static_func.timer
     def test_06_migrate_utils(self):
         file_name=sys._getframe().f_code.co_name
-        db=self.get_pg_database(appname=self.whoami())
+        db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
         if self.GENERATE_SAMPLE_DATA:
             # static_func.generate_data_sample(self.db,'xref_clickwrap_agreement',self.schema,'_sample_data/xref_clickwrap_agreement.csv',line_count=5)
             static_func.generate_data_sample_all_tables(db, self.TEST_SCHEMA, self.dirs['sample_data_dir'],
@@ -105,7 +107,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
     #@unittest.skip("Skipping for now")
     def test_08_walkdir_data_file(self):
         file_name=sys._getframe().f_code.co_name
-        db=self.get_pg_database(appname=self.whoami())
+        db=self.get_pg_database(appname=self.whoami(),loglevel=logging.level)
         print('# In function:', sys._getframe().f_code.co_name)
         # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
         print("Truncating Logging Tables:")
@@ -151,7 +153,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
 
     def clean_db(self):
         file_name=__file__
-        db=self.get_pg_database(appname=self.whoami())
+        db=self.get_pg_database(appname=self.whoami(),loglevel=logging.level)
         db.execute(
             "TRUNCATE table logging.meta_source_files, logging.table_file_regex, logging.error_log, logging.load_status RESTART IDENTITY;")
         db.execute("""INSERT into logging.table_file_regex SELECT distinct concat(table_name,'.*.csv'),',',

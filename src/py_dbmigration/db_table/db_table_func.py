@@ -32,7 +32,9 @@ class RecordKeeper():
 
         key = str(table_def.DbSchema + table_def.__tablename__)
 
+        print("-------------------------------------------------",key)
         self.table = self.table_dict.get(key, None)
+        print("-------------------------------------------------")
         if self.table is None:
             self.table_dict[key] = table_def
             self.table = self.table_dict[key]
@@ -112,19 +114,27 @@ class RecordKeeper():
             self.session.rollback()
 
     def close(self):
-        # self.session.close()
+        logging.debug("Closing SqlAlchemy Engine: {}".format(self.appname))        
+        try:
 
-        self.engine.dispose()
-        logging.debug("Closing SqlAlchemy Engine: {}".format(self.appname))
+            print("xxxxxxxxxx-----")
+            self.session.close()
+            
+            
+            self.engine.dispose()
 
+        except Exception as e:
+            print("xxxxxxxxxx",e)
     def __del__(self):
+        
+        logging.debug("Closing db_table Session: {} {} {}".format(
+            self.host, self.database, self.dbschema))
         try:
             self.session.close()
 
             self.engine.dispose()
-            logging.debug("Closing db_table Session: {} {} {}".format(
-                self.host, self.database, self.dbschema))
         except Exception as e:
+            print("----------------------",e)
             logging.exception(
                 "Error Occured Closing db_table Session: {}".format(e))
             # print(e)

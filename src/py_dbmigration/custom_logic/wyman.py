@@ -13,9 +13,9 @@ import py_dbmigration.db_table as db_table
 from openpyxl import load_workbook
 
 import pprint
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 HEADER_location = 0

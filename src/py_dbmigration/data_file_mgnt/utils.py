@@ -9,7 +9,7 @@ import sys
 from py_dbmigration.custom_logic import purge_temp_file as purge
 import yaml
 import py_dbmigration.db_table as db_table
-import os, logging
+import os, logging as lg
 import importlib.util
 import copy
 

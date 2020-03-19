@@ -4,10 +4,13 @@ import unittest
  
 from py_dbmigration.migrate_utils import static_func
 from config_parent import Config
-import os, logging
+import os, logging as lg
 
+logging=lg.getLogger()
 from py_dbutils.rdbms import postgres as db_utils
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+
+logging=lg.getLogger()
 
 
 
@@ -29,12 +32,12 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         print('# In function:', sys._getframe().f_code.co_name)
         # this should run last
     def test_print_create_table(self):
-        db=self.get_pg_database(appname=self.whoami())
+        db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
 
         print(static_func.print_create_table(db,self.dirs["sample_working_dir"],targetschema='logging'))
   
     def test_sql_to_excel(self):
-        db=self.get_pg_database(appname=self.whoami())
+        db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
         static_func.sql_to_excel(db,'select * from logging.meta_source_files',os.path.join(self.dirs["sample_working_dir"],'test.xls'))
 if __name__ == '__main__':
     unittest.main()

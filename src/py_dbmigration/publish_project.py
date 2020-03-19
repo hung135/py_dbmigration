@@ -12,9 +12,9 @@ import pprint
 import datetime
 import copy
  
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 # target_table:

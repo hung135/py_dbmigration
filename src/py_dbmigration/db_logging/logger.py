@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from pprint import pprint
 
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 class ImportLogger:
     # Reflect each database table we need to use, using metadata

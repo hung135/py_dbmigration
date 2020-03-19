@@ -1,7 +1,5 @@
 import yaml
-import os, logging
 
- 
 import sys
 import pandas as pd
 import numpy as np
@@ -13,7 +11,9 @@ from py_dbmigration.data_file_mgnt.data_files import DataFile
 
 import re
  
+import os, logging as lg
 
+logging=lg.getLogger() 
 
 
 # leveraging pandas libraries to read csv into a dataframe and let pandas

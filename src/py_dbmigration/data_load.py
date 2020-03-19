@@ -1,4 +1,4 @@
-import os, logging
+import os, logging as lg
 import logging.handlers
  
 #using root logger so this need to come before any other logger that may get call inside one of the imports below
@@ -79,7 +79,7 @@ def configure_logging(loglevel=None,logfile=None):
         handler.setFormatter(formatter)
         handler.setLevel(log_level)
         
-        root = logging.getLogger()
+        root = lg.getLogger()
         root.setLevel(log_level)
         root.addHandler(handler)
 
@@ -98,15 +98,16 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
     parser.add_argument('--ll' , help='set logging mode: debug, info, warn, error ')
     parser.add_argument('--lf' , help='path to loging file')
     parser.add_argument('--v' , help='print version info',action="store_true")
-     
+    print("----------loglevel1",__file__,logging_mode)
     args = parser.parse_args()
+    rint("----------loglevel2",__file__,logging_mode)
     if args.v:
         from py_dbmigration.version import version
         print(version)
         sys.exit(0)
     configure_logging( args.ll or logging_mode,args.lf )
         
-    print("logg",args.ll or logging_mode,args.lf )
+    print("log",args.ll or logging_mode,args.lf ) 
 
     datafiles =None
     if args.yaml is not None:
@@ -122,7 +123,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
     if len(datafiles) > 0:
 
         #so pyinstall will pick it upt
-        db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main_90')
+        db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main_90',loglevel=logging.loglevel)
         df = dfm.data_files.DataFile(writable_path, db, datafiles)
         df.init_db()
         df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")

@@ -6,9 +6,9 @@ import py_dbutils.parents as db_utils
 from py_dbmigration.data_file_mgnt.data_files import DataFile 
 from py_dbmigration import migrate_utils
 from py_dbmigration.data_file_mgnt.state import LogicState, FOI, LogicState
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 ''' 

@@ -2,9 +2,9 @@ from enum import Enum
 import sys
 import py_dbmigration.db_table as db_table
 from py_dbmigration.data_file_mgnt import utils
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 #enums to classify various states if a file
@@ -83,9 +83,10 @@ class DataFileState:
         #self.table.session.close()
         #self.table.close()
     def __del__(self):
-        self.table.session.commit()
+        #self.table.session.commit()
         #self.table.session.close()
         #self.table.close()
+        pass
 
     def authenticate(self):
         pass
@@ -175,6 +176,7 @@ class LogicState:
         self.continue_processing_logic=TrueFalse
     #This logic has ran to comletion
     def completed(self):
+        print("-----completed")
         if not ( self.row.file_process_state  in ('OBSOLETE','FAILED','DUPLICATE')):
             self.status=LogicStateEnum.COMPLETE
             self.continue_processing_logic=True
@@ -209,11 +211,13 @@ class LogicState:
 
     def __del__(self):
         assert isinstance(self.row,db_table.db_table_def.MetaSourceFiles)
-        
-        self.table.session.commit()
-        self.table.close()
-      
-
+        try:
+            print("-----------x",self.table)
+            self.table.session.commit()
+            self.table.close()
+            print("------after-----",self.table)
+        except Exception as e:
+            print("--------------e",e)
     def authenticate(self):
         pass
  

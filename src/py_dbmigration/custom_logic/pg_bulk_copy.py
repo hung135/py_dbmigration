@@ -1,7 +1,7 @@
 
-import os, logging
+import os, logging as lg
 
- 
+logging=lg.getLogger() 
 import sys
 from py_dbutils.rdbms import postgres as db_utils
 from py_dbmigration.data_file_mgnt.utils import inject_frame_work_data 

@@ -1,7 +1,7 @@
 
-import os, logging
+import os, logging as lg
 
- 
+logging=lg.getLogger() 
  
 from py_dbutils import parents as db_utils 
 import py_dbmigration.migrate_utils as migrate_utils

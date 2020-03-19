@@ -1,9 +1,9 @@
 import sys
 import unittest
  
-import os, logging
+import os, logging as lg
 
- 
+logging=lg.getLogger() 
  
 from config_parent import Config
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))

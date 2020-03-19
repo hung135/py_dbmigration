@@ -6,9 +6,9 @@ import py_dbmigration.migrate_utils.static_func as static_func
 
 import pprint
 
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 

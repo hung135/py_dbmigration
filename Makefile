@@ -82,7 +82,12 @@ sonar_switchboard:
 	echo http://localhost:9000/dashboard?id=3af30f919bc788e20e7130d351c049f184e03845
 
 python_test:
-	python setup.py test
+	clear
+	pytest /workspace/tests/
 
 
-	
+testplugin: clean_meta
+	python /workspace/src/py_dbmigration/data_load.py  --yaml=/workspace/tests/data_load_plugin.yaml --ll=debug
+
+clean_meta:
+	psql -c"truncate table logging.meta_source_files;"

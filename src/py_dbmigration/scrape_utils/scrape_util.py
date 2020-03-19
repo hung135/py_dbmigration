@@ -4,9 +4,9 @@ from lxml import html
 
 import requests
 from bs4 import BeautifulSoup
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 def getUrl(urlObj, session):

@@ -1,7 +1,7 @@
 
-import os, logging
+import os, logging as lg
 
- 
+logging=lg.getLogger() 
 import sys
 from py_dbutils.rdbms.postgres import DB
 from py_dbmigration.data_file_mgnt.data_files import DataFile,FilesOfInterest 

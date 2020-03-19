@@ -1,7 +1,7 @@
 import yaml
-import os, logging
+import os, logging as lg
 
- 
+logging=lg.getLogger() 
 import sys
 import pandas as pd
 import numpy as np

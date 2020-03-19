@@ -1,5 +1,5 @@
 import yaml
-import os, logging as lg
+import os, logging as lg as lg
   
 import pandas   
 import hashlib

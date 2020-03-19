@@ -21,9 +21,9 @@ from py_dbmigration.data_file_mgnt.state import *
     #  
     #  
 '''
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 

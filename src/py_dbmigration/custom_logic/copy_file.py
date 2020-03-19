@@ -11,8 +11,9 @@ import py_dbmigration.db_table as db_table
 from shutil import copyfile
 import datetime
 from datetime import date
-import os, logging
+import os, logging as lg
 
+logging=lg.getLogger()
 #logging = log.getLogger(f'\tPID: {runtime_pid} - {os.path.basename(__file__)}\t')
 
 

@@ -13,9 +13,9 @@ import pprint
 from datetime import datetime
 import copy
 import pprint
-import os, logging
+import os, logging as lg
 
-
+logging=lg.getLogger()
 
 
 logging.setLevel(lg.DEBUG)

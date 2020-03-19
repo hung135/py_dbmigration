@@ -4,8 +4,9 @@ import unittest
 from py_dbmigration.data_file_mgnt import *
 from py_dbmigration.migrate_utils import static_func
 import py_dbmigration.db_table as db_table
-import os, logging
+import os, logging as lg
 
+logging=lg.getLogger()
 import pprint
 from py_dbutils.rdbms import postgres as db_utils
 import requests 
@@ -36,7 +37,7 @@ class TestSessionAPI(unittest.TestCase,Config):
 
     def test_sqlalchemy_session(self):
         conn_name='TestSQLALCHEMY'
-        db=self.get_pg_database(conn_name)
+        db=self.get_pg_database(conn_name,loglevel=logging.level)
          
         #db.execute("truncate table logging.meta_source_files")
         print('# In function:', sys._getframe().f_code.co_name) 
