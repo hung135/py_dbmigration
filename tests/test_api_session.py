@@ -1,12 +1,10 @@
 import sys
 import unittest
 
-from py_dbmigration.data_file_mgnt import *
+from py_dbmigration.data_file_mgnt import data_files
 from py_dbmigration.migrate_utils import static_func
 import py_dbmigration.db_table as db_table
-import os, logging as lg
 
-logging=lg.getLogger()
 import pprint
 from py_dbutils.rdbms import postgres as db_utils
 import requests 
@@ -16,6 +14,9 @@ from bs4 import BeautifulSoup
 import time
 from prettytable import PrettyTable
 
+import os, logging as lg
+
+logging=lg.getLogger()
 
 
 

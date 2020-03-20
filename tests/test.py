@@ -1,9 +1,8 @@
 import sys
 import unittest
-
-from py_dbmigration.data_file_mgnt import *
-from py_dbmigration.data_file_mgnt.data_files import *
-from py_dbmigration.migrate_utils import *
+ 
+from py_dbmigration.data_file_mgnt import data_files
+from py_dbmigration import migrate_utils
 import py_dbmigration.db_table
 from  py_dbutils.rdbms import postgres as db_utils
 import os, logging as lg
