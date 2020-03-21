@@ -87,7 +87,12 @@ python_test:
 
 
 testplugin: clean_meta
-	python /workspace/src/py_dbmigration/data_load.py  --yaml=/workspace/tests/data_load_plugin.yaml --ll=debug
+	clear
+	python /workspace/src/py_dbmigration/data_load.py  --yaml=/workspace/tests/data_load_plugin.yaml --ll=info
+
+testpluginexe: clean_meta
+	clear
+	/workspace/exe/data_load  --yaml=/workspace/tests/data_load_plugin.yaml --ll=20
 
 clean_meta:
 	psql -c"truncate table logging.meta_source_files;"

@@ -177,7 +177,7 @@ class DataFile:
                     file_list=[]
                     id_list=[]
                     rs,_=sw_db.query(f"Select outgoing_path, id from switchboard.switchboard_history where upper(project_name)=upper('{files_of_interest.project_name}') and state='M' ")
-                    print("------query result ",rs)
+                     
                     #file_list=get_switch_board_file(files_of_interest.project_name)
                     for row,id in rs:
                         file_path=row
@@ -290,8 +290,8 @@ class DataFile:
           
 
             if file_found == 0:
-                logging.debug("New file found: {}".format(full_file_path))
-                print("New file found: {}".format(full_file_path),foi.file_type )
+                logging.debug(f"New file found: {full_file_path}")
+                
                 v_file_type = foi.file_type
                 if foi.file_type == 'DATA':
                     v_file_type = file_name.split(".")[-1].upper()

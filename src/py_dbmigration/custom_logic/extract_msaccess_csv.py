@@ -8,7 +8,7 @@ import py_dbmigration.data_file_mgnt.data_files as data_files
 import py_dbmigration.db_table as db_table
 import py_dbmigration.zip_utils as zip_utils
 
-from py_dbmigration.data_file_mgnt import state
+from py_dbmigration.data_file_mgnt.state import FOI, LogicState
 
 '''
     File name: generate_checksum.py

@@ -40,7 +40,7 @@ class LoadStatusTblStruct():
         #sql_columns = ','.join(self_attributes)
         sql_set_values = ','.join(["{}='{}'\n".format(x,str(getattr(obj, x)).replace("'", "''")) if getattr(
             obj, x) is not None else f'{x}=NULL' for x in self_attributes])
-        print(sql_set_values,"------------")
+         
         return sql.format(set_values=sql_set_values,load_status_id=load_status_id)
 
     def __str__(self):

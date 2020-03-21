@@ -80,12 +80,12 @@ class DataFileState:
 
     def close(self):
         self.table.session.commit()
-        #self.table.session.close()
-        #self.table.close()
+        self.table.session.close()
+        self.table.close()
     def __del__(self):
-        #self.table.session.commit()
-        #self.table.session.close()
-        #self.table.close()
+        self.table.session.commit()
+        self.table.session.close()
+        self.table.close()
         pass
 
     def authenticate(self):
@@ -112,6 +112,7 @@ class DataFileState:
         self.row.file_process_state=self.status.value
         self.row.last_error_msg=str(msg)
         self.table.session.commit()
+        
 
         return False
         #logging.error("Data File Processing FAILED: {}".format(self.file_path))
@@ -141,7 +142,8 @@ class LogicState:
     continue_processing_logic=None
     file_state = None
     logic_options = {}
-    def __init__(self, file,file_state):
+    def __init__(self, file : str ,file_state : DataFileState):
+         
         self.file_path=file
         self.name=os.path.basename(file)
         self.status = LogicStateEnum.INIT
@@ -176,7 +178,7 @@ class LogicState:
         self.continue_processing_logic=TrueFalse
     #This logic has ran to comletion
     def completed(self):
-        print("-----completed")
+  
         if not ( self.row.file_process_state  in ('OBSOLETE','FAILED','DUPLICATE')):
             self.status=LogicStateEnum.COMPLETE
             self.continue_processing_logic=True
@@ -188,6 +190,7 @@ class LogicState:
             self.row.process_msg_trail=self.name +"\n{}".format(self.row.process_msg_trail)
          
         self.table.session.commit()
+         
     # def processed(self):
     #     if not self.status in [LogicStateEnum.FAILED]:
     #         self.status=LogicStateEnum.COMPLETE
@@ -212,12 +215,13 @@ class LogicState:
     def __del__(self):
         assert isinstance(self.row,db_table.db_table_def.MetaSourceFiles)
         try:
-            print("-----------x",self.table)
+             
             self.table.session.commit()
             self.table.close()
-            print("------after-----",self.table)
+            
         except Exception as e:
-            print("--------------e",e)
+ 
+            logging.exception(e)
     def authenticate(self):
         pass
  

@@ -1,5 +1,5 @@
 import yaml
-import os, logging as lg as lg
+import os, logging as lg  
 
  
 import sys
@@ -15,8 +15,7 @@ import re
  
 
 lg.basicConfig()
-logging = lg.getLogger()
-logging.setLevel(lg.DEBUG)
+logging = lg.getLogger() 
 
 melt_columns = ['year', 'year_type', 'state', 'seq', 'logrecno']
 drop_columns = ["acssf",  'chariter']

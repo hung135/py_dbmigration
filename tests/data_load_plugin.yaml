@@ -4,9 +4,11 @@
   project_name: test_1
   reprocess: True # flag used to identify files we want to attempt to re-run the next go around
   process_logic: # this will get executed for all files
+    - logic: 'custom_logic.abort_if_duplicate'  
+    - logic: 'custom_logic.count_file_linux_wc'
     - logic: 
         plugin: 'tests/plugin_logic/plugin_logic_sample.py'
-    - logic: 'custom_logic.abort_if_duplicate'
+    
   mapping: #lis of logic to run for each specify file type that matches the file_regex below
     - file_regex: '^.*.csv$'
       file_type: 'csv'

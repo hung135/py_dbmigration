@@ -31,10 +31,8 @@ class RecordKeeper():
         #assert isinstance(db, db_utils.DB)
 
         key = str(table_def.DbSchema + table_def.__tablename__)
-
-        print("-------------------------------------------------",key)
+ 
         self.table = self.table_dict.get(key, None)
-        print("-------------------------------------------------")
         if self.table is None:
             self.table_dict[key] = table_def
             self.table = self.table_dict[key]
@@ -116,15 +114,14 @@ class RecordKeeper():
     def close(self):
         logging.debug("Closing SqlAlchemy Engine: {}".format(self.appname))        
         try:
-
-            print("xxxxxxxxxx-----")
+ 
             self.session.close()
             
             
             self.engine.dispose()
 
         except Exception as e:
-            print("xxxxxxxxxx",e)
+            logging.exception(e)
     def __del__(self):
         
         logging.debug("Closing db_table Session: {} {} {}".format(
@@ -134,7 +131,6 @@ class RecordKeeper():
 
             self.engine.dispose()
         except Exception as e:
-            print("----------------------",e)
-            logging.exception(
-                "Error Occured Closing db_table Session: {}".format(e))
+             
+            logging.exception(f"Error Occured Closing db_table Session: {e}")
             # print(e)

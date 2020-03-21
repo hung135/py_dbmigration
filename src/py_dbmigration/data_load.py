@@ -1,6 +1,7 @@
 import os, logging as lg
 import logging.handlers
- 
+logging = lg.getLogger()
+
 #using root logger so this need to come before any other logger that may get call inside one of the imports below
 ##############################################
 import yaml
@@ -71,7 +72,7 @@ def configure_logging(loglevel=None,logfile=None):
     #print("----logggg",log_level)
     LOGFORMAT=f'%(asctime)s, %(process)d, %(levelname)s,%(filename)s," \t%(message)s"'
 
-    logging.basicConfig(level=log_level, format=LOGFORMAT)
+    #logging.basicConfig(name=__name__,level=log_level, format=LOGFORMAT)
     if log_file is not None:
         handler = logging.handlers.WatchedFileHandler(
             os.environ.get("LOGFILE", "dataload_log.txt"),log_file_write_mode)
@@ -98,17 +99,23 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
     parser.add_argument('--ll' , help='set logging mode: debug, info, warn, error ')
     parser.add_argument('--lf' , help='path to loging file')
     parser.add_argument('--v' , help='print version info',action="store_true")
-    print("----------loglevel1",__file__,logging_mode)
-    args = parser.parse_args()
-    rint("----------loglevel2",__file__,logging_mode)
+    
+    args = parser.parse_args() 
     if args.v:
         from py_dbmigration.version import version
         print(version)
         sys.exit(0)
-    configure_logging( args.ll or logging_mode,args.lf )
-        
-    print("log",args.ll or logging_mode,args.lf ) 
+    #configure_logging( args.ll or logging_mode,args.lf )
+    if str(args.ll).isnumeric():
+        logging.setLevel(int( args.ll))
+    elif not (args.ll is None):
+        logging.setLevel(str( args.ll).upper())
+    elif (logging_mode is not None) and str(logging_mode ).isnumeric:
+        logging.setLevel(int( logging_mode))
+    elif (logging_mode is not None):
+        logging.setLevel(str( logging_mode).upper())
 
+     
     datafiles =None
     if args.yaml is not None:
         datafiles = process_yaml(os.path.abspath(args.yaml))
@@ -123,7 +130,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
     if len(datafiles) > 0:
 
         #so pyinstall will pick it upt
-        db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main_90',loglevel=logging.loglevel)
+        db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main_90',loglevel=logging.level)
         df = dfm.data_files.DataFile(writable_path, db, datafiles)
         df.init_db()
         df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")

@@ -25,7 +25,6 @@ class Config(object):
         from yaml import Loader
         import yaml
 
-        print("----------loglevel",__file__,loglevel)
         db=self.get_pg_database(loglevel=loglevel)
         with open(yaml_file,'r') as f:
             yaml_data = yaml.full_load(f)
@@ -37,7 +36,7 @@ class Config(object):
         return 1
 
     def get_pg_database(self,appname=__file__,loglevel=None):
-        print("----------loglevel",__file__,loglevel)
+         
         from py_dbutils.rdbms import postgres as db_utils
         HOST = os.environ['PGHOST'] or 'localhost'
         DATABASE = os.environ['PGDATABASE'] or 'postgres'

@@ -1,5 +1,5 @@
 import yaml
-import os, logging as lg as lg
+import os, logging as lg  
   
 import pandas   
 import hashlib
@@ -11,8 +11,7 @@ from py_dbmigration.data_file_mgnt.data_files import DataFile
 import re
  
 lg.basicConfig()
-logging = lg.getLogger()
-logging.setLevel(lg.DEBUG)
+logging = lg.getLogger() 
 
 
 base_columns = [u'file_id', u'table_id', u'seq', u'line_number',

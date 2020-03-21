@@ -5,7 +5,7 @@ import sys
 import py_dbutils.rdbms.postgres as db_utils
 import py_dbmigration.data_file_mgnt as data_file_mgnt
 import py_dbmigration.migrate_utils as migrate_utils
-from py_dbmigration.data_file_mgnt import state
+from py_dbmigration.data_file_mgnt.state import FOI, LogicState
 import py_dbmigration.db_logging as db_logging
 import py_dbmigration.db_table as db_table
 from shutil import copyfile

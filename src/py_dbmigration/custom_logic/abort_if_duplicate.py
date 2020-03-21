@@ -45,7 +45,7 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
         logic_status.continue_to_next_logic(
             logic_status.file_state.duplicate())
     else:
-        logging.debug("\t\tDuplicate NOT File Found")
+        logging.debug("\t\tNOT Duplicate File Found")
     return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 

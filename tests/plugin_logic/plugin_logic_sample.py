@@ -20,8 +20,6 @@ import logging
 
 def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     print("------------------------------This Logic does nothing------------------------------")
-
-    print("------------------------------",__file__,"------------------------------")
     return logic_status
 
 

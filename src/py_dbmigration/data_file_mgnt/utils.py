@@ -1,7 +1,7 @@
 
  
 import py_dbmigration.migrate_utils as migrate_utils
-from py_dbmigration.data_file_mgnt import state
+from py_dbmigration.data_file_mgnt.state import LogicState
 import datetime
  
 import re
@@ -105,3 +105,134 @@ def inject_frame_work_data(string_text, foi, df):
 
     return x
  
+
+def execute_sql(db, sql_list, foi, df,label=''):
+    if sql_list is not None:
+        for id, sql in enumerate(sql_list):
+            # print(sql['sql'], "executing sike", type(sql))
+
+            modified_sql = inject_frame_work_data(sql['sql'], foi, df)
+            shorten_sql = (
+                modified_sql[:50] + "...") if len(modified_sql) > 75 else modified_sql
+            logging.info(f"\t{label}SQL Step #: {id} {shorten_sql}")
+
+            t = datetime.datetime.now()
+            #print("modified sql",modified_sql)
+            db.execute(modified_sql, catch_exception=False)
+            
+
+            time_delta = (datetime.datetime.now() - t)
+            logging.debug(f"\t\tExecution Time: {time_delta}sec")
+    else:
+        logging.info('Not Post Action SQL to run')
+def get_imported_plugin_module(custom_logic,foi,curr_plugin):
+     
+    abs_plugin = os.path.abspath(curr_plugin)
+    logic_name = abs_plugin.split('.')[-2]
+    logging.info(abs_plugin)
+    foi.logic_options = copy.copy(custom_logic)
+    foi.logic_options['name']=copy.copy((logic_name))
+
+    spec = importlib.util.spec_from_file_location(logic_name, abs_plugin)
+    imported_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(imported_module)
+    return imported_module
+def get_imported_module(custom_logic,foi):
+    logic_name = custom_logic.split('.')[-1]
+    foi.logic_options['name']=custom_logic
+     
+    module = __import__('py_dbmigration.custom_logic',
+                        fromlist=[logic_name])
+        
+    return getattr(module, logic_name)
+# pull the list of modules configured in the yaml file under process_logic
+# it will execute each of the logic on this file in the order it was entered in the yaml file
+def loop_through_logic(foi, db, df,process_logic):
+    logic_status = None
+    logic_status = LogicState(df.curr_src_working_file, df.current_file_state)
+    for logic in process_logic:
+        fqn_logic = None
+        custom_logic = logic['logic']
+        foi.logic_options={}
+        logic_name = None
+        imported_module = None 
+         
+        #advanced process logic config
+        if isinstance(custom_logic,dict):
+            
+            curr_logic=copy.copy(custom_logic.get('name',None))
+            curr_plugin=copy.copy(custom_logic.get('plugin',None))
+            if (curr_logic or curr_plugin) is None:
+                logic_status.failed('Plugin or Custom Logic not found')
+                raise Exception('Process Logic Needa a Name or Plugin Attribute')
+            elif curr_logic is not None:
+                imported_module = get_imported_module(curr_logic,foi)
+                logic_name = f'py_dbmigration.{custom_logic}'
+                
+            else:    
+                imported_module = get_imported_plugin_module(custom_logic,foi,curr_plugin)
+                logic_name = os.path.abspath(curr_plugin).split('.')[-2]
+        #simple process logic (built in logic)      
+        else:
+            imported_module = get_imported_module(custom_logic,foi)
+            logic_name = f'py_dbmigration.{custom_logic}'
+             
+        # dynmaically import the modeul specified in the yaml file
+        # this could be faster if we imported this once but for now it stays here
+        logging.info(f'Importing Module: {custom_logic},{logic_name}')
+        try:
+            
+
+            logging.info('Custom Logic Start: {}'.format(custom_logic))
+            #df.set_work_file_status(db, df.file_id, custom_logic)
+
+            time_started = datetime.datetime.now()
+        # *************************************************************************
+            logic_status.name=logic_name
+             
+            logic_status=imported_module.process(db, foi, df, logic_status)
+            logic_status.completed()
+        except Exception as e:
+            logging.exception(f"Syntax Error Importing or Running Custom Logic: {logic_name}\n{e}")
+            logic_status.hardfail(f'{__file__}: {e}')
+        # *************************************************************************
+
+        time_delta = (datetime.datetime.now() - time_started)
+        logging.debug(f"\t\tExecution Time: {time_delta}sec".format())
+        logging.debug(f'->Dynamic Module Ended: {custom_logic}')
+
+        if not logic_status.continue_processing_logic:
+            logging.error(
+                'Abort Processing File: \n\t\t{}'.format(os.path.join(df.source_file_path, df.curr_src_working_file)))
+
+            #df.set_work_file_status(db, df.file_id, 'FAILED', custom_logic+'\n'+str(df.load_status_msg or ''))
+            break
+    return logic_status
+
+def process_logic(foi, db, df):
+    logic_status=None
+ 
+    foi.render_runtime_data(df)
+    # store result of action you do in this variable
+
+    process_logic = foi.process_logic
+    post_process_logic = foi.post_process_logic
+ 
+    try:
+         
+            logging.info("Executing Pre Load SQL")
+            execute_sql(db, foi.pre_action, foi, df,'PRE ')
+            logging.info("Executing Process_logic")
+            logic_status=loop_through_logic(foi, db, df,process_logic)
+            logging.info("Executing Post Load SQL")
+            execute_sql(db, foi.post_action, foi, df,'POST ')
+            logging.info("Executing Process_logic")
+            logic_status= loop_through_logic(foi, db, df,post_process_logic)
+
+    except Exception as e:
+        logging.exception(f"Failed executing Pre Load action: {e}")
+        df.current_file_state.failed(e)
+    else:
+        logic_status.file_state.processed()
+        logic_status.row.reprocess=foi.reprocess or False
+        purge.process(db, foi, df)
