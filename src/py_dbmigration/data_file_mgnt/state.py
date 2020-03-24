@@ -186,9 +186,9 @@ class LogicState:
         else:
             self.continue_processing_logic=False
         if self.row.process_msg_trail is None:
-            self.row.process_msg_trail=self.name
+            self.row.process_msg_trail=self.name[:2000]
         else:
-            self.row.process_msg_trail=self.name +"\n{}".format(self.row.process_msg_trail)
+            self.row.process_msg_trail=str(self.name +f"\n{self.row.process_msg_trail}")[:2000]
          
         self.table.session.commit()
          

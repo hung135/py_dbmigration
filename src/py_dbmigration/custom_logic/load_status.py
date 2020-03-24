@@ -47,7 +47,7 @@ class LoadStatusTblStruct():
         #     if getattr(self,col) is None:
         #         setattr(self,col,'NULL')
         sql_columns = ','.join(self_attributes)
-        sql_values = ','.join(["'{}'".format(str(getattr(obj, x)).replace("'", "''")) if getattr(
+        sql_values = ','.join(["'{}'".format(str(getattr(obj, x)).replace("'", "''")[:2000]) if getattr(
             obj, x) is not None else 'NULL' for x in self_attributes])
 
         return sql.format(columns=sql_columns, values=sql_values)
