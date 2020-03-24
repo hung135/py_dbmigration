@@ -934,7 +934,7 @@ def print_create_views(db, folder=None, targetschema=None, file_prefix=None):
             with open(os.path.join(folder ,"sqitchplanadd_view.bash"), "a") as f:
                 f.write(s)
 
-    print("Totalxxx views:{}".format(table_count))
+    print("Total views:{}".format(table_count))
 
 
 def reset_migration(db):

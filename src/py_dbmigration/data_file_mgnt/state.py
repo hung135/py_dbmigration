@@ -67,6 +67,7 @@ class DataFileState:
         pass
 
     def __repr__(self):
+       
         return_string="""File: {}\nStatus: {}\nError_msg:  {}\n """
         return return_string.format(self.name,self.status,self.error_msg)
 
@@ -225,7 +226,7 @@ class LogicState:
     def authenticate(self):
         pass
  
-
+#this will be decprecated one day as you can see the why in the __init__ function
 class FilesOfInterest:
     
     # 2 scerios...given a path and a file pattern we walk the dir
@@ -313,7 +314,7 @@ class FilesOfInterest:
         pass
 
     def __repr__(self):
-        pass
+        return self.__str__()
 
     
 
@@ -325,7 +326,7 @@ class FilesOfInterest:
 
    
 
-
+#this is mapped to the contents of the YAML file
 class FOI(object):
     
     # 2 scerios...given a path and a file pattern we walk the dir
@@ -352,10 +353,10 @@ class FOI(object):
     pre_action= []
     post_action= []
     limit_rows= None
-    
     process_logic= None
     post_process_logic = [] #these logic will get executed regardless
-   
+    pre_process_scripts = []
+    post_process_scripts = []
     reprocess=None 
     extract_file_name_data = None
     format_extracted_date = None
@@ -424,6 +425,7 @@ class FOI(object):
                     setattr(self,a,field)
 
     def __str__(self):
+         
         string_result={
             'project_name':self.project_name,
             'regex_pattern': self.regex,
@@ -437,7 +439,8 @@ class FOI(object):
         pass
 
     def __repr__(self):
-        return self.__str__
+
+        return self.__str__()
 
     def __del__(self):
         pass

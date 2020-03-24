@@ -573,11 +573,17 @@ class DataFile:
             self.full_file_path = os.path.join(self.source_file_path,self.curr_src_working_file)
             self.file_id=row.id
 
-             
-
         t.close()
         return WorkState.HAVE_MORE_WORK
-
+    def do_pre_process_scripts(self,db,foi_list):
+        logging.info("Running Pre Processing Script")
+        for foi in foi_list:
+            utils.process_scripts(db,foi.pre_process_scripts) 
+    def do_post_process_scripts(self,db,foi_list):
+        logging.info("Running Post Processing Script")
+        for foi in foi_list:
+            utils.process_scripts(db,foi.post_process_scripts)
+ 
     # Do work will query the meta source table for a record
     # It will stamp that record with this pid and ip address
     # When it is done with the processing of the record it we stamp the process_end_dtm
@@ -588,7 +594,7 @@ class DataFile:
         # iterate over each file in the logging.meta_source_files table
         # get work will lock 1 file and store the id into meta_source_file_id
         # inside this instance
-
+        self.do_pre_process_scripts(db,self.foi_list)
         get_work_status=WorkState.HAVE_MORE_WORK
         while get_work_status in [WorkState.SLEEP, WorkState.HAVE_MORE_WORK]:
             get_work_status=self.get_work(db)
@@ -635,4 +641,5 @@ class DataFile:
                 logging.info(f"Work up From sleep, Checking for more work")   
             else:
                 logging.error(f"Unknown Work State Tripped EXITING")
-                sys.exit(1)       
+                sys.exit(1)  
+        self.do_post_process_scripts(db,self.foi_list)     

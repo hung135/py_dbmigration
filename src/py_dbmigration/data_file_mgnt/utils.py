@@ -151,7 +151,7 @@ def loop_through_logic(foi, db, df,process_logic):
     logic_status = None
     logic_status = LogicState(df.curr_src_working_file, df.current_file_state)
     for logic in process_logic:
-        fqn_logic = None
+        
         custom_logic = logic['logic']
         foi.logic_options={}
         logic_name = None
@@ -208,6 +208,37 @@ def loop_through_logic(foi, db, df,process_logic):
             #df.set_work_file_status(db, df.file_id, 'FAILED', custom_logic+'\n'+str(df.load_status_msg or ''))
             break
     return logic_status
+
+def loop_through_scripts(db,scripts):
+    success=False
+
+    for script_path in scripts:
+         
+        imported_module = None 
+        try:
+            #imported_module = get_imported_plugin_module(custom_logic,foi,curr_plugin)
+
+            abs_plugin = os.path.abspath(script_path)
+            script_name = abs_plugin.split('.')[-2]
+
+            spec = importlib.util.spec_from_file_location(script_name, abs_plugin)
+            imported_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(imported_module) 
+
+         
+        # *************************************************************************
+            success=imported_module.process(db)
+        except Exception as e:
+            logging.exception(f"Syntax Error Importing or Running SCRIPT: {script_name}\n{e}")
+            success=False
+        # *************************************************************************
+        else:
+            if not success:
+                break
+    return success
+
+def process_scripts(db,scripts):
+    loop_through_scripts(db,scripts)
 
 def process_logic(foi, db, df):
     logic_status=None
