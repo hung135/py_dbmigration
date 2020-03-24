@@ -113,12 +113,12 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         print("Truncating Logging Tables:")
 
         db.execute(
-            "TRUNCATE table logging.meta_source_files, logging.table_file_regex, logging.error_log, logging.load_status RESTART IDENTITY;")
+            "TRUNCATE table logging.meta_source_files, logging.error_log, logging.load_status RESTART IDENTITY;")
 
-        db.execute("""INSERT into logging.table_file_regex SELECT distinct concat(table_name,'.*.csv'),',',
-        table_schema,table_name,now(),TRUE
-        FROM information_schema.columns a
-        WHERE table_schema = '{}'""".format(self.TEST_SCHEMA))
+        # db.execute("""INSERT into logging.table_file_regex SELECT distinct concat(table_name,'.*.csv'),',',
+        # table_schema,table_name,now(),TRUE
+        # FROM information_schema.columns a
+        # WHERE table_schema = '{}'""".format(self.TEST_SCHEMA))
         
         # This is how we store the files we are looking for List of FileOfInterest
         foi_list = [
@@ -155,11 +155,11 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         file_name=__file__
         db=self.get_pg_database(appname=self.whoami(),loglevel=logging.level)
         db.execute(
-            "TRUNCATE table logging.meta_source_files, logging.table_file_regex, logging.error_log, logging.load_status RESTART IDENTITY;")
-        db.execute("""INSERT into logging.table_file_regex SELECT distinct concat(table_name,'.*.csv'),',',
-                       table_schema,table_name,now(),TRUE
-                       FROM information_schema.columns a
-                       WHERE table_schema = '{}'""".format(self.TEST_SCHEMA))
+            "TRUNCATE table logging.meta_source_files,  logging.error_log, logging.load_status RESTART IDENTITY;")
+        # db.execute("""INSERT into logging.table_file_regex SELECT distinct concat(table_name,'.*.csv'),',',
+        #                table_schema,table_name,now(),TRUE
+        #                FROM information_schema.columns a
+        #                WHERE table_schema = '{}'""".format(self.TEST_SCHEMA))
         
 
     def make_foi(self):

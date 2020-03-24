@@ -6,7 +6,6 @@
   pre_process_scripts: # note there is no file data here yet since this operates before any meta data is even loaded
     - 'tests/plugin_logic/plugin_logic_runonce.py'
     - 'tests/plugin_logic/plugin_logic_runonce.py'
-    
   post_process_scripts: # note there is no file data here yet since this operates before any meta data is even loaded
     - 'tests/plugin_logic/plugin_logic_runonce.py'
     

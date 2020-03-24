@@ -19,13 +19,13 @@ RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-s
 RUN unzip sonar-scanner-cli-4.2.0.1873-linux.zip \
     && ln -s /sonar/sonar-scanner-4.2.0.1873-linux/bin/sonar-scanner /bin/sonar-scanner
 RUN mkdir /workspace
-WORKDIR /workspace
+
 
 # Install pylint
 RUN pip install pylint
 RUN pip install pipenv
 # Install Python dependencies from requirements.txt if it exists
-COPY .devcontainer/requirements.txt.temp requirements.txt* /workspace/
+COPY requirements.txt requirements.txt 
 RUN if [ -f "requirements.txt" ]; then pip install -r requirements.txt && rm requirements.txt; fi
 # Clean up
 # RUN apt-get autoremove -y \
