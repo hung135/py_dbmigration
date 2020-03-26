@@ -19,3 +19,4 @@ statistics
 jaydebeapi
 boto3
 pytest-cov
+pgcli

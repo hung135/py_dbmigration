@@ -16,7 +16,8 @@ from setuptools import setup
 try:
     require('setuptools>=38.3')
     require('py-dbutils')
-    require('prettytable')
+    require('pyyaml')
+    require('xlrd')
 except VersionConflict:
     print("Error: version of setuptools is too old (<38.3)!")
     sys.exit(1)

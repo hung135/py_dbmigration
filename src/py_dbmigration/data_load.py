@@ -88,39 +88,38 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
 
 
 
-
-
-    import sys
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--yaml', help="yaml file")
-    parser.add_argument('--cores',default=1, help='Number of Cores(Subprocess) to use')
-    parser.add_argument('--ll' , help='set logging mode: debug, info, warn, error ')
-    parser.add_argument('--lf' , help='path to loging file')
-    parser.add_argument('--v' , help='print version info',action="store_true")
-    
-    args = parser.parse_args() 
-    if args.v:
-        from py_dbmigration.version import version
-        print(version)
-        sys.exit(0)
-    #configure_logging( args.ll or logging_mode,args.lf )
-    if str(args.ll).isnumeric():
-        logging.setLevel(int( args.ll))
-    elif not (args.ll is None):
-        logging.setLevel(str( args.ll).upper())
-    elif (logging_mode is not None) and str(logging_mode ).isnumeric:
-        logging.setLevel(int( logging_mode))
-    elif (logging_mode is not None):
-        logging.setLevel(str( logging_mode).upper())
-
-     
     datafiles =None
-    if args.yaml is not None:
-        datafiles = process_yaml(os.path.abspath(args.yaml))
+    if yamlfile is None:
+
+        import sys
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--yaml', help="yaml file")
+        parser.add_argument('--cores',default=1, help='Number of Cores(Subprocess) to use')
+        parser.add_argument('--ll' , help='set logging mode: debug, info, warn, error ')
+        parser.add_argument('--lf' , help='path to loging file')
+        parser.add_argument('--v' , help='print version info',action="store_true")
+        
+        args = parser.parse_args() 
+        if args.v:
+            from py_dbmigration.version import version
+            print(version)
+            sys.exit(0)
+        #configure_logging( args.ll or logging_mode,args.lf )
+        if str(args.ll).isnumeric():
+            logging.setLevel(int( args.ll))
+        elif not (args.ll is None):
+            logging.setLevel(str( args.ll).upper())
+        yamlfile=args.yaml
     else:
-        datafiles = process_yaml(yamlfile)
+        if (logging_mode is not None) and str(logging_mode ).isnumeric:
+            logging.setLevel(int( logging_mode))
+        elif (logging_mode is not None):
+            logging.setLevel(str( logging_mode).upper())
+
+        
+    datafiles = process_yaml(yamlfile)
  
     writable_path = write_path or os.getenv('WORKINGPATH',os.getcwd())  
     PGDATASCHEMA = schema or os.getenv('PGDATASCHEMA',schema)

@@ -68,9 +68,8 @@ class DataFileState:
 
     def __repr__(self):
        
-        return_string="""File: {}\nStatus: {}\nError_msg:  {}\n """
-        return return_string.format(self.name,self.status,self.error_msg)
-
+        return return_string=f"""File: {self.name}\nStatus: {self.status}\nError_msg:  {self.error_msg}\n """
+         
     def refresh(self,appname=None):
         try:
             self.table.close()
@@ -142,7 +141,7 @@ class LogicState:
     error_msg = None
     continue_processing_logic=None
     file_state = None
-    logic_options = {}
+    #logic_options = {}
     def __init__(self, file : str ,file_state : DataFileState):
          
         self.file_path=file

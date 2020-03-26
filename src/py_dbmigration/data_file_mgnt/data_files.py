@@ -102,7 +102,7 @@ class DataFile:
     def get_curr_table_row_count(self,fqn_table_name):
         current_table_row_count=0
         sql = f'select count(1) from {fqn_table_name}'
-        logging.info(f'Counting table, This could take sometime: {fqn_table_name}')
+        logging.debug(f'Counting table, This could take sometime: {fqn_table_name}')
         try:
             current_table_row_count,=self.db.get_a_row(sql)
         except Exception as e:
@@ -578,8 +578,9 @@ class DataFile:
     def do_pre_process_scripts(self,db,foi_list):
    
         for foi in foi_list:
-            logging.info("Running Pre Processing Script")
+            
             if hasattr('foi','pre_process_scripts'):
+                logging.info("Running Pre Processing Script")
                 utils.process_scripts(db,foi.pre_process_scripts) 
             else:
                 logging.debug("No Pre Process Scripts Found")

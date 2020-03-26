@@ -130,8 +130,8 @@ def get_imported_plugin_module(custom_logic,foi,curr_plugin):
     abs_plugin = os.path.abspath(curr_plugin)
     logic_name = abs_plugin.split('.')[-2]
     logging.info(abs_plugin)
-    foi.logic_options = copy.copy(custom_logic)
-    foi.logic_options['name']=copy.copy((logic_name))
+    #foi.logic_options = copy.copy(custom_logic)
+    #foi.logic_options['name']=copy.copy((logic_name))
 
     spec = importlib.util.spec_from_file_location(logic_name, abs_plugin)
     imported_module = importlib.util.module_from_spec(spec)
@@ -139,7 +139,7 @@ def get_imported_plugin_module(custom_logic,foi,curr_plugin):
     return imported_module
 def get_imported_module(custom_logic,foi):
     logic_name = custom_logic.split('.')[-1]
-    foi.logic_options['name']=custom_logic
+    #foi.logic_options['name']=custom_logic
      
     module = __import__('py_dbmigration.custom_logic',
                         fromlist=[logic_name])
@@ -152,38 +152,39 @@ def loop_through_logic(foi, db, df,process_logic):
     logic_status = LogicState(df.curr_src_working_file, df.current_file_state)
     for logic in process_logic:
         
-        custom_logic = logic['logic']
-        foi.logic_options={}
+
+        #foi.logic_options={}
         logic_name = None
         imported_module = None 
          
+        custom_logic=copy.copy(logic.get('logic',None))
+        plugin_logic=copy.copy(logic.get('plugin',None))
         #advanced process logic config
-        if isinstance(custom_logic,dict):
-            
-            curr_logic=copy.copy(custom_logic.get('name',None))
-            curr_plugin=copy.copy(custom_logic.get('plugin',None))
-            if (curr_logic or curr_plugin) is None:
-                logic_status.failed('Plugin or Custom Logic not found')
-                raise Exception('Process Logic Needa a Name or Plugin Attribute')
-            elif curr_logic is not None:
-                imported_module = get_imported_module(curr_logic,foi)
-                logic_name = f'py_dbmigration.{custom_logic}'
-                
-            else:    
-                imported_module = get_imported_plugin_module(custom_logic,foi,curr_plugin)
-                logic_name = os.path.abspath(curr_plugin).split('.')[-2]
-        #simple process logic (built in logic)      
-        else:
+        
+        if custom_logic is not None:
             imported_module = get_imported_module(custom_logic,foi)
             logic_name = f'py_dbmigration.{custom_logic}'
+        
+        elif plugin_logic is not None: 
+   
+            imported_module = get_imported_plugin_module(logic,foi,plugin_logic)
+            logic_name = os.path.basename(plugin_logic) 
+            
+        
+        else:
+           
+            logic_status.failed('Plugin or Custom Logic not found')
+            raise Exception('Process Logic Needa a Name or Plugin Attribute')
+  
+      
              
         # dynmaically import the modeul specified in the yaml file
         # this could be faster if we imported this once but for now it stays here
-        logging.info(f'Importing Module: {custom_logic},{logic_name}')
+        
         try:
             
 
-            logging.info('Custom Logic Start: {}'.format(custom_logic))
+            logging.info(f'Custom Logic Start: {logic_name}' )
             #df.set_work_file_status(db, df.file_id, custom_logic)
 
             time_started = datetime.datetime.now()

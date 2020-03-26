@@ -36,7 +36,7 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     try:
 
         md5 = logic_status.row.crc
-        modified_write_path = os.path.join(abs_writable_path, str(md5))
+        modified_write_path = os.path.join(abs_writable_path, str(md5)[:8])
 
         files = zip_utils.unzipper.extract_file(abs_file_path, modified_write_path,
                                                 False, df.work_file_type, skip_ifexists=skip_ifexists)
