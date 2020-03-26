@@ -237,9 +237,7 @@ def loop_through_scripts(db,scripts):
             if not success:
                 break
     return success
-
-def process_scripts(db,scripts):
-    loop_through_scripts(db,scripts)
+ 
 
 def process_logic(foi, db, df):
     logic_status=None

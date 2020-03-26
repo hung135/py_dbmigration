@@ -68,7 +68,7 @@ class DataFileState:
 
     def __repr__(self):
        
-        return return_string=f"""File: {self.name}\nStatus: {self.status}\nError_msg:  {self.error_msg}\n """
+        return f"""File: {self.name}\nStatus: {self.status}\nError_msg:  {self.error_msg}\n """
          
     def refresh(self,appname=None):
         try:

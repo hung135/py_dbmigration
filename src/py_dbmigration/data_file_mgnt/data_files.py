@@ -576,23 +576,23 @@ class DataFile:
         t.close()
         return WorkState.HAVE_MORE_WORK
     def do_pre_process_scripts(self,db,foi_list):
-   
+        
+        scripts=[] 
         for foi in foi_list:
-            
             if hasattr('foi','pre_process_scripts'):
-                logging.info("Running Pre Processing Script")
-                utils.process_scripts(db,foi.pre_process_scripts) 
-            else:
-                logging.debug("No Pre Process Scripts Found")
+                for script in foi.pre_process_scripts:
+                    scripts.append(script)
+        utils.loop_through_scripts(db,scripts)
+        
     def do_post_process_scripts(self,db,foi_list):
         
+        scripts=[] 
         for foi in foi_list:
-            if hasattr('foi','post_process_scripts'):
-                logging.info("Running Post Processing Script")
-                utils.process_scripts(db,foi.post_process_scripts)
-            else:
-                logging.debug("No Post Process Scripts Found")
- 
+            if hasattr('foi','pre_process_scripts'):
+                for script in foi.pre_process_scripts:
+                    scripts.append(script)
+        
+        utils.loop_through_scripts(db,scripts)
     # Do work will query the meta source table for a record
     # It will stamp that record with this pid and ip address
     # When it is done with the processing of the record it we stamp the process_end_dtm
