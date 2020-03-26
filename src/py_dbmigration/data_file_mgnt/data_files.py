@@ -580,19 +580,18 @@ class DataFile:
         scripts=[] 
         for foi in foi_list:
             if hasattr('foi','pre_process_scripts'):
-                for script in foi.pre_process_scripts:
-                    scripts.append(script)
+                scripts = foi.pre_process_scripts
         utils.loop_through_scripts(db,scripts)
         
     def do_post_process_scripts(self,db,foi_list):
         
         scripts=[] 
+        #take any since they are all supposed to be the same
         for foi in foi_list:
-            if hasattr('foi','pre_process_scripts'):
-                for script in foi.pre_process_scripts:
-                    scripts.append(script)
-        
+            if hasattr('foi','post_process_scripts'):
+                scripts = foi.post_process_scripts
         utils.loop_through_scripts(db,scripts)
+
     # Do work will query the meta source table for a record
     # It will stamp that record with this pid and ip address
     # When it is done with the processing of the record it we stamp the process_end_dtm
