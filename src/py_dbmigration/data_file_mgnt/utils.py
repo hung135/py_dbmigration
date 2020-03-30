@@ -266,3 +266,5 @@ def process_logic(foi, db, df):
         logic_status.file_state.processed()
         logic_status.row.reprocess=foi.reprocess or False
         purge.process(db, foi, df)
+        # putthing this here for now since I can not find why table.session.commit() is not committing
+        db.execute(f"update logging.meta_source_files set file_process_state='PROCESSED' where id={df.file_id}")
