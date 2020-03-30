@@ -121,7 +121,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
         
     datafiles = process_yaml(yamlfile)
  
-    writable_path = write_path or os.getenv('WORKINGPATH',os.getcwd())  
+    writable_path = write_path #or os.getenv('WORKINGPATH',os.getcwd())  
     PGDATASCHEMA = schema or os.getenv('PGDATASCHEMA',schema)
     
 
