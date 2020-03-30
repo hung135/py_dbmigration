@@ -128,7 +128,8 @@ class DataFile:
         for p in foi_list:
             self.project_list.append(p.project_name)
             if p.write_path is not None:
-                self.working_path = self.working_path or p.write_path
+                
+                self.working_path =  p.write_path
         self.project_list = list(set(self.project_list))
         self.working_path = working_path or self.working_path or os.getcwd()
         self.working_path = os.path.abspath(self.working_path)

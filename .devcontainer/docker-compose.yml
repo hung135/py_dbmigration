@@ -68,23 +68,23 @@ services:
   #       SA_PASSWORD: Docker1234
   #       MSSQL_PID: Express
         
-  pgadmin4:
-    image: dpage/pgadmin4
-    restart: always
-    ports: 
-      - 80:80
-    links:
-      - pgdb
-    volumes:
-      # - ~/.pgadmincompose:/var/lib/pgadmin
-      - ./pgadmin4.json:/pgadmin4/servers.json
-    environment:
-      PGADMIN_LISTEN_PORT: 80  
-      PGADMIN_DEFAULT_EMAIL: docker
-      PGADMIN_DEFAULT_PASSWORD: docker
-      PGADMIN_CONFIG_LOGIN_BANNER: "'PGADMIN4 LOGIN: docker : docker'"
-    command:
-        - /usr/local/bin/python /pgadmin4/setup.py --load-servers /pgadmin4/servers.json --user docker
+  # pgadmin4:
+  #   image: dpage/pgadmin4
+  #   restart: always
+  #   ports: 
+  #     - 80:80
+  #   links:
+  #     - pgdb
+  #   volumes:
+  #     # - ~/.pgadmincompose:/var/lib/pgadmin
+  #     - ./pgadmin4.json:/pgadmin4/servers.json
+  #   environment:
+  #     PGADMIN_LISTEN_PORT: 80  
+  #     PGADMIN_DEFAULT_EMAIL: docker
+  #     PGADMIN_DEFAULT_PASSWORD: docker
+  #     PGADMIN_CONFIG_LOGIN_BANNER: "'PGADMIN4 LOGIN: docker : docker'"
+  #   command:
+  #       - /usr/local/bin/python /pgadmin4/setup.py --load-servers /pgadmin4/servers.json --user docker
   
   # sonarqube:
   #   image: bitnami/sonarqube:latest
