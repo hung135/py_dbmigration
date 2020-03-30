@@ -36,7 +36,7 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
             #else:
             namelist = [str(f) for f in file.filelist]
         # print(source_file)
-        types=['gzip','tar','gz']
+        types=[ 'tar','gz']
         if (any(zip_type in sublist for sublist in types) ):
         #if zip_type in ['gzip','tar']:
             logging.info("\tExtracting TAR File:{}".format(source_file))
