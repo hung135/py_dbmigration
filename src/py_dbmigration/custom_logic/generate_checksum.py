@@ -36,9 +36,9 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
     else:
 
         crc=None
-        if logic_status.logic_options.get('use_cache',False):
-            crc=fetch_cache_crc(hashlib.md5(abs_file_path))
-            logging.info("\t\tFile Not in Known Hash, generating MD5:")
+        # if logic_status.logic_options.get('use_cache',False):
+        #     crc=fetch_cache_crc(hashlib.md5(abs_file_path))
+        #     logging.info("\t\tFile Not in Known Hash, generating MD5:")
         if crc is None:
         
             crc = migrate_utils.static_func.md5_file_36(abs_file_path)
