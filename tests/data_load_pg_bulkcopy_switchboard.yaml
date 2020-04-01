@@ -1,6 +1,6 @@
 #This file is to configure mapping of files to database tables 
 #bad path test
-- path: 'switchboard@docker:pgdb'
+- path: 'switchboard@test:docker:pgdb'
   project_name: switch_board_test
   reprocess: True 
   process_logic: # this will get executed for all files
@@ -18,7 +18,7 @@
       file_encoding: 'ISO-8859-1'
 
 #good path test
-- path: 'switchboard@switchboard:pgdb'
+- path: 'switchboard@test:switchboard:pgdb'
   convert_table_name_snake_case: True
   enabled: True # activates this configration tree
   project_name: switch_board_test
