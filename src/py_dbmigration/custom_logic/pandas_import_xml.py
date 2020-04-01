@@ -152,6 +152,7 @@ def custom_logic(db, foi, df,logic_status):
             dataframe_columns = dataframe.columns.tolist()
              
             logic_status.row.rows_inserted = rows_inserted
+            logic_status.row.database_table = table_name
             logic_status.table.session.commit()
             
 

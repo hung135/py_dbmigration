@@ -118,7 +118,7 @@ class RecordKeeper():
             self.session.close()
             
             
-#            self.engine.dispose()
+            self.engine.dispose()
 
         except Exception as e:
             logging.exception(e)
@@ -129,7 +129,7 @@ class RecordKeeper():
         try:
             self.session.close()
 
-            #self.engine.dispose()
+            self.engine.dispose()
         except Exception as e:
              
             logging.exception(f"Error Occured Closing db_table Session: {e}")

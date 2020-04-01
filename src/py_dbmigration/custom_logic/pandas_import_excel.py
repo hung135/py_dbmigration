@@ -129,6 +129,7 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
 
                 rows_inserted = (len(dataframe))
                 logic_status.row.rows_inserted = rows_inserted
+                logic_status.row.database_table = table_name
                 logic_status.table.session.commit()
 
         except Exception as e:
