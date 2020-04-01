@@ -367,7 +367,7 @@ class FOI(object):
     convert_table_name_snake_case = None
     encoding = None
     mapping = None
-    def __init__(self,level1,mapping ):
+    def __init__(self,level1,mapping=[]):
 
         for key in level1:
             if str(level1[key])=='None':

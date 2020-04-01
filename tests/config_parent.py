@@ -28,11 +28,14 @@ class Config(object):
         db=self.get_pg_database(loglevel=loglevel)
         with open(yaml_file,'r') as f:
             yaml_data = yaml.full_load(f)
-          
-            for x in yaml_data[0]['mapping']:
-                test_schema=x.get('schema_name',None)
-                if test_schema is not None:
-                    db.execute("create schema {}".format(test_schema))
+            print(yaml_file)
+            for idx in yaml_data:
+                for mapping in idx.get('mapping',[]):
+                    for test_schema in mapping:
+ 
+                        if test_schema=='schema_name': 
+                            db.execute("create schema {}".format(test_schema))
+            
         return 1
 
     def get_pg_database(self,appname=__file__,loglevel=None):

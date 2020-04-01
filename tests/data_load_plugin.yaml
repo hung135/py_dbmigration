@@ -12,15 +12,13 @@
   process_logic: # this will get executed for all files
     - logic: 'custom_logic.abort_if_duplicate'  
     - logic: 'custom_logic.count_file_linux_wc'
-    - logic: 
-        plugin: 'tests/plugin_logic/plugin_logic_sample.py'
+    - plugin: 'tests/plugin_logic/plugin_logic_sample.py'
     
   mapping: #lis of logic to run for each specify file type that matches the file_regex below
     - file_regex: '^.*.csv$'
       file_type: 'csv'
       process_logic:
-        - logic: 
-            plugin: 'tests/plugin_logic/plugin_logic_sample2.py'
+        - plugin: 'tests/plugin_logic/plugin_logic_sample2.py'
  
     
      

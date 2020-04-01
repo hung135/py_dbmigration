@@ -14,8 +14,7 @@
     - logic: 'custom_logic.load_status'
     - logic: 'custom_logic.generate_checksum'
     - logic: 'custom_logic.log_file_size'
-    - logic: 
-        plugin: '/workspace/tests/plugin_logic/plugin_logic_sample.py'
+    - plugin: '/workspace/tests/plugin_logic/plugin_logic_sample.py'
     - logic: 'custom_logic.abort_if_duplicate'
   #post_process_logic: #logic to be ran after everything else regarless of exceptions to above
   #  - logic: 'custom_logic.load_status_post_import'

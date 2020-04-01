@@ -117,7 +117,7 @@ def execute_sql(db, sql_list, foi, df,label=''):
             logging.info(f"\t{label}SQL Step #: {id} {shorten_sql}")
 
             t = datetime.datetime.now()
-            #print("modified sql",modified_sql)
+           
             db.execute(modified_sql, catch_exception=False)
             
 
@@ -137,7 +137,8 @@ def get_imported_plugin_module(custom_logic,foi,curr_plugin):
     imported_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(imported_module)
     return imported_module
-def get_imported_module(custom_logic,foi):
+def get_imported_module(custom_logic: str,foi):
+    
     logic_name = custom_logic.split('.')[-1]
     #foi.logic_options['name']=custom_logic
      
@@ -162,12 +163,20 @@ def loop_through_logic(foi, db, df,process_logic):
         #advanced process logic config
         
         if custom_logic is not None:
-            imported_module = get_imported_module(custom_logic,foi)
+             
+            if isinstance(custom_logic,dict):
+
+                imported_module = get_imported_module(custom_logic['name'],foi)
+            else:
+                imported_module = get_imported_module(custom_logic,foi)
+            
             logic_name = f'py_dbmigration.{custom_logic}'
         
         elif plugin_logic is not None: 
-   
-            imported_module = get_imported_plugin_module(logic,foi,plugin_logic)
+            if isinstance(plugin_logic,dict):
+                imported_module = get_imported_plugin_module(logic,foi,plugin_logic)
+            else:
+                imported_module = get_imported_plugin_module(logic,foi,plugin_logic['name'])
             logic_name = os.path.basename(plugin_logic) 
             
         

@@ -40,5 +40,5 @@
       has_header: False
       user_header: False
       post_action: 
-        - sql: "vacuum analyze {schema_name}.{table_name}"
+        - sql: "vacuum analyze {{schema_name}}.{{{table_name}}}"
     

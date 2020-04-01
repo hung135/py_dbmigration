@@ -48,9 +48,12 @@ def process_yaml(yaml_file=None):
             for key in path_dict.keys():
                 if key.upper()!='MAPPING':
                     level1[key]=path_dict[key]
-        
-            for mapping in path_dict['mapping']:
-                datafiles.append(FOI(level1,mapping))
+            mapping=path_dict.get('mapping',False)
+            if mapping==False:
+                datafiles.append(FOI(level1))
+            else:
+                for mapping in path_dict['mapping']:
+                    datafiles.append(FOI(level1,mapping))
  
                                              
 
@@ -112,8 +115,10 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
         elif not (args.ll is None):
             logging.setLevel(str( args.ll).upper())
         yamlfile=args.yaml
+        cores = int(cores or args.cores)
     else:
-        if (logging_mode is not None) and str(logging_mode ).isnumeric:
+        if (logging_mode is not None) and str(logging_mode).isnumeric():
+             
             logging.setLevel(int( logging_mode))
         elif (logging_mode is not None):
             logging.setLevel(str( logging_mode).upper())
@@ -125,7 +130,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
     PGDATASCHEMA = schema or os.getenv('PGDATASCHEMA',schema)
     
 
-    sub_proc_count=int(cores or args.cores)
+    sub_proc_count=int(cores or 1)
     if len(datafiles) > 0:
 
         #so pyinstall will pick it upt

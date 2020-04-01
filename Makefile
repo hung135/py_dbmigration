@@ -2,11 +2,12 @@ PHONY: build
 version_file=src/py_dbmigration/version.py
 GIT_HASH := $(shell git rev-parse HEAD)
 DATE:= ${shell date}
+
 #the first remote will be used
 GIT_HASH_URL:=$(shell git remote -v | head -n1 | sed -e"s/\t/ /g" | cut -d " " -f 2)
 # all: clean build
 # 	echo "Building ALL"
-build: clean
+build: clean version
 	#python setup.py sdist bdist_wheel build
 	python setup.py build
 dist:
@@ -29,8 +30,9 @@ version:
 	echo "\"url\":\"${GIT_HASH_URL}/commit/${GIT_HASH}\",">>${version_file}
 	echo "\"check_out_syntax\":\"git checkout ${GIT_HASH} .\"," >>${version_file}
 	echo "\"build_time\":\"${DATE}\"">>${version_file}
-	  
+	 
 	echo "}">>${version_file}
+
 	cat ${version_file}
 exe: clean_exe 
 	# pyinstaller src/py_dbmigration/data_load.py -w --onefile \

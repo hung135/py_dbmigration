@@ -170,10 +170,15 @@ class DataFile:
                     self.FilesOfInterest = self.walk_s3(
                         files_of_interest)
                 elif 'switchboard@' in files_of_interest.file_path:
+                    prog = re.compile('switchboard@.*:.*')
+                    if not prog.match( files_of_interest.file_path):
+                        raise Exception ("Bad Format Switchboard","switchboard@<dbname>:<hostname>")
                     import py_dbutils.rdbms.postgres as dbconn 
-                    switch_db_hostname = files_of_interest.file_path.split('@')[-1]
+                    switch_db_hostname = files_of_interest.file_path.split(':')[-1]
+                    switch_db_name = files_of_interest.file_path.split(':')[-2]
+                    logging.debug("Connecting to Switchboard : {switch_db_name} : {switch_db_hostname}")
                    
-                    sw_db=dbconn.DB(host=switch_db_hostname,dbname='switchboard')
+                    sw_db=dbconn.DB(host=switch_db_hostname,dbname=switch_db_name)
                      
                     file_list=[]
                     id_list=[]
@@ -185,8 +190,7 @@ class DataFile:
                              
                         # file_list.append(file_path)
                         # id_list.append(id)
-                        print("----seting switchboard files found")
-                        print(files_of_interest.file_path)
+                          
                         switchboard_foi=(self.foi_from_list(files_of_interest,[file_path]))
                         switchboard_foi.file_type= file_path.split('.')[-1].upper()
                         #putting each file into meta_source

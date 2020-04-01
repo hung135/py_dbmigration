@@ -1,5 +1,24 @@
 #This file is to configure mapping of files to database tables 
-- path: 'switchboard@'
+#bad path test
+- path: 'switchboard@' 
+  project_name: switch_board_test
+  reprocess: True 
+  process_logic: # this will get executed for all files
+    - logic: 'custom_logic.count_file_linux_wc' 
+  reset_failed: False
+  mapping: 
+    - file_regex: '.*test.csv$'
+      file_type: 'CSV'
+      schema_name: 'switch_board_test'
+      reprocess: True
+      table_name: 'test'
+      file_delimiter: ","
+      process_logic:
+        - logic: 'custom_logic.pg_bulk_copy'
+      file_encoding: 'ISO-8859-1'
+
+#good path test
+- path: 'switchboard@switchboard:pgdb'
   convert_table_name_snake_case: True
   enabled: True # activates this configration tree
   project_name: switch_board_test
