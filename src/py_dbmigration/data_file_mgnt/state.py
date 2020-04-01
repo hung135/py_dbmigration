@@ -385,7 +385,7 @@ class FOI(object):
 
         #ensure variable data types are proper here so we don't have to massage it else wheres
         self.file_path = self.path or self.file_path
-        if not (self.file_path.startswith('S3') or self.file_path.startswith('SWITCHBOARD@')):
+        if not (self.file_path.lower().startswith('s3') or self.file_path.lower().startswith('switchboard@')):
             self.file_path = os.path.abspath(self.file_path)
             
          

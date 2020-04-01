@@ -1,6 +1,6 @@
 #This file is to configure mapping of files to database tables 
 #bad path test
-- path: 'switchboard@' 
+- path: 'switchboard@docker:pgdb'
   project_name: switch_board_test
   reprocess: True 
   process_logic: # this will get executed for all files

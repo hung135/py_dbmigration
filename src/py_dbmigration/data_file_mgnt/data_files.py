@@ -163,19 +163,25 @@ class DataFile:
 
         for files_of_interest in self.foi_list:
             if files_of_interest.file_path is not None:
+                
                 #assert isinstance(files_of_interest, FilesOfInterest)
                 file_path = files_of_interest.file_path[:5]
-                if file_path == 's3://':
+                if file_path.upper() == 'S3://':
+                    prog = re.compile('S3://.*')
+
+                    if not prog.match( files_of_interest.file_path):
+                        raise Exception ("Bad Format S3","S3://<url>")
+
                     logging.info("Walking AWS s3")
                     self.FilesOfInterest = self.walk_s3(
                         files_of_interest)
-                elif 'switchboard@' in files_of_interest.file_path:
-                    prog = re.compile('switchboard@.*:.*')
+                elif 'switchboard@' in files_of_interest.file_path.lower():
+                    prog = re.compile('switchboard@.*:.*') 
                     if not prog.match( files_of_interest.file_path):
                         raise Exception ("Bad Format Switchboard","switchboard@<dbname>:<hostname>")
                     import py_dbutils.rdbms.postgres as dbconn 
                     switch_db_hostname = files_of_interest.file_path.split(':')[-1]
-                    switch_db_name = files_of_interest.file_path.split(':')[-2]
+                    switch_db_name = files_of_interest.file_path.split(':')[0].split('@')[-1]
                     logging.debug("Connecting to Switchboard : {switch_db_name} : {switch_db_hostname}")
                    
                     sw_db=dbconn.DB(host=switch_db_hostname,dbname=switch_db_name)
