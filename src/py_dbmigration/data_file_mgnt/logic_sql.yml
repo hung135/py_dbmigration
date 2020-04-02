@@ -7,8 +7,8 @@ sql_get_work:
     current_worker_host_pid={2},
     process_start_dtm=now(),
     last_error_msg=NULL
-    WHERE (file_path ||file_name) in
-    (select file_path ||file_name
+    WHERE id in
+    (select id
       FROM {0}.meta_source_files
       WHERE  file_process_state='RAW' and current_worker_host is null
       and reprocess=True

@@ -551,7 +551,7 @@ class DataFile:
         sql = self.sql_yaml['sql_get_work'].format(
             db_table.db_table_def.MetaSourceFiles.DbSchema,
             self.host, self.curr_pid, project_list)
-        logging.debug(f"Claming work SQL: {sql}")   
+        logging.debug(f"Claiming work SQL: {sql}")   
         t.engine.execute(sql)
 
         t.session.commit()
