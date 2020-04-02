@@ -592,8 +592,8 @@ class DataFile:
         
         scripts=[] 
         for foi in foi_list:
-            if hasattr('foi','pre_process_scripts'):
-                scripts = foi.pre_process_scripts
+            #just take the last instance
+            scripts = foi.pre_process_scripts
         utils.loop_through_scripts(db,scripts)
         
     def do_post_process_scripts(self,db,foi_list):
@@ -601,8 +601,8 @@ class DataFile:
         scripts=[] 
         #take any since they are all supposed to be the same
         for foi in foi_list:
-            if hasattr('foi','post_process_scripts'):
-                scripts = foi.post_process_scripts
+            #just take the last instance
+            scripts = foi.post_process_scripts
         utils.loop_through_scripts(db,scripts)
 
     # Do work will query the meta source table for a record
@@ -614,7 +614,8 @@ class DataFile:
 
         # iterate over each file in the logging.meta_source_files table
         # get work will lock 1 file and store the id into meta_source_file_id
-        # inside this instance
+        # inside this instance 
+        
         self.do_pre_process_scripts(db,self.foi_list)
         get_work_status=WorkState.HAVE_MORE_WORK
         while get_work_status in [WorkState.SLEEP, WorkState.HAVE_MORE_WORK]:

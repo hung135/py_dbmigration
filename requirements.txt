@@ -1,22 +1,13 @@
 
 twine
-psycopg2-binary
 pandas
-sqlalchemy
 xlsxwriter
 requests
-BeautifulSoup4
-inflection
 pyyaml
 py-dbutils
-BeautifulSoup4
-prettytable
-autopep8
 pyinstaller
 xlrd
-openpyxl
 statistics
 jaydebeapi
-boto3
 pytest-cov
 pgcli

@@ -1,4 +1,4 @@
-FROM centos:6.7
+FROM centos:6.8
 
 RUN yum -y update && \
     yum -y install yum-utils tar && \
@@ -14,5 +14,6 @@ RUN easy_install-3.6 pip && \
 RUN mkdir -p Build/
 WORKDIR Build/
 
-COPY requirements.txt src/
-RUN pip3 install -r src/requirements.txt
+#COPY requirements.txt src/
+#RUN pip3 install -r src/requirements.txt
+RUN pip3 install pandas twine pyyaml pytest-cov xlrd

@@ -46,6 +46,7 @@ def process_yaml(yaml_file=None):
         for path_dict in paths:
             level1={}
             for key in path_dict.keys():
+                
                 if key.upper()!='MAPPING':
                     level1[key]=path_dict[key]
             mapping=path_dict.get('mapping',False)

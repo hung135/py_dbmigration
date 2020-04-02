@@ -374,6 +374,7 @@ class FOI(object):
                 setattr(self, key, None)
             else:
                 setattr(self, key, level1[key])
+                #print("----foi key ",key,level1[key])
 
         for key in mapping:
             if str(mapping[key])=='None':
@@ -398,7 +399,7 @@ class FOI(object):
             self.column_list =  self.column_list.replace(' ', '').replace('\n', '').split(',')
         if self.column_list2 is not None:
             self.column_list2 = self.column_list2.replace(' ', '').replace('\n', '').split(',')
-    
+        print(self.pre_process_scripts)
     #set runtime values for any objects
     def render_runtime_data(self,df):
         obj=self
@@ -429,7 +430,9 @@ class FOI(object):
             'project_name':self.project_name,
             'regex_pattern': self.regex,
             'file_path':self.path,
-            'current_file':self.file_path
+            'current_file':self.file_path,
+            'pre_process_scripts': self.pre_process_scripts,
+            'post_process_scripts': self.post_process_scripts
 
         }
          

@@ -4,10 +4,9 @@
   project_name: test_1
   reprocess: True # flag used to identify files we want to attempt to re-run the next go around
   pre_process_scripts: # note there is no file data here yet since this operates before any meta data is even loaded
-    - 'tests/plugin_logic/plugin_logic_runonce.py'
-    - 'tests/plugin_logic/plugin_logic_runonce.py'
+    - 'tests/plugin_logic/plugin_logic_runonce_pre.py'
   post_process_scripts: # note there is no file data here yet since this operates before any meta data is even loaded
-    - 'tests/plugin_logic/plugin_logic_runonce.py'
+    - 'tests/plugin_logic/plugin_logic_runonce_post.py'
     
   process_logic: # this will get executed for all files
     - logic: 'custom_logic.abort_if_duplicate'  
@@ -16,6 +15,10 @@
     
   mapping: #lis of logic to run for each specify file type that matches the file_regex below
     - file_regex: '^.*.csv$'
+      file_type: 'csv'
+      process_logic:
+        - plugin: 'tests/plugin_logic/plugin_logic_sample2.py'
+    - file_regex: '^.*.txt$'
       file_type: 'csv'
       process_logic:
         - plugin: 'tests/plugin_logic/plugin_logic_sample2.py'

@@ -174,9 +174,9 @@ def loop_through_logic(foi, db, df,process_logic):
         
         elif plugin_logic is not None: 
             if isinstance(plugin_logic,dict):
-                imported_module = get_imported_plugin_module(logic,foi,plugin_logic)
-            else:
                 imported_module = get_imported_plugin_module(logic,foi,plugin_logic['name'])
+            else:
+                imported_module = get_imported_plugin_module(logic,foi,plugin_logic)
             logic_name = os.path.basename(plugin_logic) 
             
         

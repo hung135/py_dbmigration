@@ -48,8 +48,8 @@ exe: clean_exe
 	tar -czvf artifact.tar -C exe/ .
 
 buildbase:
-	docker image rm buildbase:latest
-	docker build -t buildbase -f Build.Dockerfile_base .
+	docker image rm buildbase2:latest || true
+	docker build -t buildbase2 -f Build.Dockerfile_base .
 
 buildCentos6: version
 	./BuildTarget.sh

@@ -17,5 +17,5 @@ import logging
  
 
 def process(db):
-    print("-------\n\nrun once only\n\n")
+    print("------> Test Run ONce\n\nrun once only Pre\n\n",__file__)
     return True
