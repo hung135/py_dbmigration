@@ -73,8 +73,7 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
                     print("no col value")
                     print(sn)
                     print(pcol)
-
-                print("foi.header_row_location")
+ 
                 print(header_row_location)
 
                 # check for sheet_name
@@ -100,11 +99,10 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
                 print(foi.column_list)
                 if foi.column_list is None:
                     foi.column_list=[]
-                
-                print(foi.use_header)
+                 
                 print(len(foi.column_list))
                 # not use header row and column_list attribute is provided.
-                if not foi.use_header and len(foi.column_list) > 0:
+                if not foi.get('use_header',True) and len(foi.column_list) > 0:
                     dataframe.columns = map(str,
                                             column_list
                                             # names

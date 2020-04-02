@@ -15,7 +15,7 @@ import time
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
 from py_dbmigration.data_file_mgnt import utils 
-from py_dbmigration.data_file_mgnt.state import FilesOfInterest, DataFileState, FOI,LogicState, WorkState
+from py_dbmigration.data_file_mgnt.state import ChildFOI, DataFileState, FOI,LogicState, WorkState
 import os
 import logging as log
 
@@ -54,12 +54,10 @@ def get_mapped_table(file_name, foi_list):
     import copy
 
     for i in foi_list:
-        # print(i.regex)
-        # if i.table_name is not None:
-        assert isinstance(i, FilesOfInterest) or isinstance(i, FOI)
+        assert isinstance(i, ChildFOI) or isinstance(i, FOI)
 
         if re.match(i.regex, file_name, re.IGNORECASE):
-            # print("***FOI.regex:", i.regex, i.table_name, file_name)
+            
             logging.info(
                 "File->Table mapping found: {} {}".format(i.file_type, i.regex))
             return copy.copy(i)
@@ -112,7 +110,7 @@ class DataFile:
 
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
-        #assert isinstance(foi_list[0], FilesOfInterest)
+        #assert isinstance(foi_list[0], ChildFOI)
 
         curr_path = (os.path.dirname(__file__))
 
@@ -164,7 +162,7 @@ class DataFile:
         for files_of_interest in self.foi_list:
             if files_of_interest.file_path is not None:
                 
-                #assert isinstance(files_of_interest, FilesOfInterest)
+                #assert isinstance(files_of_interest, ChildFOI)
                 file_path = files_of_interest.file_path[:5]
                 if file_path.upper() == 'S3://':
                     prog = re.compile('S3://.*')
@@ -173,7 +171,7 @@ class DataFile:
                         raise Exception ("Bad Format S3","S3://<url>")
 
                     logging.info("Walking AWS s3")
-                    self.FilesOfInterest = self.walk_s3(
+                    self.ChildFOI = self.walk_s3(
                         files_of_interest)
                 elif 'switchboard@' in files_of_interest.file_path.lower():
                     prog = re.compile('switchboard@.*:.*:.*') 
@@ -207,19 +205,19 @@ class DataFile:
                 else:
                     if os.path.isdir(files_of_interest.file_path):
 
-                        self.FilesOfInterest = self.walk_dir(
+                        self.ChildFOI = self.walk_dir(
                             files_of_interest)
 
                     else:
                         logging.error("Directory from Yaml does not exists: {}".format(
                             files_of_interest.file_path))
                         sys.exit(1)
-                    self.FilesOfInterest.parent_file_id = self.file_id
+                    self.ChildFOI.parent_file_id = self.file_id
 
-                    if not 0 >= len(list(self.FilesOfInterest.file_list)):
-                        #print(self.FilesOfInterest,"-------------")
+                    if not 0 >= len(list(self.ChildFOI.file_list)):
+                        #print(self.ChildFOI,"-------------")
                         self.insert_working_files(
-                            db, self.FilesOfInterest, self.parent_file_id)
+                            db, self.ChildFOI, self.parent_file_id)
 
     def init_db(self):
         appname = os.path.basename(__file__)+"init_db"
@@ -274,7 +272,7 @@ class DataFile:
     # that id gets stored with the meta data about the file to later use
 
     def insert_working_files(self, db, foi, parent_file_id=0):
-        assert isinstance(foi, FilesOfInterest) or isinstance(
+        assert isinstance(foi, ChildFOI) or isinstance(
             foi, FOI)
         appname = os.path.basename(__file__)+"insert_working_files"
         t = db_table.db_table_func.RecordKeeper(
@@ -356,15 +354,14 @@ class DataFile:
 
     @staticmethod
     def walk_s3(foi,  db=None):
-        import boto3
-
-        regex = None
+        import boto3.s3
+ 
         try:
-            regex = re.compile(foi.regex)
+            regex = re.compile(foi.file_regex)
         except Exception :
             logging.exception(
-                "Bad Regex Pattern for Walking Directory: '{}'".format(foi.regex))
-            return none
+                "Bad Regex Pattern for Walking Directory: '{}'".format(foi.file_regex))
+            return None
 
         s3 = boto3.resource('s3')
         split_url = foi.file_path.replace('s3://', '').split('/')
@@ -419,19 +416,19 @@ class DataFile:
     @staticmethod
     def walk_dir(foi):
         """Walks a directory structure and returns all files that match the regex pattern
-        :rtype: FilesOfInterest
+        :rtype: ChildFOI
         """
-        assert isinstance(foi, FilesOfInterest) or isinstance(foi, FOI)
+        assert isinstance(foi, ChildFOI) or isinstance(foi, FOI)
         file_path = foi.file_path
         logging.debug("Walking Directory: '{}' : Search Pattern: {}".format(
-            file_path, foi.regex))
+            file_path, foi.file_regex))
 
         regex = None
         try:
-            regex = re.compile(foi.regex)
+            regex = re.compile(foi.file_regex)
         except Exception as e:
             logging.exception(
-                "Bad Regex Pattern for Walking Directory: '{}' \n{}".format(foi.regex, e))
+                "Bad Regex Pattern for Walking Directory: '{}' \n{}".format(foi.file_regex, e))
             raise
 
         files_list = []

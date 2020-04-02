@@ -92,10 +92,10 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
     
      
     header = ''
-    if foi.use_header or foi.has_header:
+    if foi.get('use_header',True) or foi.get('has_header',True):
         with_options.append("HEADER")
     #header only works for csv
-    if foi.use_header:
+    if foi.get('use_header',True):
         with open(data_file,'r',encoding=encoding) as f:
             for row in f:
                 cols=row.replace(delim,',')

@@ -109,7 +109,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         file_name=sys._getframe().f_code.co_name
         db=self.get_pg_database(appname=self.whoami(),loglevel=logging.level)
         print('# In function:', sys._getframe().f_code.co_name)
-        # datafiles = dfm.DataFile([dfm.FilesOfInterest('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
+        # datafiles = dfm.DataFile([dfm.ChildFOI('account', r'^d.*.txt', '', None, self.schema, has_header=self.SAMPLE_DATA_HAS_HEADER)]
         print("Truncating Logging Tables:")
 
         db.execute(
@@ -122,10 +122,10 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         
         # This is how we store the files we are looking for List of FileOfInterest
         foi_list = [
-            data_files.FilesOfInterest('CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
+            data_files.ChildFOI('CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
                                        parent_file_id=0)]
         foi_list.append(
-            data_files.FilesOfInterest('ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
+            data_files.ChildFOI('ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
                                        parent_file_id=0))
 
         df = data_files.DataFile(working_path=self.dirs["sample_working_dir"], db=db, foi_list=foi_list,
@@ -142,7 +142,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         # for r in records:
         #     assert isinstance(r, db_table.db_table_def.TableFilesRegex)
 
-        #     foi_list.append(data_files.FilesOfInterest(
+        #     foi_list.append(data_files.ChildFOI(
         #         file_type='CSV', table_name=str("tbl_1"), file_regex=str(r.regex),
         #         file_delimiter=str(r.delimiter), column_list=None, schema_name=str(r.db_schema),
         #         has_header=self.SAMPLE_DATA_HAS_HEADER, append_file_id=self.GENERATE_FILE_ID,
@@ -165,10 +165,10 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
     def make_foi(self):
         # This is how we store the files we are looking for List of FileOfInterest
         foi_list = [
-            data_files.FilesOfInterest('CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
+            data_files.ChildFOI('CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
                                        parent_file_id=0)]
         foi_list.append(
-            data_files.FilesOfInterest('ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
+            data_files.ChildFOI('ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
                                        parent_file_id=0))
         return foi_list
 

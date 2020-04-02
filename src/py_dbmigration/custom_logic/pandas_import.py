@@ -43,7 +43,7 @@ def custom_logic(db, foi, df,logic_status):
     file_type = foi.file_type
     file_id = df.file_id
 
-    delim = foi.new_delimiter or foi.file_delimiter
+    delim = foi.file_delimiter
     append_file_id = foi.append_file_id
  
     if db is not None:
@@ -83,7 +83,7 @@ def custom_logic(db, foi, df,logic_status):
                 if foi.column_list is None:
                     foi.column_list=[]
                     
-                if not foi.use_header and len(foi.column_list) > 0:
+                if not foi.get('use_header',True) and len(foi.column_list) > 0:
                     dataframe.rename(columns=lambda x: str(x).strip(), inplace=True)
                     dataframe.columns = map(str,
                                             # foi.column_list
