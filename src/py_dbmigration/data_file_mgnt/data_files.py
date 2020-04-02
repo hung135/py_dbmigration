@@ -551,6 +551,7 @@ class DataFile:
         sql = self.sql_yaml['sql_get_work'].format(
             db_table.db_table_def.MetaSourceFiles.DbSchema,
             self.host, self.curr_pid, project_list)
+        logging.debug("Claming work SQL: ", sql)   
         t.engine.execute(sql)
 
         t.session.commit()
@@ -558,7 +559,7 @@ class DataFile:
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,
                            db_table.db_table_def.MetaSourceFiles.current_worker_host_pid == self.curr_pid,
                            db_table.db_table_def.MetaSourceFiles.process_end_dtm == None)
-
+        logging.debug("Pulling in Work meta in va SQLAlchemy")
         if row is None:
             logging.info("\tNo Work Left, Checking Unzip in Progress")
             sql = self.sql_yaml['sql_any_proc_still_unzipping']
@@ -619,8 +620,9 @@ class DataFile:
         self.do_pre_process_scripts(db,self.foi_list)
         get_work_status=WorkState.HAVE_MORE_WORK
         while get_work_status in [WorkState.SLEEP, WorkState.HAVE_MORE_WORK]:
+            logging.debug("Getting work")
             get_work_status=self.get_work(db)
-            
+            logging.debug("Got Work")
             if get_work_status == WorkState.HAVE_MORE_WORK:
                 try:
                     full_file_name = os.path.join(
