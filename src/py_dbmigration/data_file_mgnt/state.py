@@ -93,7 +93,7 @@ class DataFileState:
     def processed(self):
         if not self.status in [FileStateEnum.FAILED,FileStateEnum.DUPLICATE,FileStateEnum.OBSOLETE]:
             self.status=FileStateEnum.PROCESSED
-        else  
+        else:
             self.status=FileStateEnum.FAILED
         self.row.file_process_state=self.status.value
         
