@@ -185,9 +185,11 @@ class LogicState:
   
         if not ( self.row.file_process_state  in ('OBSOLETE','FAILED','DUPLICATE')):
             self.status=LogicStateEnum.COMPLETE
+            self.row.file_process_state=LogicStateEnum.COMPLETE.value
             self.continue_processing_logic=True
         else:
             self.continue_processing_logic=False
+            self.row.file_process_state=LogicStateEnum.FAILED.value
         if self.row.process_msg_trail is None:
             self.row.process_msg_trail=self.name[:2000]
         else:
