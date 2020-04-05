@@ -90,13 +90,14 @@ class DataFileState:
 
     def authenticate(self):
         pass
-    def processed(self):
+    def processed(self,reprocess=False):
         if not self.status in [FileStateEnum.FAILED,FileStateEnum.DUPLICATE,FileStateEnum.OBSOLETE]:
             self.status=FileStateEnum.PROCESSED
         else:
             self.status=FileStateEnum.FAILED
+        logging.debug(f"Processed: Reprocess: {reprocess}, Statue: {self.status.value}")
+        self.row.reprocess=reprocess
         self.row.file_process_state=self.status.value
-        
         self.table.session.commit()
         return self.status.value
     def obsolete(self):
@@ -109,10 +110,13 @@ class DataFileState:
         self.row.file_process_state=self.status.value
         self.table.session.commit()
         return False        
-    def failed(self,msg):
+    def failed(self,msg,reprocess=False):
+        logging.error(f"FAILED: {msg}")
         self.table.session.rollback()
-        
+        logging.error(f"FAILED: Reprocess: {reprocess}, Prev Status: {self.status.value}")
         self.status=FileStateEnum.FAILED
+        
+        self.row.reprocess=reprocess
         self.row.file_process_state=self.status.value
         self.row.last_error_msg=str(msg)
         self.table.session.commit()
@@ -248,7 +252,7 @@ class FilesOfInterest:
                  new_delimiter=None, dataset_name=None, redaction_file=None,
                  upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
                  post_action=None, pre_action=None, process_logic=None, project_name='Default',
-                 table_name_extract=None, reprocess=True, yaml=None,mapping=None):
+                 table_name_extract=None, reprocess=False, yaml=None,mapping=None):
         self.yaml = yaml
         self.mapping = mapping
         # avoid trying to put any logic here
@@ -362,7 +366,7 @@ class FOI(object):
     post_process_logic = [] #these logic will get executed regardless
     pre_process_scripts = []
     post_process_scripts = []
-    reprocess=None 
+    reprocess=False 
     extract_file_name_data = None
     format_extracted_date = None
     file_name_data_regex = None

@@ -553,7 +553,7 @@ class DataFile:
             self.host, self.curr_pid, project_list)
         logging.debug(f"Claiming work SQL: {sql}")   
         t.engine.execute(sql)
-
+        logging.debug(f"Work Claimed")
         t.session.commit()
 
         row = t.get_record(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,

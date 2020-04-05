@@ -272,11 +272,9 @@ def process_logic(foi, db, df):
         logging.exception(f"Failed executing Pre Load action: {e}")
         df.current_file_state.failed(e)
     else:
-        
-        logic_status.row.reprocess=foi.reprocess or False
-        #reprocess=foi.reprocess or False
-        logic_status.file_state.processed()
+         
+        logic_status.file_state.processed(foi.reprocess)
         purge.process(db, foi, df)
         # putthing this here for now since I can not find why table.session.commit() is not committing
         #print("----------",f"update logging.meta_source_files set file_process_state='PROCESSED',reprocess={reprocess} where id={df.file_id}")
-        #db.execute(f"update logging.meta_source_files set file_process_state='PROCESSED',reprocess={reprocess} where id={df.file_id}")
+        #db.execute(f"update logging.meta_source_files set  reprocess={reprocess} where id={df.file_id}")
