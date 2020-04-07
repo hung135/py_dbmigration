@@ -1,0 +1,6 @@
+ 
+- path: '/workspace/tests/sample_data/'
+  write_path: '/workspace/tmp/'
+  project_name: test_1
+  pre_process_scripts: 
+    - 'tests/plugin_logic/plugin_logic_runonce_pre.py'

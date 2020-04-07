@@ -151,7 +151,7 @@ class DataFile:
         self.work_file_type = 0
         self.total_files = 0
         self.curr_file_success = False
-       
+        self.FilesOfInterest = None
         self.total_data_file_count = 0
         self.foi_list = foi_list
         self.rows_inserted = 0  # initialzed in constructor
@@ -183,7 +183,7 @@ class DataFile:
                     switch_db_hostname = files_of_interest.file_path.split(':')[-1]
                     switch_db_name = files_of_interest.file_path.split(':')[1] 
                     switch_project_name = files_of_interest.file_path.split(':')[0].split('@')[-1]
-                    logging.debug("Connecting to Switchboard : {switch_db_name} : {switch_db_hostname}")
+                    logging.debug(f"Connecting to Switchboard : {switch_db_name} : {switch_db_hostname}")
                    
                     sw_db=dbconn.DB(host=switch_db_hostname,dbname=switch_db_name)
                      
@@ -206,17 +206,19 @@ class DataFile:
                         sw_db.execute(f"update switchboard.switchboard_history set state='C' where id={id}")
                 else:
                     if os.path.isdir(files_of_interest.file_path):
-
-                        self.FilesOfInterest = self.walk_dir(
-                            files_of_interest)
+                        if files_of_interest.regex:
+                            
+                            self.FilesOfInterest = self.walk_dir( files_of_interest)
+                            self.FilesOfInterest.parent_file_id = self.file_id
 
                     else:
                         logging.error("Directory from Yaml does not exists: {}".format(
                             files_of_interest.file_path))
                         sys.exit(1)
-                    self.FilesOfInterest.parent_file_id = self.file_id
+                    
 
-                    if not 0 >= len(list(self.FilesOfInterest.file_list)):
+                    if  ( self.FilesOfInterest):
+                        # or   len(list(self.FilesOfInterest.file_list))<0:
                         #print(self.FilesOfInterest,"-------------")
                         self.insert_working_files(
                             db, self.FilesOfInterest, self.parent_file_id)
@@ -428,6 +430,7 @@ class DataFile:
 
         regex = None
         try:
+ 
             regex = re.compile(foi.regex)
         except Exception as e:
             logging.exception(
@@ -590,7 +593,8 @@ class DataFile:
         t.close()
         return WorkState.HAVE_MORE_WORK
     def do_pre_process_scripts(self,db,foi_list):
-        
+        print(self.foi_list)
+
         scripts=[] 
         for foi in foi_list:
             #just take the last instance
