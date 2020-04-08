@@ -1,4 +1,4 @@
-import logging
+import logging as lg
 import pprint
 from sqlalchemy import MetaData
 import sqlalchemy
@@ -9,33 +9,39 @@ from sqlalchemy import exc as sqlachemy_exception
 from sqlalchemy.ext.declarative import declarative_base
 from .db_table_def import MetaBase, MetaSourceFiles
 
+logging=lg.getLogger('RecordKeeper')
 
 class RecordKeeper():
 
     engine_dict = {}
     table_dict = {}
-
+    table_def = None
+    session = None
     def __init__(self, db, table_def, appname=__file__):
         # type: (dbutils.conn, str, str) -> object
         """
 
         :rtype: 
         """
+ 
+        self.table_def=table_def
         #self.engine_dict = {}
         self.table_dict = {}
         self.host = db.host
-        self.dbschema = 'logging'
+        self.dbschema = 'logging2'
         self.database = db.dbname
         self.appname = appname
         self.engine = None  # instance
         #assert isinstance(db, db_utils.DB)
-
+        
         key = str(table_def.DbSchema + table_def.__tablename__)
- 
+     
         self.table = self.table_dict.get(key, None)
         if self.table is None:
             self.table_dict[key] = table_def
             self.table = self.table_dict[key]
+        else:
+            raise("Error only one instace allowed: Fix your code")
 
         # db.connect_SqlAlchemy()
         sql_alchemy_uri_connected = db.sql_alchemy_uri.format(
@@ -48,6 +54,7 @@ class RecordKeeper():
         )
 
         self.engine = sqlalchemy.create_engine(sql_alchemy_uri_connected)
+        
         #self.engine = self.engine_dict['only1']
 
         # try:
@@ -56,32 +63,34 @@ class RecordKeeper():
         # except sqlachemy_exception.ProgrammingError as e:
         #     logging.warning(e)
 
-        MetaBase.metadata.create_all(bind=self.engine)
-
+        #MetaBase.metadata.create_all(bind=self.engine)
+        #print(x)
         # create session
 
         Session = sqlalchemy.orm.sessionmaker()
         Session.configure(bind=self.engine)
-        self.session = Session(bind=self.engine)
-
+        self.session = Session(bind=self.engine) 
         # reflecting whole schema
         self.metadata = MetaData()
         self.metadata.reflect(bind=self.engine)
+        
+        self.table_def.metadata.create_all(bind=self.engine)
+    def delete_record(self, row, commit=False):
 
-    def add_record(self, table, commit=False):
+        # remove row from database
+
+        self.session.delete(row)
+
+        if commit:
+            self.commit()
+                  
+    def add_record(self, row, commit=False):
 
         # add row to database
 
-        self.session.add(table)
-
+        self.session.add(row)
         if commit:
-            try:
-                self.session.commit()
-
-            except Exception as e:
-                logging.exception(e)
-                 
-                self.session.rollback()
+            self.commit()
 
     def print_row(self, row):
         print(type(row), dir(row))
@@ -89,48 +98,33 @@ class RecordKeeper():
             print(i)
 
     def get_all_records(self):
-
         row = self.session.query(self.table).all()
-
         return row
 
-    def get_record(self, *row):
+    def get_record(self, *row,obj=MetaSourceFiles):
         # update row to database
-        row = self.session.query(MetaSourceFiles).filter(
-            *row).order_by(MetaSourceFiles.id.desc()).first()
-
+        row = self.session.query(obj).filter(*row)
         return row
 
     def commit(self):
         try:
             self.session.commit()
-        except sqlalchemy.exc.IntegrityError as e:
-            logging.warning(
-                "Duplicate Found: This library will ignore duplicate records")
-            print(e)
-        except:
+        except Exception as e:
+            logging.exception(e)
             self.session.rollback()
 
     def close(self):
         logging.debug("Closing SqlAlchemy Engine: {}".format(self.appname))        
         try:
- 
-            self.session.close()
             
-            
-            self.engine.dispose()
+            self.commit() 
+             
 
         except Exception as e:
-            logging.exception(e)
+            logging.error('error closing')
     def __del__(self):
         
         logging.debug("Closing db_table Session: {} {} {}".format(
             self.host, self.database, self.dbschema))
-        try:
-            self.session.close()
-
-            self.engine.dispose()
-        except Exception as e:
-             
-            logging.exception(f"Error Occured Closing db_table Session: {e}")
+        self.close()
             # print(e)

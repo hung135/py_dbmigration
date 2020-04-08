@@ -21,26 +21,29 @@ class PidManager(object):
             self.logging.exception('Singleton Already Initiated')
 
         return
-    def __init__(self,db:PGDB,project_name):
+    def __init__(self,db:PGDB,project_name,schema,table_name):
         self._singleton()  
-        self.register(db,project_name)
+        self.db=db
+        self.project_name=project_name
+        self.schema=schema
+        self.table_name=table_name
+        self.register()
 
     def getwork(self):
         return 1
-    def register(self,db,project_name):
+    def register(self):
+         
+        table_def=PidWorker(self.schema,self.table_name).table_def
+        self.table = RecordKeeper(self.db,table_def ,'PidManager')
         
-        self.table = RecordKeeper(db, PidWorker,'PidManager')
+        self.row = self.table.get_record(table_def.pid == self.pid)
         
-        self.row = self.table.get_record(PidWorker.pid == self.pid)
-        print("---------",type(self.row))
         if not self.row:
-            self.row = PidWorker(pid=self.pid, host=self.host)
+                
+            self.row = table_def(pid=self.pid, host=self.host)
     
             self.table.add_record(self.row,commit=True)
 
-
-            
-        
     
     def deregister(self):
         pass

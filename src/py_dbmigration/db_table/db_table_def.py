@@ -2,12 +2,18 @@ from sqlalchemy.schema import Column, UniqueConstraint
 import sqlalchemy.types as c
 
 from sqlalchemy.ext.declarative import declarative_base
-
+import logging as lg 
+logging=lg.getLogger('RecordKeeper')
  
 
 
 MetaBase = declarative_base()
+class CFPB(object):
+    DbSchema = 'logging'
 
+    def __init__(self,schema=DbSchema):
+        self.DbSchema=schema
+  
 
 class MetaSourceFiles(MetaBase):
     DbSchema = 'logging'
@@ -47,15 +53,24 @@ class MetaSourceFiles(MetaBase):
 
 
 #small table that will track pid workers to file id
-class PidWorker(MetaBase):
-    DbSchema = 'logging'
-    __tablename__ = 'pid_worker'
-    __table_args__ = (UniqueConstraint('file_id', name='pid_working_id'), {"schema": DbSchema})
-    host = Column(c.String(128), primary_key=True)
-    pid = Column(c.Integer, primary_key=True)
-    file_id = Column(c.Integer, nullable=True)
+class PidWorker():
+    table_def=None
+    def __init__(self,schema,table_name):
+        if not self.table_def:
+            class Pid(MetaBase):
+                DbSchema = schema
+                __tablename__ = table_name
+                __table_args__ = (UniqueConstraint('file_id', name=f'{table_name}_working_id'), {"schema": schema})
+                host = Column(c.String(128), primary_key=True)
+                pid = Column(c.Integer, primary_key=True)
+                file_id = Column(c.Integer, nullable=True)
 
-      
+            self.table_def=Pid
+        else:
+            logging.error("Multiple Instance of PidWorker dectected")
+            raise("Only 1 Incstance allowed: Fix your code")
+            
+
 
 # class TableFilesRegex(MetaBase):
 #     DbSchema = 'logging'
@@ -102,7 +117,9 @@ class PublishLog(MetaBase):
     row_counts = Column(c.BigInteger)
     file_name = Column(c.String(256))
     file_path = Column(c.String(256))
-
+    def __init__(self,table_name=__tablename__,schema=DbSchema):
+        self.DbSchema=schema
+        self.__tablename__=table_name
 
 class ErrorLog(MetaBase):
     DbSchema = 'logging'
@@ -118,6 +135,9 @@ class ErrorLog(MetaBase):
     program_unit = Column(c.String(256))
     sql_statement = Column(c.String(2000))
 
+    def __init__(self,table_name=__tablename__,schema=DbSchema):
+        self.DbSchema=schema
+        self.__tablename__=table_name
 
 class LoadStatus(MetaBase):
     DbSchema = 'logging'
@@ -138,3 +158,7 @@ class LoadStatus(MetaBase):
     records_deleted = Column(c.BigInteger)
     records_updated = Column(c.BigInteger)
     current_record_count = Column(c.BigInteger)
+
+    def __init__(self,table_name=__tablename__,schema=DbSchema):
+        self.DbSchema=schema
+        self.__tablename__=table_name

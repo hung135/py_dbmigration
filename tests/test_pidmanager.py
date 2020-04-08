@@ -20,8 +20,9 @@ class Test(unittest.TestCase,Config):
  
     def test_init(self):
         db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
-        x = pw.PidManager(db,'unit-test')
-
+        x = pw.PidManager(db,'unit-test','logging','table1')
+        #y = pw.PidManager(db,'unit-test2','logging','table1')
+        
 
 if __name__ == '__main__':
     unittest.main()

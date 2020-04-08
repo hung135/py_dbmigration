@@ -98,3 +98,6 @@ testpluginexe: clean_meta
 
 clean_meta:
 	psql -c"truncate table logging.meta_source_files;"
+
+pytest:
+	pytest tests/test_pidmanager.py 
