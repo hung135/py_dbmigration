@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
       
 
 
@@ -27,7 +28,15 @@
             "console": "integratedTerminal",
             "args": ["--yaml=tests/data_load.yaml","--cores=1"]
             
-        }  
+        },{
+            "name": "pytest",
+            "type": "python",
+            "request": "launch",
+            "program": "/usr/local/bin/pytest",
+            "console": "integratedTerminal",
+            "args": ["/workspace/tests/test_pidmanager.py","--no-cov"]
+             
+
     ],
     "compounds": [
         {

@@ -46,6 +46,17 @@ class MetaSourceFiles(MetaBase):
 # table to store regex for data files to be imported into a table
 
 
+#small table that will track pid workers to file id
+class PidWorker(MetaBase):
+    DbSchema = 'logging'
+    __tablename__ = 'pid_worker'
+    __table_args__ = (UniqueConstraint('file_id', name='pid_working_id'), {"schema": DbSchema})
+    host = Column(c.String(128), primary_key=True)
+    pid = Column(c.Integer, primary_key=True)
+    file_id = Column(c.Integer, nullable=True)
+
+      
+
 # class TableFilesRegex(MetaBase):
 #     DbSchema = 'logging'
 #     __tablename__ = 'table_file_regex'

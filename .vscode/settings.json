@@ -20,5 +20,7 @@
             "server": "pgdb",
             "username": "docker"
         }
-    ]
+    ],
+    "python.pythonPath": "/usr/local/bin/python3.6",
+    "python.linting.enabled": true
 }
