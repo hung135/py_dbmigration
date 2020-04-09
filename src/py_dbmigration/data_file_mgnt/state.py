@@ -234,106 +234,7 @@ class LogicState:
             logging.exception(e)
     def authenticate(self):
         pass
- 
-#this will be decprecated one day as you can see the why in the __init__ function
-class FilesOfInterest:
-    
-    # 2 scerios...given a path and a file pattern we walk the dir
-    # gven table_name and a file regex we use it to map files from the meta
-    # source to a table
-    write_path=None
-    extract_file_name_data = None
-    format_extracted_date = None
-    file_path = None # the direction not the FQN of the file...
-    def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
-                 use_header=False, has_header=True, quoted_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
-                 file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF8',
-                 append_crc=False, limit_rows=None, header_row_location=0,  
-                 new_delimiter=None, dataset_name=None, redaction_file=None,
-                 upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
-                 post_action=None, pre_action=None, process_logic=None, project_name='Default',
-                 table_name_extract=None, reprocess=False, yaml=None,mapping=None):
-        self.yaml = yaml
-        self.mapping = mapping
-        # avoid trying to put any logic here
-        self.regex = file_regex
-        self.folder_regex = folder_regex
-        self.table_name = table_name
-        self.schema_name = schema_name
-        if column_list is not None:
-            self.column_list = column_list.replace(' ', '').replace('\n', '').split(',')
-        else:
-            self.column_list = None
-        
-        self.file_delimiter = file_delimiter
-        self.use_header = use_header
-        self.has_header = has_header
-        self.quoted_header = quoted_header
-        self.import_method = import_method
-        self.append_file_id = append_file_id
-        self.append_column_name = append_column_name
-        self.file_type = file_type
-        self.file_name_data_regex = file_name_data_regex
-        self.append_crc = append_crc
 
-        if file_path is not None and not(file_path[:5]=='s3://'):
-            self.file_path = file_path = os.path.abspath(file_path)
-        else:
-            self.file_path = file_path
-        self.parent_file_id = parent_file_id
-        self.insert_option = insert_option
-        self.encoding = encoding
-        self.total_files = 0
-
-        self.encoding = encoding
-        self.current_working_abs_file_name = None
-        self.limit_rows = limit_rows
-       
-        self.header_added = None
-        # self.start_row = start_row
-        self.header_row = header_row_location or 0
-        
-        self.new_delimiter = new_delimiter
-        self.dataset_name = dataset_name
-        self.redaction_file = redaction_file
-        self.upsert_function_name = upsert_function_name
-        self.unzip_again = unzip_again
-        self.pre_action_sql = pre_action_sql
-        # list of sql to execute prior or post import of the file
-        self.post_action = post_action
-        self.pre_action = pre_action
-         
-        self.process_logic = process_logic
-        self.project_name = project_name
-        self.table_name_extract = table_name_extract
-        self.reprocess = reprocess
-
-    
-    def __str__(self):
-        string_result={
-            'project_name':self.project_name,
-            'regex_pattern': self.regex,
-            'file_path':self.file_path,
-            'current_file':self.current_working_abs_file_name
-
-        }
-         
-        return str(string_result)
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def __repr__(self):
-        return self.__str__()
-
-    
-
-    def __del__(self):
-        pass
-
-    def authenticate(self):
-        pass
-
-   
 
 #this is mapped to the contents of the YAML file
 class FOI(object):
@@ -458,3 +359,102 @@ class FOI(object):
         pass
 
   
+#this will be decprecated one day as you can see the why in the __init__ function
+class FilesOfInterest(FOI):
+    
+    # 2 scerios...given a path and a file pattern we walk the dir
+    # gven table_name and a file regex we use it to map files from the meta
+    # source to a table
+    write_path=None
+    extract_file_name_data = None
+    format_extracted_date = None
+    file_path = None # the direction not the FQN of the file...
+    def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
+                 use_header=False, has_header=True, quoted_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
+                 file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF8',
+                 append_crc=False, limit_rows=None, header_row_location=0,  
+                 new_delimiter=None, dataset_name=None, redaction_file=None,
+                 upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
+                 post_action=None, pre_action=None, process_logic=None, project_name='Default',
+                 table_name_extract=None, reprocess=False, yaml=None,mapping=None):
+        self.yaml = yaml
+        self.mapping = mapping
+        # avoid trying to put any logic here
+        self.regex = file_regex
+        self.folder_regex = folder_regex
+        self.table_name = table_name
+        self.schema_name = schema_name
+        if column_list is not None:
+            self.column_list = column_list.replace(' ', '').replace('\n', '').split(',')
+        else:
+            self.column_list = None
+        
+        self.file_delimiter = file_delimiter
+        self.use_header = use_header
+        self.has_header = has_header
+        self.quoted_header = quoted_header
+        self.import_method = import_method
+        self.append_file_id = append_file_id
+        self.append_column_name = append_column_name
+        self.file_type = file_type
+        self.file_name_data_regex = file_name_data_regex
+        self.append_crc = append_crc
+
+        if file_path is not None and not(file_path[:5]=='s3://'):
+            self.file_path = file_path = os.path.abspath(file_path)
+        else:
+            self.file_path = file_path
+        self.parent_file_id = parent_file_id
+        self.insert_option = insert_option
+        self.encoding = encoding
+        self.total_files = 0
+
+        self.encoding = encoding
+        self.current_working_abs_file_name = None
+        self.limit_rows = limit_rows
+       
+        self.header_added = None
+        # self.start_row = start_row
+        self.header_row = header_row_location or 0
+        
+        self.new_delimiter = new_delimiter
+        self.dataset_name = dataset_name
+        self.redaction_file = redaction_file
+        self.upsert_function_name = upsert_function_name
+        self.unzip_again = unzip_again
+        self.pre_action_sql = pre_action_sql
+        # list of sql to execute prior or post import of the file
+        self.post_action = post_action
+        self.pre_action = pre_action
+         
+        self.process_logic = process_logic
+        self.project_name = project_name
+        self.table_name_extract = table_name_extract
+        self.reprocess = reprocess
+
+    
+    def __str__(self):
+        string_result={
+            'project_name':self.project_name,
+            'regex_pattern': self.regex,
+            'file_path':self.file_path,
+            'current_file':self.current_working_abs_file_name
+
+        }
+         
+        return str(string_result)
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def __repr__(self):
+        return self.__str__()
+
+    
+
+    def __del__(self):
+        pass
+
+    def authenticate(self):
+        pass
+
+   
