@@ -1,6 +1,6 @@
 import sys
 import unittest 
-import py_dbmigration.db_table.pid_worker as pw
+import py_dbmigration.db_table.pid_worker as PidWorker
 from  py_dbutils.rdbms import postgres as db_utils
  
 import os, logging as lg
@@ -20,7 +20,10 @@ class Test(unittest.TestCase,Config):
  
     def test_init(self):
         db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
-        x = pw.PidManager(db,'unit-test','logging','table1')
+        pid = PidWorker.PidManager(db,'unit-test','logging','table1')
+        pid.getwork()
+        pid.row.file_id=555
+        pid.commit()
         #y = pw.PidManager(db,'unit-test2','logging','table1')
         
 

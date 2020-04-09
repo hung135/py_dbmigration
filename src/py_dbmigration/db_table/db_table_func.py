@@ -103,8 +103,9 @@ class RecordKeeper():
 
     def get_record(self, *row,obj=MetaSourceFiles):
         # update row to database
-        row = self.session.query(obj).filter(*row)
-        return row
+        r = self.session.query(obj).filter(*row).first()
+         
+        return r
 
     def commit(self):
         try:
@@ -115,13 +116,10 @@ class RecordKeeper():
 
     def close(self):
         logging.debug("Closing SqlAlchemy Engine: {}".format(self.appname))        
-        try:
-            
+        try: 
             self.commit() 
-             
-
-        except Exception as e:
-            logging.error('error closing')
+        except Exception :
+            logging.error('error committing')
     def __del__(self):
         
         logging.debug("Closing db_table Session: {} {} {}".format(

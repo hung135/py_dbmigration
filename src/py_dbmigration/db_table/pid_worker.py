@@ -28,25 +28,35 @@ class PidManager(object):
         self.schema=schema
         self.table_name=table_name
         self.register()
-
+    def commit(self):
+        self.table.add_record(self.row)
     def getwork(self):
-        return 1
+        import random
+        i=0
+        while i<1000000:
+            file_id=random.randrange(10000) 
+            self.row.file_id=file_id
+            i+=1
+
+            self.table.add_record(self.row)
+        return True
     def register(self):
          
         table_def=PidWorker(self.schema,self.table_name).table_def
         self.table = RecordKeeper(self.db,table_def ,'PidManager')
         
-        self.row = self.table.get_record(table_def.pid == self.pid)
-        
+        self.row = self.table.get_record(table_def.host == self.host,table_def.pid==self.pid,obj=table_def)
+      
         if not self.row:
                 
             self.row = table_def(pid=self.pid, host=self.host)
     
             self.table.add_record(self.row,commit=True)
+            print("record added")
 
     
     def deregister(self):
-        pass
+        self.table.delete_record(self.row)
     def __str__(self): 
         return self.pid
 
