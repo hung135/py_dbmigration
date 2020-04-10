@@ -142,7 +142,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
         df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
         
         if sub_proc_count==1:
-            pidManager=PidManager(db,'unit-test','logging','table1',False)
+            pidManager=PidManager(db,'dataload','logging','pidworker',False)
             df.do_work(db, cleanup=False,    skip_ifexists=False,pid=pidManager)
             #db.execute('vacuum analyze logging.meta_source_files')
             pidManager.checkin('EXITING','DONE','Process Ran to Completion')
@@ -162,7 +162,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
 def mp_do_work(foi_list, data_schema, writable_path,proc_num, return_dict):
     
     db = db_utils.DB(schema=data_schema,label='mp_do_work'+str(proc_num))
-    pidManager=PidManager(db,'unit-test','logging','table1',False)
+    pidManager=PidManager(db,'dataload','logging','pidworker',False)
     df = dfm.data_files.DataFile(writable_path, db, foi_list)
     
     
