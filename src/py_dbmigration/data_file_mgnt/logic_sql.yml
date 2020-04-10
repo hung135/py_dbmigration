@@ -44,7 +44,7 @@ sql_update_file_data_date_children_regex:
   from logging.meta_source_files parent 
   where a.parent_file_id=parent.id and a.parent_file_id>0 and (a.file_name_data is null or a.file_name_data='0' or a.file_name_data='') 
   and a.project_name='{project_name}'
-#sql to reset all meta data rows
+#sql to reset all meta data rowsF
 sql_update_ALL_meta_source:
   UPDATE logging.meta_source_files
   SET process_start_dtm=null

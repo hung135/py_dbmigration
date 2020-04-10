@@ -157,13 +157,13 @@ def loop_through_logic(foi, db, df,process_logic):
         #foi.logic_options={}
         logic_name = None
         imported_module = None 
-         
+        
         custom_logic=copy.copy(logic.get('logic',None))
         plugin_logic=copy.copy(logic.get('plugin',None))
         #advanced process logic config
         
         if custom_logic is not None:
-             
+       
             if isinstance(custom_logic,dict):
 
                 imported_module = get_imported_module(custom_logic['name'],foi)
@@ -171,8 +171,10 @@ def loop_through_logic(foi, db, df,process_logic):
                 imported_module = get_imported_module(custom_logic,foi)
             
             logic_name = f'py_dbmigration.{custom_logic}'
+           
         
         elif plugin_logic is not None: 
+           
             if isinstance(plugin_logic,dict):
                 imported_module = get_imported_plugin_module(logic,foi,plugin_logic['name'])
             else:
@@ -181,7 +183,7 @@ def loop_through_logic(foi, db, df,process_logic):
             
         
         else:
-           
+            df.pidManager.checkin('looping_thru_logic','ERROR','Plugin or Custom Logic not found')
             logic_status.failed('Plugin or Custom Logic not found')
             raise Exception('Process Logic Needa a Name or Plugin Attribute')
   
@@ -199,11 +201,13 @@ def loop_through_logic(foi, db, df,process_logic):
             time_started = datetime.datetime.now()
         # *************************************************************************
             logic_status.name=logic_name
-             
+            df.pidManager.checkin(logic_name,'START')
             logic_status=imported_module.process(db, foi, df, logic_status)
             logic_status.completed()
+            df.pidManager.checkin(logic_name,'DONE')
         except Exception as e:
             logging.exception(f"Syntax Error Importing or Running Custom Logic: {logic_name}\n{e}")
+            df.pidManager.checkin(logic_name,'ERROR',e)
             logic_status.hardfail(f'{__file__}: {e}')
         # *************************************************************************
 

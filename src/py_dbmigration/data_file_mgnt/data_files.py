@@ -593,40 +593,45 @@ class DataFile:
         t.close()
         return WorkState.HAVE_MORE_WORK
     def do_pre_process_scripts(self,db,foi_list):
-        print(self.foi_list)
-
+         
+        self.pidManager.checkin('pre_process_scripts','START')
         scripts=[] 
         for foi in foi_list:
             #just take the last instance
             scripts = foi.pre_process_scripts
         utils.loop_through_scripts(db,scripts)
+        self.pidManager.checkin('pre_process_scripts','DONE')
         
     def do_post_process_scripts(self,db,foi_list):
         
         scripts=[] 
+        self.pidManager.checkin('post_process_scripts','START')
         #take any since they are all supposed to be the same
         for foi in foi_list:
             #just take the last instance
             scripts = foi.post_process_scripts
         utils.loop_through_scripts(db,scripts)
+        self.pidManager.checkin('post_process_scripts','DONE')
 
     # Do work will query the meta source table for a record
     # It will stamp that record with this pid and ip address
     # When it is done with the processing of the record it we stamp the process_end_dtm
     # signifying the file has been processed
 
-    def do_work(self, db, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False):
+    def do_work(self, db,pid, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False):
 
         # iterate over each file in the logging.meta_source_files table
         # get work will lock 1 file and store the id into meta_source_file_id
         # inside this instance 
-        
+        self.pidManager=pid
         self.do_pre_process_scripts(db,self.foi_list)
         get_work_status=WorkState.HAVE_MORE_WORK
         while get_work_status in [WorkState.SLEEP, WorkState.HAVE_MORE_WORK]:
-            logging.debug("Getting work")
+            
+             
             get_work_status=self.get_work(db)
-            logging.debug("Got Work")
+             
+            self.pidManager.checkin('get_work_status','START')
             if get_work_status == WorkState.HAVE_MORE_WORK:
                 try:
                     full_file_name = os.path.join(
@@ -646,6 +651,7 @@ class DataFile:
                         # self.set_work_file_status(
                         #     db, self.meta_source_file_id, 'Processing Started', '')
                         utils.process_logic(foi, db, self)
+                        
 
                     else:
                         logging.error('No Matching Regex Found for this file: {}'.format(full_file_name))
@@ -662,12 +668,16 @@ class DataFile:
                 except Exception as e:
                     msg=f'Un handled Exception: {e}'
                     self.current_file_state.failed(msg)
+                    self.pidManager.checkin('DOWORK','ERROR',msg) 
                     logging.exception(msg)
             elif get_work_status == WorkState.NO_MORE_WORK:
                 logging.info(f"No More Work Found Exiting Process")
+                self.pidManager.checkin(str(WorkState.NO_MORE_WORK),'DONE') 
             elif get_work_status == WorkState.SLEEP:
-                logging.info(f"Work up From sleep, Checking for more work")   
+                logging.info(f"Woke up From sleep, Checking for more work")  
+                self.pidManager.checkin('SLEEPING','SLEEP',"Waiting for Work") 
             else:
                 logging.error(f"Unknown Work State Tripped EXITING")
+                self.pidManager.checkin('HARD ERROR','ERROR',"Unknown Work State Tripped EXITING")
                 sys.exit(1)  
         self.do_post_process_scripts(db,self.foi_list)     

@@ -20,10 +20,14 @@ class Test(unittest.TestCase,Config):
  
     def test_init(self):
         db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
-        pid = PidWorker.PidManager(db,'unit-test','logging','table1')
+        pid = PidWorker.PidManager(db,'unit-test','logging','table1',True)
         pid.getwork()
-        pid.row.file_id=555
+       
+        #pid.row.file_id=555
+        pid.checkin('Completed Test Init','ERROR','test error')
         pid.commit()
+ 
+        print(pid)
         #y = pw.PidManager(db,'unit-test2','logging','table1')
         
 

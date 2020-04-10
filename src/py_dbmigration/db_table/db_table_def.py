@@ -1,6 +1,6 @@
 from sqlalchemy.schema import Column, UniqueConstraint
 import sqlalchemy.types as c
-
+from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
 import logging as lg 
 logging=lg.getLogger('RecordKeeper')
@@ -64,6 +64,10 @@ class PidWorker():
                 host = Column(c.String(128), primary_key=True)
                 pid = Column(c.Integer, primary_key=True)
                 file_id = Column(c.Integer, nullable=True)
+                last_checkin = Column(c.DateTime, server_default=func.now())
+                current_task = Column(c.String(128), nullable=True)
+                task_status = Column(c.String(128), nullable=True)
+                detail = Column(c.String(2000), nullable=True)
 
             self.table_def=Pid
         else:

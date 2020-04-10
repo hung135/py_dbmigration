@@ -28,7 +28,7 @@ class RecordKeeper():
         #self.engine_dict = {}
         self.table_dict = {}
         self.host = db.host
-        self.dbschema = 'logging2'
+        self.dbschema = 'logging'
         self.database = db.dbname
         self.appname = appname
         self.engine = None  # instance
