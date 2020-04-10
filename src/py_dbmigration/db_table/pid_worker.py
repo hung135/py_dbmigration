@@ -59,14 +59,14 @@ class PidManager(object):
     def getwork(self):
         import random
         i=0
-        n=10000
-        print(f"test looop {n}xs")
-        while i<n:
-            file_id=random.randrange(10000) 
-            self.row.file_id=file_id
-            i+=1
+        # n=10000
+        # print(f"test looop {n}xs")
+        # while i<n:
+        #     file_id=random.randrange(10000) 
+        #     self.row.file_id=file_id
+        #     i+=1
 
-            self.table.add_record(self.row)
+        #     self.table.add_record(self.row)
         return True
     def register(self):
         self.current_task='REGISTERED'
