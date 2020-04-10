@@ -179,12 +179,12 @@ class LogicState:
         return_string="""Logic: {}\nStatus: {}\nError_msg:  {}\n FileState: {}"""
         return return_string.format(self.name,self.status,self.error_msg, self.file_state.status)
 
-    #This logic has ran to comletion
+    #This logic has ran to completion
     def continue_to_next_logic(self,TrueFalse):
         assert isinstance(TrueFalse,bool)
         logging.info("\t\tSet Continue to Next Logic: {}".format(TrueFalse))
         self.continue_processing_logic=TrueFalse
-    #This logic has ran to comletion
+    #This logic has ran to completion
     def completed(self):
   
         if not ( self.row.file_process_state  in ('OBSOLETE','FAILED','DUPLICATE')):

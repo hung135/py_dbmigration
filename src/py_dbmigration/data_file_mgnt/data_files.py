@@ -500,13 +500,13 @@ class DataFile:
                         WHERE  current_worker_host like '%{}%' and current_worker_host_pid is not null
                         ORDER BY process_start_dtm""".format(host)))
 
-    # process_error HAS to equal 'sucess' to be marked as process
+    # process_error HAS to equal 'success' to be marked as process
     # todo handle error when file is not longer located in directory because
     # it was moved
 
     def release_file_lock(self, db, file_id):
-        update_sql = """UPDATE logging.meta_source_files set process_end_dtm='{}'
-        where id={}""".format(datetime.datetime.now(), file_id)
+        update_sql = f"""UPDATE logging.meta_source_files set process_end_dtm=now()
+        where id={file_id}"""
         assert isinstance(db, db_utils.DB)
         db.execute(update_sql)
 
