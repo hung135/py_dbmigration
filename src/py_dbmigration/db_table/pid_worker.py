@@ -17,6 +17,7 @@ class PidManager(object):
     task_status=None
     current_task=None
     has_error = False
+    detail = None
     def _singleton(self):
         if not (self.pid):
             self.pid=os.getpid()
@@ -65,7 +66,7 @@ class PidManager(object):
         return True
     def register(self):
         self.current_task='REGISTERED'
-        table_def=PidWorker(self.schema,self.table_name).table_def
+        table_def=PidWorker
         self.table = RecordKeeper(self.db,table_def ,'PidManager')
         
         self.row = self.table.get_record(table_def.host == self.host,table_def.pid==self.pid,obj=table_def)
@@ -82,8 +83,9 @@ class PidManager(object):
         if self.on_exit_deregister and not self.has_error:
             self.table.delete_record(self.row)
         else:
+           
             self.row.current_task='DEREGISTERED'
-            self.row.detail=(f"fileid: {self.file_id}" + self.detail)
+            self.row.detail=(f"fileid: {self.file_id}" + (" "+self.detail if self.detail else ""))
             self.row.file_id=None
 
     def __str__(self): 

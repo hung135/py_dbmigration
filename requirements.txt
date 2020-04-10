@@ -11,3 +11,4 @@ statistics
 jaydebeapi
 pytest-cov
 pgcli
+inflection

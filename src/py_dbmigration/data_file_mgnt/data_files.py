@@ -7,6 +7,7 @@ import copy
 import pandas as pd
 #import db_logging
 import py_dbmigration.db_table as db_table
+from py_dbmigration.db_table.pid_worker import PidManager
 # mport db_table.db_table_func
 import yaml
 import sys
@@ -83,7 +84,7 @@ def convert_to_sql(instring):
 class DataFile:
     #COMPRESSED_FILE_TYPES = ['ZIP', 'GZ', 'TAR']
     #    SUPPORTED_DATAFILE_TYPES = ['DATA', 'CSV', 'DAT', 'XLSX', 'TXT', 'XLS', 'MDB']
-
+    pidManager = None
     working_path = None
     full_file_path = None
     db = None
@@ -111,9 +112,12 @@ class DataFile:
         return current_table_row_count
 
 
-    def __init__(self, working_path, db, foi_list, parent_file_id=0, compressed_file_type=None):
+    def __init__(self, working_path, db, foi_list, parent_file_id=0,compressed_file_type=None):
         #assert isinstance(foi_list[0], FilesOfInterest)
-
+         
+        if not self.pidManager:
+            
+            self.pidManager=PidManager(db,'dfm','logging','pidworker',False)
         curr_path = (os.path.dirname(__file__))
 
         with open(os.path.join(curr_path, 'logic_sql.yml'), 'r') as f:
@@ -618,12 +622,12 @@ class DataFile:
     # When it is done with the processing of the record it we stamp the process_end_dtm
     # signifying the file has been processed
 
-    def do_work(self, db,pid, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False):
+    def do_work(self, db, cleanup=True, limit_rows=None,   vacuum=True, chunksize=10000, skip_ifexists=False):
 
         # iterate over each file in the logging.meta_source_files table
         # get work will lock 1 file and store the id into meta_source_file_id
         # inside this instance 
-        self.pidManager=pid
+         
         self.do_pre_process_scripts(db,self.foi_list)
         get_work_status=WorkState.HAVE_MORE_WORK
         while get_work_status in [WorkState.SLEEP, WorkState.HAVE_MORE_WORK]:

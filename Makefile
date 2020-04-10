@@ -90,7 +90,7 @@ python_test:
 
 testplugin: clean_meta
 	clear
-	python /workspace/src/py_dbmigration/data_load.py  --yaml=/workspace/tests/data_load_plugin.yaml --ll=info
+	python /workspace/src/py_dbmigration/data_load.py  --yaml=/workspace/tests/data_load_plugin.yaml --ll=debug
 
 testpluginexe: clean_meta
 	clear

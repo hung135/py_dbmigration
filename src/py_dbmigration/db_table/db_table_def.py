@@ -53,26 +53,19 @@ class MetaSourceFiles(MetaBase):
 
 
 #small table that will track pid workers to file id
-class PidWorker():
-    table_def=None
-    def __init__(self,schema,table_name):
-        if not self.table_def:
-            class Pid(MetaBase):
-                DbSchema = schema
-                __tablename__ = table_name
-                __table_args__ = (UniqueConstraint('file_id', name=f'{table_name}_working_id'), {"schema": schema})
-                host = Column(c.String(128), primary_key=True)
-                pid = Column(c.Integer, primary_key=True)
-                file_id = Column(c.Integer, nullable=True)
-                last_checkin = Column(c.DateTime, server_default=func.now())
-                current_task = Column(c.String(128), nullable=True)
-                task_status = Column(c.String(128), nullable=True)
-                detail = Column(c.String(2000), nullable=True)
-
-            self.table_def=Pid
-        else:
-            logging.error("Multiple Instance of PidWorker dectected")
-            raise("Only 1 Incstance allowed: Fix your code")
+ 
+class PidWorker(MetaBase):
+    DbSchema = 'logging'
+    __tablename__ = 'pidworker'
+    __table_args__ = (UniqueConstraint('file_id', name=f'pidworker_working_id'), {"schema": DbSchema})
+    host = Column(c.String(128), primary_key=True)
+    pid = Column(c.Integer, primary_key=True)
+    file_id = Column(c.Integer, nullable=True)
+    last_checkin = Column(c.DateTime, server_default=func.now())
+    current_task = Column(c.String(128), nullable=True)
+    task_status = Column(c.String(128), nullable=True)
+    detail = Column(c.String(2000), nullable=True)
+ 
             
 
 

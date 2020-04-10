@@ -11,7 +11,7 @@ import py_dbmigration.data_file_mgnt as dfm
 import py_dbmigration.migrate_utils.static_func as static_func
 from  py_dbmigration.data_file_mgnt.utils import  pre_process_yaml as ppy
 from  py_dbmigration.data_file_mgnt.state import  FOI
-from py_dbmigration.db_table.pid_worker import PidManager
+
 import multiprocessing as mp
 
 import pprint 
@@ -137,15 +137,16 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
 
         #so pyinstall will pick it upt
         db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main',loglevel=logging.level)
+       
         df = dfm.data_files.DataFile(writable_path, db, datafiles)
         df.init_db()
         df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
         
         if sub_proc_count==1:
-            pidManager=PidManager(db,'dataload','logging','pidworker',False)
-            df.do_work(db, cleanup=False,    skip_ifexists=False,pid=pidManager)
+            
+            df.do_work(db, cleanup=False,    skip_ifexists=False)
             #db.execute('vacuum analyze logging.meta_source_files')
-            pidManager.checkin('EXITING','DONE','Process Ran to Completion')
+            
     
 
         else:
@@ -154,6 +155,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
             return_dict = manager.dict()
             multi_process(
                 mp_do_work, [datafiles, PGDATASCHEMA,writable_path], int(sub_proc_count), return_dict)
+        
     else:
         logging.info("No configruation Items found...Exiting.")
    
@@ -162,16 +164,16 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
 def mp_do_work(foi_list, data_schema, writable_path,proc_num, return_dict):
     
     db = db_utils.DB(schema=data_schema,label='mp_do_work'+str(proc_num))
-    pidManager=PidManager(db,'dataload','logging','pidworker',False)
+    
     df = dfm.data_files.DataFile(writable_path, db, foi_list)
     
     
     return_dict['proc_num{}'.format(proc_num)]='Started'
     print(">>>>>>>>>>>Proc Started: {}".format(proc_num))
-    df.do_work(db, cleanup=False,    skip_ifexists=False,pid=pidManager)
+    df.do_work(db, cleanup=False,    skip_ifexists=False)
     return_dict['proc_num{}'.format(proc_num)]='Done'
     print(">>>>>>>>>>>Proc Done: {}".format(proc_num))
-    pidManager.checkin('EXITING','DONE','Process Ran to Completion')
+   
 
 def multi_process(funct, list_params, max_cores, p_return_dict=None):
     import copy

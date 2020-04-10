@@ -60,7 +60,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         assert isinstance(df, data_files.DataFile)
         #result_set = self.db.query("select * from logging.meta_source_files")
         #self.assertGreater(len(result_set), 0, "No files Found: Check Regex Logic")
-
+         
         df.do_work(db, cleanup=False, limit_rows=None)
  
 if __name__ == '__main__':
