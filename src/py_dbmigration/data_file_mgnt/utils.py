@@ -249,8 +249,8 @@ def loop_through_scripts(db,scripts):
  
 
 def process_logic(foi, db, df):
-    logic_status=None
- 
+    
+    current_file_state=df.current_file_state
     foi.render_runtime_data(df)
     # store result of action you do in this variable
 
@@ -267,14 +267,15 @@ def process_logic(foi, db, df):
             execute_sql(db, foi.post_action, foi, df,'POST ')
             logging.info("Executing Process_logic")
             logic_status= loop_through_logic(foi, db, df,post_process_logic)
-
+            logic_status.complete()
     except Exception as e:
         logging.exception(f"Failed executing Pre Load action: {e}")
-        df.current_file_state.failed(e)
+        current_file_state.failed(e)
     else:
          
-        logic_status.file_state.processed(foi.reprocess)
+        current_file_state.processed(foi.reprocess)
         purge.process(db, foi, df)
         # putthing this here for now since I can not find why table.session.commit() is not committing
         #print("----------",f"update logging.meta_source_files set file_process_state='PROCESSED',reprocess={reprocess} where id={df.file_id}")
         #db.execute(f"update logging.meta_source_files set  reprocess={reprocess} where id={df.file_id}")
+        

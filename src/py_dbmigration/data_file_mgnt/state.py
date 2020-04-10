@@ -144,6 +144,9 @@ class DataFileState:
 
 class LogicState:
     # object to carry status info for prossing and import
+    # tract status of logic on a file
+    # only tag file record if logic fails
+    
     status = None
     name = None
     error_msg = None
@@ -189,7 +192,7 @@ class LogicState:
   
         if not ( self.row.file_process_state  in ('OBSOLETE','FAILED','DUPLICATE')):
             self.status=LogicStateEnum.COMPLETE
-            self.row.file_process_state=LogicStateEnum.COMPLETE.value
+            #self.row.file_process_state=LogicStateEnum.COMPLETE.value
             self.continue_processing_logic=True
         else:
             self.continue_processing_logic=False
