@@ -630,8 +630,9 @@ class DataFile:
             
              
             get_work_status=self.get_work(db)
-             
+        
             self.pidManager.checkin('get_work_status','START')
+            self.getwork(self.file_id)
             if get_work_status == WorkState.HAVE_MORE_WORK:
                 try:
                     full_file_name = os.path.join(

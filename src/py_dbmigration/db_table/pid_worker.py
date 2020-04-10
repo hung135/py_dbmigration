@@ -56,17 +56,11 @@ class PidManager(object):
         self.commit()
     def commit(self):
         self.table.add_record(self.row)
-    def getwork(self):
-        import random
-        i=0
-        # n=10000
-        # print(f"test looop {n}xs")
-        # while i<n:
-        #     file_id=random.randrange(10000) 
-        #     self.row.file_id=file_id
-        #     i+=1
-
-        #     self.table.add_record(self.row)
+    def getwork(self,file_id:int=None):
+ 
+        if not file_id:
+            self.row.file_id=file_id
+            self.table.add_record(self.row)
         return True
     def register(self):
         self.current_task='REGISTERED'
