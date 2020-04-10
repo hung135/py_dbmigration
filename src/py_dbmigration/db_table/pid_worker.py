@@ -56,7 +56,7 @@ class PidManager(object):
         self.commit()
         self.logging.debug(f"Checking in: {current_task}- {task_status}")
     def commit(self):
-        self.table.add_record(self.row)
+        self.table.add_record(self.row,True)
     def getwork(self,file_id:int=None):
  
         if not file_id:
