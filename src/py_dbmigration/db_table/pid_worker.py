@@ -61,7 +61,7 @@ class PidManager(object):
  
         if not file_id:
             self.row.file_id=file_id
-            self.table.add_record(self.row)
+            self.table.add_record(self.row,True)
         return True
     def register(self):
         self.current_task='REGISTERED'
@@ -83,6 +83,9 @@ class PidManager(object):
             self.table.delete_record(self.row)
         else:
             self.row.current_task='DEREGISTERED'
+            self.row.detail=(f"fileid: {self.file_id}" + self.detail)
+            self.row.file_id=None
+
     def __str__(self): 
 
         string_result={
