@@ -271,7 +271,7 @@ def process_logic(foi, db, df):
             execute_sql(db, foi.post_action, foi, df,'POST ')
             logging.info("Executing Process_logic")
             logic_status= loop_through_logic(foi, db, df,post_process_logic)
-            logic_status.complete()
+            logic_status.completed()
     except Exception as e:
         logging.exception(f"Failed executing Pre Load action: {e}")
         current_file_state.failed(e)
