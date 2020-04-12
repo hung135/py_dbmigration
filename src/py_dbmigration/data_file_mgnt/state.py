@@ -61,7 +61,7 @@ class DataFileState:
         self.row = self.table.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
         
         self.row.file_process_state=self.status.value
-        self.table.session.commit()
+        self.commit()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
@@ -72,7 +72,7 @@ class DataFileState:
          
     def refresh(self,appname=None):
         try:
-            self.table.close()
+            self.close()
         except:
             pass
         self.table = db_table.db_table_func.RecordKeeper(self.db, db_table.db_table_def.MetaSourceFiles,appname or self.name)
@@ -83,11 +83,12 @@ class DataFileState:
         self.table.session.close()
         self.table.close()
     def __del__(self):
+     
+        self.close()
+    def commit(self):
         self.table.session.commit()
-        self.table.session.close()
-        self.table.close()
-        pass
-
+    def rollback(self):
+        self.table.session.rollback()
     def authenticate(self):
         pass
     def processed(self,reprocess=False):
@@ -98,28 +99,28 @@ class DataFileState:
         logging.debug(f"Processed: Reprocess: {reprocess}, Statue: {self.status.value}")
         self.row.reprocess=reprocess
         self.row.file_process_state=self.status.value
-        self.table.session.commit()
+        self.commit()
         return self.status.value
     def obsolete(self):
         self.status=FileStateEnum.OBSOLETE
         self.row.file_process_state=self.status.value
-        self.table.session.commit()  
+        self.commit()
         return False
     def duplicate(self):
         self.status=FileStateEnum.DUPLICATE
         self.row.file_process_state=self.status.value
-        self.table.session.commit()
+        self.commit()
         return False        
     def failed(self,msg,reprocess=False):
         logging.error(f"FAILED: {msg}")
-        self.table.session.rollback()
+        self.rollback()
         logging.error(f"FAILED: Reprocess: {reprocess}, Prev Status: {self.status.value}")
         self.status=FileStateEnum.FAILED
         
         self.row.reprocess=reprocess
         self.row.file_process_state=self.status.value
         self.row.last_error_msg=str(msg)
-        self.table.session.commit()
+        self.commit()
         
 
         return False

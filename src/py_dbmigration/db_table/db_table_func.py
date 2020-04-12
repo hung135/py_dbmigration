@@ -52,7 +52,7 @@ class RecordKeeper():
             db=db.dbname,
             appname='sqlAlch_'+ appname
         )
-
+        logging.debug("Opening SqlAlchemy Engine: {}".format(self.appname))   
         self.engine = sqlalchemy.create_engine(sql_alchemy_uri_connected)
         
         #self.engine = self.engine_dict['only1']
@@ -126,7 +126,6 @@ class RecordKeeper():
             logging.error('Error Closing Session')
     def __del__(self):
         
-        logging.debug("Closing db_table Session: {} {} {}".format(
-            self.host, self.database, self.dbschema))
+        logging.debug("Out of Scope Deleting RecordKeeper")
         self.close()
             # print(e)
