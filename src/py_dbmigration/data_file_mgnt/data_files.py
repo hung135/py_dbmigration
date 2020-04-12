@@ -97,8 +97,8 @@ class DataFile:
     #                    WHERE  file_name='{1}' and
     #                    """
     current_file_state = None
-     
-    file_id = 0
+    file_id_list=[]
+    file_id = None
 
     def get_curr_table_row_count(self,fqn_table_name):
         current_table_row_count=0
@@ -525,6 +525,23 @@ class DataFile:
 
         # assert isinstance(db, db_utils.DB)
         # db.execute(update_sql)
+    def pop_row(self):
+        print("-----------",len(self.file_id_list))
+        row=self.file_id_list.pop()
+        print(row)
+        self.reset_stat()
+        self.curr_src_working_file = row["curr_src_working_file"]
+        self.source_file_path = row["source_file_path"]
+        self.embedded_id = row["embedded_id"]
+        self.work_file_type = row["work_file_type"]
+        self.total_files = row["total_files"]
+        self.file_size = row["file_size"]
+        self.row_count = row["row_count"]
+        self.full_file_path = os.path.join(self.source_file_path,self.curr_src_working_file)
+    
+        self.file_id=row["file_id"]
+
+      
 
     def reset_stat(self):
         self.rows_inserted = 0
@@ -535,65 +552,70 @@ class DataFile:
         self.crc = None
 
     # @migrate_utils.static_func.timer
-    def get_work(self, db):
+    def claim_work(self, db):
+        
         assert isinstance(db, db_utils.DB)
         assert isinstance(self.foi_list, list)
+        print("-------------------",len(self.file_id_list))
+        if len(self.file_id_list)==0:
 
-        self.reset_stat()
-        x = set(self.project_list)
+            print('Querying database')
+            x = set(self.project_list)
+            for foi in self.foi_list:
+                self.extract_file_name_datav2(db, foi)
+            project_list = (','.join("'" + item + "'" for item in x))
+            appname = os.path.basename(__file__)+"get_work"
+            sqlAlcTable = db_table.db_table_func.RecordKeeper(
+                db, db_table.db_table_def.MetaSourceFiles, appname=appname)
 
-        
-        for foi in self.foi_list:
-            self.extract_file_name_datav2(db, foi)
- 
-        project_list = (','.join("'" + item + "'" for item in x))
+            # to ensure we lock 1 row to avoid race conditions
 
-        appname = os.path.basename(__file__)+"get_work"
-        sqlAlcTable = db_table.db_table_func.RecordKeeper(
-            db, db_table.db_table_def.MetaSourceFiles, appname=appname)
+            sql = self.sql_yaml['sql_get_work'].format(
+                db_table.db_table_def.MetaSourceFiles.DbSchema,
+                self.host, self.curr_pid, project_list)
+            logging.debug(f"Claiming work SQL: {sql}")   
+            sqlAlcTable.engine.execute(sql)
+            logging.debug(f"Work Claimed")
+            sqlAlcTable.session.commit()
+            print("-----geting rows")
+            rows = sqlAlcTable.get_records(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,
+                            db_table.db_table_def.MetaSourceFiles.current_worker_host_pid == self.curr_pid,
+                            db_table.db_table_def.MetaSourceFiles.process_end_dtm == None)
+            logging.debug("Pulling in Work meta in va SQLAlchemy")
+            print("-----got rows",rows)
+            if len(rows)==0:
+                print("-----",len(rows))
+                logging.info("\tNo Work Left, Checking Unzip in Progress")
+                sql = self.sql_yaml['sql_any_proc_still_unzipping']
 
-        # to ensure we lock 1 row to avoid race conditions
+                unzipping_count=1
+                sqlAlcTable.close() #closing sqlalchemy so we don't lock while sleeping
+                while(unzipping_count>0):
+                    unzipping_count,=db.get_a_row(sql)
+                    if (unzipping_count)>0:
+                        logging.info("\tStill Got someone Unzipping going back to sleep")
+                        time.sleep(10)
+                        return WorkState.SLEEP
+                    else:
+                        return WorkState.NO_MORE_WORK
+            else:
 
-        sql = self.sql_yaml['sql_get_work'].format(
-            db_table.db_table_def.MetaSourceFiles.DbSchema,
-            self.host, self.curr_pid, project_list)
-        logging.debug(f"Claiming work SQL: {sql}")   
-        sqlAlcTable.engine.execute(sql)
-        logging.debug(f"Work Claimed")
-        sqlAlcTable.session.commit()
+                for row in rows:
+                    print("-------iterate before pop------------",len(self.file_id_list))
+                    row_dict={
+                    "curr_src_working_file":row.file_name,
+                    "source_file_path": row.file_path,
+                    "embedded_id":row.file_name_data,
+                    "work_file_type": row.file_type,
+                    "total_files": row.total_files,
+                    "file_size": row.file_size,
+                    "row_count": row.total_rows,
+                    "file_id":row.id}
 
-        row = sqlAlcTable.get_record(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,
-                           db_table.db_table_def.MetaSourceFiles.current_worker_host_pid == self.curr_pid,
-                           db_table.db_table_def.MetaSourceFiles.process_end_dtm == None)
-        logging.debug("Pulling in Work meta in va SQLAlchemy")
-        if row is None:
-            logging.info("\tNo Work Left, Checking Unzip in Progress")
-            sql = self.sql_yaml['sql_any_proc_still_unzipping']
-
-            unzipping_count=1
-            sqlAlcTable.close() #closing sqlalchemy so we don't lock while sleeping
-            while(unzipping_count>0):
-                unzipping_count,=db.get_a_row(sql)
-                if (unzipping_count)>0:
-                    logging.info("\tStill Got someone Unzipping going back to sleep")
-                    time.sleep(10)
-                    return WorkState.SLEEP
-                else:
-                    return WorkState.NO_MORE_WORK
-        else:
-            self.curr_src_working_file = row.file_name
-            self.source_file_path = row.file_path
-            self.embedded_id = row.file_name_data
-            self.work_file_type = row.file_type
-            self.total_files = row.total_files
-            self.file_size = row.file_size
-            
-            self.row_count = row.total_rows
-            
-            self.full_file_path = os.path.join(self.source_file_path,self.curr_src_working_file)
-            self.file_id=row.id
-
-        sqlAlcTable.close()
+                    self.file_id_list.append(row_dict)
+            sqlAlcTable.close()
+        print("-------before pop------------",len(self.file_id_list))
+        self.pop_row()
         return WorkState.HAVE_MORE_WORK
     def do_pre_process_scripts(self,db,foi_list):
          
@@ -629,12 +651,14 @@ class DataFile:
          
         self.do_pre_process_scripts(db,self.foi_list)
         get_work_status=WorkState.HAVE_MORE_WORK
+        print("----xxxbefore file_id: ",self.file_id)
         while get_work_status in [WorkState.SLEEP, WorkState.HAVE_MORE_WORK]:
             
-             
-            get_work_status=self.get_work(db)
+            print("----before file_id: ",self.file_id)
+            get_work_status=self.claim_work(db)
         
-            self.pidManager.checkin('Just Got Work','START')
+            self.pidManager.checkin('BEGIN','START')
+            print("------ file id",self.file_id, get_work_status)
             self.pidManager.getwork(self.file_id)
             if get_work_status == WorkState.HAVE_MORE_WORK:
                 try:

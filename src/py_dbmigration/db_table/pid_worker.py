@@ -47,7 +47,8 @@ class PidManager(object):
         if task_status=='ERROR':
             self.has_error=True
 
-      
+        if self.current_task == 'BEGIN':
+            self.row.job_start_time=func.now()
         if detail and not self.has_error:
             self.detail=detail
             self.row.detail=self.detail
@@ -125,7 +126,7 @@ class PidManager(object):
         
         return self.__str__()
     def __del__(self):
-        
+        print('going out of scope')
         self.deregister()
 
 

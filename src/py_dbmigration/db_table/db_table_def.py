@@ -67,7 +67,8 @@ class PidWorker(MetaBase):
     detail = Column(c.String(2000), nullable=True)
     file_count = Column(c.Integer, default=0)
     command = Column(c.String(128), nullable=True)
- 
+
+    job_start_time = Column(c.DateTime, server_default=func.now())
  
             
 

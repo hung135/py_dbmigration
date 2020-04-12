@@ -109,6 +109,11 @@ class RecordKeeper():
         r = self.session.query(obj).filter(*row).first()
          
         return r
+    def get_records(self, *row,obj=MetaSourceFiles):
+        # update row to database
+        r = self.session.query(obj).filter(*row).all()
+         
+        return r
 
     def commit(self):
         try:
