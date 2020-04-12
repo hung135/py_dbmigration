@@ -125,6 +125,7 @@ class RecordKeeper():
             logging.error('Error committing')
         try: 
             self.session.close() 
+            self.engine.close()
         except Exception :
             logging.error('Error Closing Session')
     def __del__(self):
