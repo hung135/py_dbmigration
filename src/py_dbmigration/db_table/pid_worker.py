@@ -71,7 +71,8 @@ class PidManager(object):
         self.commit()
         table_def=PidWorker
         cur = self.table.get_record(table_def.host == self.host,table_def.pid==self.pid,obj=table_def)
-        if cur.command =='STOP':
+        self.logging.debug(f'Checking Commands: {cur.command}')
+        if str(cur.command) =='STOP':
             self.table.commit()
             self.deregister()
             return 'STOP'
