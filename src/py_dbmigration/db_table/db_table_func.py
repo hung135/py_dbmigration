@@ -50,7 +50,7 @@ class RecordKeeper():
             host=db.host,
             port=db.port,
             db=db.dbname,
-            appname=appname
+            appname='sqlAlch_'+ appname
         )
 
         self.engine = sqlalchemy.create_engine(sql_alchemy_uri_connected)
