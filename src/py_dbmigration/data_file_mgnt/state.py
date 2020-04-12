@@ -4,7 +4,7 @@ import py_dbmigration.db_table as db_table
 from py_dbmigration.data_file_mgnt import utils
 import os, logging as lg
 
-logging=lg.getLogger()
+logging=lg.getLogger('StateKeeper')
 
 
 #enums to classify various states if a file
@@ -44,6 +44,7 @@ class DataFileState:
     continue_processing_logic=False
     file_id = None
     def __init__(self, db, file,file_id,appname=None):
+        
         self.file_path=os.path.abspath(file)
         self.name=os.path.basename(file)
         self.status = FileStateEnum.RAW
@@ -53,6 +54,7 @@ class DataFileState:
         self.table_name = None
         self.file_id=file_id
         self.db=db
+        logging.debug(f'Init State Keeper: {self.name}')
         # try:
         #     self.table.close()
         # except:
@@ -72,6 +74,7 @@ class DataFileState:
          
     def refresh(self,appname=None):
         try:
+            logging.debug(f'Closing to Refresh: {self.name}')
             self.close()
         except:
             pass
@@ -79,19 +82,23 @@ class DataFileState:
         self.row = self.table.get_record(db_table.db_table_def.MetaSourceFiles.id == self.file_id)
 
     def close(self):
+        logging.debug(f'Close Function called: {self.name}')
         self.table.session.commit()
         self.table.session.close()
         self.table.close()
     def __del__(self):
-     
+        logging.debug(f'Out of Scope Datafile State: {self.name}')
         self.close()
     def commit(self):
+        logging.debug(f'Commit Called: {self.name}')
         self.table.session.commit()
     def rollback(self):
+        logging.debug(f'Rollback Called: {self.name}')
         self.table.session.rollback()
     def authenticate(self):
         pass
     def processed(self,reprocess=False):
+        logging.debug(f'Processed Called: {self.name}')
         if not self.status in [FileStateEnum.FAILED,FileStateEnum.DUPLICATE,FileStateEnum.OBSOLETE]:
             self.status=FileStateEnum.PROCESSED
         else:
@@ -169,6 +176,7 @@ class LogicState:
         
         if self.row.file_process_state==FileStateEnum.RAW.value:
             self.row.file_process_state=FileStateEnum.PROCESSING.value
+            logging.debug(f'Calling Commit from LogicState: {self.name}')
             self.table.session.commit()
         
    
@@ -202,7 +210,7 @@ class LogicState:
             self.row.process_msg_trail=self.name[:2000]
         else:
             self.row.process_msg_trail=str(self.name +f"\n{self.row.process_msg_trail}")[:2000]
-         
+        logging.debug(f'Calling Commit from LogicState Completed: {self.name}')
         self.table.session.commit()
          
     # def processed(self):
