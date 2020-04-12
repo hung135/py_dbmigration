@@ -128,7 +128,7 @@ class RecordKeeper():
         try: 
             self.session.close() 
             
-            self.engine.close()
+            self.engine.dispose()
         except Exception as e:
             logging.error(f'Error Closing Session: {e}')
     def __del__(self):
