@@ -119,7 +119,11 @@ class RecordKeeper():
         try: 
             self.commit() 
         except Exception :
-            logging.error('error committing')
+            logging.error('Error committing')
+        try: 
+            self.session.close() 
+        except Exception :
+            logging.error('Error Closing Session')
     def __del__(self):
         
         logging.debug("Closing db_table Session: {} {} {}".format(
