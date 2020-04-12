@@ -8,6 +8,7 @@ import sqlalchemy
 from sqlalchemy import exc as sqlachemy_exception
 from sqlalchemy.ext.declarative import declarative_base
 from .db_table_def import MetaBase, MetaSourceFiles
+import inspect
 
 logging=lg.getLogger('RecordKeeper')
 
@@ -116,6 +117,7 @@ class RecordKeeper():
             # self.session.begin()
 
     def close(self):
+        logging.debug(inspect.stack()[1].function)
         logging.debug("Closing SqlAlchemy Engine: {}".format(self.appname))        
         try: 
             self.commit() 
