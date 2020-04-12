@@ -73,8 +73,11 @@ class PidManager(object):
         cur = self.table.get_record(table_def.host == self.host,table_def.pid==self.pid,obj=table_def)
         if cur.command =='STOP':
             self.table.commit()
+            self.deregister()
+            return 'STOP'
+        return None
 
-            sys.exit(0)
+             
         
     def register(self):
         self.current_task='REGISTERED'

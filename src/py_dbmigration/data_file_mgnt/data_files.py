@@ -674,6 +674,12 @@ class DataFile:
                     self.current_file_state.failed(msg)
                     self.pidManager.checkin('DOWORK','ERROR',msg) 
                     logging.exception(msg)
+
+                # check to see if we have any command
+                if self.pidManager.check_commands()=='STOP':
+                    self.do_post_process_scripts(db,self.foi_list)   
+                    sys.exit(0)  
+
             elif get_work_status == WorkState.NO_MORE_WORK:
                 logging.info(f"No More Work Found Exiting Process")
                 self.pidManager.checkin(str(WorkState.NO_MORE_WORK),'DONE') 
@@ -684,4 +690,5 @@ class DataFile:
                 logging.error(f"Unknown Work State Tripped EXITING")
                 self.pidManager.checkin('HARD ERROR','ERROR',"Unknown Work State Tripped EXITING")
                 sys.exit(1)  
+            
         self.do_post_process_scripts(db,self.foi_list)     
