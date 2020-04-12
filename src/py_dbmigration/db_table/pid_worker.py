@@ -4,7 +4,7 @@ import py_dbutils.rdbms.postgres as PGDB
 from sqlalchemy.sql import func
 import logging as lg 
 import socket
-import os
+import os, sys
  
 class PidManager(object):
     
@@ -32,7 +32,7 @@ class PidManager(object):
     def __init__(self,db:PGDB,project_name,schema,table_name,on_exit_deregister=True):
 
 
-
+        self.file_count=0
         self._singleton()  
         self.db=db
         self.project_name=project_name
@@ -47,7 +47,7 @@ class PidManager(object):
         if task_status=='ERROR':
             self.has_error=True
 
-        self.logging.info("Checking in")  
+      
         if detail and not self.has_error:
             self.detail=detail
             self.row.detail=self.detail
@@ -56,14 +56,26 @@ class PidManager(object):
         self.row.last_checkin=func.now()
         self.commit()
         self.logging.debug(f"Checking in: {current_task}- {task_status}")
+        
     def commit(self):
         self.table.add_record(self.row,True)
     def getwork(self,file_id:int=None):
- 
-        if not file_id:
+        self.logging.info(f"Got file_id : {file_id}")
+        self.file_count+=1
+        self.row.file_count = self.file_count
+        if file_id is not None:
             self.row.file_id=file_id
             self.table.add_record(self.row,True)
         return True
+    def check_commands(self):
+        self.commit()
+        table_def=PidWorker
+        cur = self.table.get_record(table_def.host == self.host,table_def.pid==self.pid,obj=table_def)
+        if cur.command =='STOP':
+            self.table.commit()
+
+            sys.exit(0)
+        
     def register(self):
         self.current_task='REGISTERED'
         table_def=PidWorker

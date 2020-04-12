@@ -65,6 +65,9 @@ class PidWorker(MetaBase):
     current_task = Column(c.String(128), nullable=True)
     task_status = Column(c.String(128), nullable=True)
     detail = Column(c.String(2000), nullable=True)
+    file_count = Column(c.Integer, default=0)
+    command = Column(c.String(128), nullable=True)
+ 
  
             
 

@@ -222,8 +222,7 @@ class DataFile:
                     
 
                     if  ( self.FilesOfInterest):
-                        # or   len(list(self.FilesOfInterest.file_list))<0:
-                        #print(self.FilesOfInterest,"-------------")
+                        
                         self.insert_working_files(
                             db, self.FilesOfInterest, self.parent_file_id)
 
@@ -635,7 +634,7 @@ class DataFile:
              
             get_work_status=self.get_work(db)
         
-            self.pidManager.checkin('get_work_status','START')
+            self.pidManager.checkin('Just Got Work','START')
             self.pidManager.getwork(self.file_id)
             if get_work_status == WorkState.HAVE_MORE_WORK:
                 try:
