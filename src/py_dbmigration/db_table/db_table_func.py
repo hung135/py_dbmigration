@@ -51,6 +51,7 @@ class RecordKeeper():
             host=db.host,
             port=db.port,
             db=db.dbname,
+            pool_size=5,
             appname='sqlAlch_'+ appname
         )
         logging.debug("Opening SqlAlchemy Engine: {}".format(self.appname))   
@@ -126,7 +127,8 @@ class RecordKeeper():
             logging.error(f'Error committing: {e}')
         try: 
             self.session.close() 
-            #self.engine.close()
+            
+            self.engine.close()
         except Exception as e:
             logging.error(f'Error Closing Session: {e}')
     def __del__(self):

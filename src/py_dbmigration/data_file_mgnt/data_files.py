@@ -549,7 +549,7 @@ class DataFile:
         project_list = (','.join("'" + item + "'" for item in x))
 
         appname = os.path.basename(__file__)+"get_work"
-        t = db_table.db_table_func.RecordKeeper(
+        sqlAlcTable = db_table.db_table_func.RecordKeeper(
             db, db_table.db_table_def.MetaSourceFiles, appname=appname)
 
         # to ensure we lock 1 row to avoid race conditions
@@ -558,11 +558,11 @@ class DataFile:
             db_table.db_table_def.MetaSourceFiles.DbSchema,
             self.host, self.curr_pid, project_list)
         logging.debug(f"Claiming work SQL: {sql}")   
-        t.engine.execute(sql)
+        sqlAlcTable.engine.execute(sql)
         logging.debug(f"Work Claimed")
-        t.session.commit()
+        sqlAlcTable.session.commit()
 
-        row = t.get_record(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,
+        row = sqlAlcTable.get_record(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,
                            db_table.db_table_def.MetaSourceFiles.current_worker_host_pid == self.curr_pid,
                            db_table.db_table_def.MetaSourceFiles.process_end_dtm == None)
         logging.debug("Pulling in Work meta in va SQLAlchemy")
@@ -571,7 +571,7 @@ class DataFile:
             sql = self.sql_yaml['sql_any_proc_still_unzipping']
 
             unzipping_count=1
-            t.close() #closing sqlalchemy so we don't lock while sleeping
+            sqlAlcTable.close() #closing sqlalchemy so we don't lock while sleeping
             while(unzipping_count>0):
                 unzipping_count,=db.get_a_row(sql)
                 if (unzipping_count)>0:
@@ -593,7 +593,7 @@ class DataFile:
             self.full_file_path = os.path.join(self.source_file_path,self.curr_src_working_file)
             self.file_id=row.id
 
-        t.close()
+        sqlAlcTable.close()
         return WorkState.HAVE_MORE_WORK
     def do_pre_process_scripts(self,db,foi_list):
          
