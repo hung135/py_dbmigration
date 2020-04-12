@@ -112,7 +112,8 @@ class RecordKeeper():
             self.session.commit()
         except Exception as e:
             logging.exception(e)
-            self.session.rollback()
+            # self.session.rollback()
+            # self.session.begin()
 
     def close(self):
         logging.debug("Closing SqlAlchemy Engine: {}".format(self.appname))        

@@ -59,7 +59,7 @@ class DataFileState:
         #     self.table.close()
         # except:
         #     pass
-        self.table = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles,appname or self.name)
+        self.table = db_table.db_table_func.RecordKeeper(db, db_table.db_table_def.MetaSourceFiles,'DataFileState_'+self.name)
         self.row = self.table.get_record(db_table.db_table_def.MetaSourceFiles.id == file_id)
         
         self.row.file_process_state=self.status.value
@@ -78,7 +78,7 @@ class DataFileState:
             self.close()
         except:
             pass
-        self.table = db_table.db_table_func.RecordKeeper(self.db, db_table.db_table_def.MetaSourceFiles,appname or self.name)
+        self.table = db_table.db_table_func.RecordKeeper(self.db, db_table.db_table_def.MetaSourceFiles,'DataFileState_'+self.name)
         self.row = self.table.get_record(db_table.db_table_def.MetaSourceFiles.id == self.file_id)
 
     def close(self):
@@ -94,7 +94,7 @@ class DataFileState:
         self.table.session.commit()
     def rollback(self):
         logging.debug(f'Rollback Called: {self.name}')
-        self.table.session.rollback()
+        #self.table.session.rollback()
     def authenticate(self):
         pass
     def processed(self,reprocess=False):
@@ -120,7 +120,7 @@ class DataFileState:
         return False        
     def failed(self,msg,reprocess=False):
         logging.error(f"FAILED: {msg}")
-        self.rollback()
+        # self.rollback()
         logging.error(f"FAILED: Reprocess: {reprocess}, Prev Status: {self.status.value}")
         self.status=FileStateEnum.FAILED
         
