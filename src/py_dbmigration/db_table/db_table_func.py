@@ -13,7 +13,7 @@ import inspect
 logging=lg.getLogger('RecordKeeper')
 
 class RecordKeeper():
-
+    engine = None
     engine_dict = {}
     table_dict = {}
     table_def = None
@@ -54,7 +54,8 @@ class RecordKeeper():
             appname='sqlAlch_'+ appname
         )
         logging.debug("Opening SqlAlchemy Engine: {}".format(self.appname))   
-        self.engine = sqlalchemy.create_engine(sql_alchemy_uri_connected)
+        if  self.engine is None:
+            self.engine = sqlalchemy.create_engine(sql_alchemy_uri_connected)
         
         #self.engine = self.engine_dict['only1']
 
@@ -117,17 +118,17 @@ class RecordKeeper():
             # self.session.begin()
 
     def close(self):
-        logging.debug(inspect.stack()[1].function)
+        logging.debug(f"Calling Function: {inspect.stack()[1].function}")
         logging.debug("Closing SqlAlchemy Engine: {}".format(self.appname))        
         try: 
             self.commit() 
-        except Exception :
-            logging.error('Error committing')
+        except Exception as e :
+            logging.error(f'Error committing: {e}')
         try: 
             self.session.close() 
-            self.engine.close()
-        except Exception :
-            logging.error('Error Closing Session')
+            #self.engine.close()
+        except Exception as e:
+            logging.error(f'Error Closing Session: {e}')
     def __del__(self):
         
         logging.debug("Out of Scope Deleting RecordKeeper")
