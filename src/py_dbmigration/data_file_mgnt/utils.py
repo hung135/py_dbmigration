@@ -13,7 +13,7 @@ import os, logging as lg
 import importlib.util
 import copy
 
-logging = lg.getLogger()
+logging = lg.getLogger('Utils')
 
 
 
@@ -221,6 +221,7 @@ def loop_through_logic(foi, db, df,process_logic):
 
             #df.set_work_file_status(db, df.file_id, 'FAILED', custom_logic+'\n'+str(df.load_status_msg or ''))
             break
+    logging.debug('Returning logic_status')
     return logic_status
 
 def loop_through_scripts(db,scripts):
@@ -269,7 +270,7 @@ def process_logic(foi, db, df):
             logic_status=loop_through_logic(foi, db, df,process_logic)
             logging.info("Executing Post Load SQL")
             execute_sql(db, foi.post_action, foi, df,'POST ')
-            logging.info("Executing Process_logic")
+            logging.info("Executing Post Process_logic")
             logic_status= loop_through_logic(foi, db, df,post_process_logic)
             logic_status.completed()
     except Exception as e:
