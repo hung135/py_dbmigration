@@ -99,6 +99,7 @@ class DataFile:
     current_file_state = None
     file_id_list=[]
     file_id = None
+    claim_size = 1 #number of files to fetch each time
 
     def get_curr_table_row_count(self,fqn_table_name):
         current_table_row_count=0
@@ -112,9 +113,10 @@ class DataFile:
         return current_table_row_count
 
 
-    def __init__(self, working_path, db, foi_list, parent_file_id=0,compressed_file_type=None):
+    def __init__(self, working_path, db, foi_list, parent_file_id=0,compressed_file_type=None,claim_size=1):
         #assert isinstance(foi_list[0], FilesOfInterest)
-         
+        self.claim_size=claim_size
+        logging.debug(f'Claim Size; {self.claim_size}')
         if not self.pidManager:
             
             self.pidManager=PidManager(db,'dfm','logging','pidworker',False)
@@ -526,9 +528,9 @@ class DataFile:
         # assert isinstance(db, db_utils.DB)
         # db.execute(update_sql)
     def pop_row(self):
-        print("-----------",len(self.file_id_list))
+         
         row=self.file_id_list.pop()
-        print(row)
+       
         self.reset_stat()
         self.curr_src_working_file = row["curr_src_working_file"]
         self.source_file_path = row["source_file_path"]
@@ -553,10 +555,10 @@ class DataFile:
 
     # @migrate_utils.static_func.timer
     def claim_work(self, db):
-        
+        logging.debug(f'Claim Size: {self.claim_size}')
         assert isinstance(db, db_utils.DB)
         assert isinstance(self.foi_list, list)
-        print("-------------------",len(self.file_id_list))
+         
         if len(self.file_id_list)==0:
 
             print('Querying database')
@@ -572,19 +574,19 @@ class DataFile:
 
             sql = self.sql_yaml['sql_get_work'].format(
                 db_table.db_table_def.MetaSourceFiles.DbSchema,
-                self.host, self.curr_pid, project_list)
+                self.host, self.curr_pid, project_list).replace('limit 1',f'limit {self.claim_size}')
             logging.debug(f"Claiming work SQL: {sql}")   
             sqlAlcTable.engine.execute(sql)
             logging.debug(f"Work Claimed")
             sqlAlcTable.session.commit()
-            print("-----geting rows")
+             
             rows = sqlAlcTable.get_records(db_table.db_table_def.MetaSourceFiles.current_worker_host == self.host,
                             db_table.db_table_def.MetaSourceFiles.current_worker_host_pid == self.curr_pid,
                             db_table.db_table_def.MetaSourceFiles.process_end_dtm == None)
             logging.debug("Pulling in Work meta in va SQLAlchemy")
-            print("-----got rows",rows)
+             
             if len(rows)==0:
-                print("-----",len(rows))
+                 
                 logging.info("\tNo Work Left, Checking Unzip in Progress")
                 sql = self.sql_yaml['sql_any_proc_still_unzipping']
 
@@ -601,7 +603,7 @@ class DataFile:
             else:
 
                 for row in rows:
-                    print("-------iterate before pop------------",len(self.file_id_list))
+                     
                     row_dict={
                     "curr_src_working_file":row.file_name,
                     "source_file_path": row.file_path,
@@ -614,7 +616,7 @@ class DataFile:
 
                     self.file_id_list.append(row_dict)
             sqlAlcTable.close()
-        print("-------before pop------------",len(self.file_id_list))
+        logging.debug(f'{len(self.file_id_list)} Files Left before ReQuery')
         self.pop_row()
         return WorkState.HAVE_MORE_WORK
     def do_pre_process_scripts(self,db,foi_list):
@@ -651,14 +653,14 @@ class DataFile:
          
         self.do_pre_process_scripts(db,self.foi_list)
         get_work_status=WorkState.HAVE_MORE_WORK
-        print("----xxxbefore file_id: ",self.file_id)
+        
         while get_work_status in [WorkState.SLEEP, WorkState.HAVE_MORE_WORK]:
             
-            print("----before file_id: ",self.file_id)
+            
             get_work_status=self.claim_work(db)
         
             self.pidManager.checkin('BEGIN','START')
-            print("------ file id",self.file_id, get_work_status)
+             
             self.pidManager.getwork(self.file_id)
             if get_work_status == WorkState.HAVE_MORE_WORK:
                 try:

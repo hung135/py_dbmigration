@@ -92,7 +92,7 @@ def configure_logging(loglevel=None,logfile=None):
 def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None):
 
     
-
+    claim_size=1
     datafiles =None
     if yamlfile is None:
 
@@ -102,6 +102,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
         parser = argparse.ArgumentParser()
         parser.add_argument('--yaml', help="yaml file")
         parser.add_argument('--cores',default=1, help='Number of Cores(Subprocess) to use')
+        parser.add_argument('--claim',default=1, help='Number file to claim at a time')
         parser.add_argument('--ll' , help='set logging mode: debug, info, warn, error ')
         parser.add_argument('--lf' , help='path to loging file')
         parser.add_argument('--v' , help='print version info',action="store_true")
@@ -118,6 +119,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
             logging.setLevel(str( args.ll).upper())
         yamlfile=args.yaml
         cores = int(cores or args.cores)
+        claim_size=args.claim_size
     else:
         if (logging_mode is not None) and str(logging_mode).isnumeric():
              
@@ -138,7 +140,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
         #so pyinstall will pick it upt
         db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main',loglevel=logging.level)
        
-        df = dfm.data_files.DataFile(writable_path, db, datafiles)
+        df = dfm.data_files.DataFile(writable_path, db, datafiles,claim_size=claim_size)
         df.init_db()
         df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
         

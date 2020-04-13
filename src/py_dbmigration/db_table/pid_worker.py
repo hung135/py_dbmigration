@@ -47,7 +47,8 @@ class PidManager(object):
         if task_status=='ERROR':
             self.has_error=True
 
-        if self.current_task == 'BEGIN':
+        if current_task == 'BEGIN':
+            self.logging.debug('Restarting Timer for New Task')
             self.row.job_start_time=func.now()
         if detail and not self.has_error:
             self.detail=detail
@@ -126,7 +127,7 @@ class PidManager(object):
         
         return self.__str__()
     def __del__(self):
-        print('going out of scope')
+        self.logging.debug(f'Going Out of Scope')
         self.deregister()
 
 
