@@ -119,7 +119,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
             logging.setLevel(str( args.ll).upper())
         yamlfile=args.yaml
         cores = int(cores or args.cores)
-        claim_size=args.claim_size
+        claim_size=args.claim
     else:
         if (logging_mode is not None) and str(logging_mode).isnumeric():
              
