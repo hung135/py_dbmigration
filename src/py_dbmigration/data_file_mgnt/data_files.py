@@ -659,7 +659,7 @@ class DataFile:
             
             get_work_status=self.claim_work(db)
         
-            self.pidManager.checkin('BEGIN','START')
+            self.pidManager.checkin('BEGIN','START',claim_size=self.claim_size)
              
             self.pidManager.getwork(self.file_id)
             if get_work_status == WorkState.HAVE_MORE_WORK:
