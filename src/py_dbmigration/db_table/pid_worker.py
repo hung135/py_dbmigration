@@ -98,7 +98,7 @@ class PidManager(object):
              
     #un claim files
     def release_claim(self,db):
-        sql="""UPDATE logging.meta_source_files
+        sql=f"""UPDATE logging.meta_source_files
                 SET process_start_dtm=null
                 ,process_end_dtm=null
                 ,current_worker_host=null
