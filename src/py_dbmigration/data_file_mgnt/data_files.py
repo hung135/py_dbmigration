@@ -703,6 +703,7 @@ class DataFile:
 
                 # check to see if we have any command
                 if self.pidManager.check_commands()=='STOP':
+                    self.pidManager.release_claim(db)
                     self.do_post_process_scripts(db,self.foi_list)   
                     sys.exit(0)  
 

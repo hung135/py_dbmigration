@@ -39,7 +39,7 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     if already_processed:
         # raise execption to continue with the next file
         # raise valuerror to abort process
-        logging.debug("\t\tDuplicate File Found")
+        logging.error("\t\tDuplicate File Found")
 
         # let file state machine determin if we can continue
         logic_status.continue_to_next_logic(

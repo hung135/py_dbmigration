@@ -40,13 +40,14 @@ class PidManager(object):
         self.table_name=table_name
         self.on_exit_deregister=on_exit_deregister
         self.register()
-    def checkin(self,current_task:str,task_status:str,detail:str=None):
+    def checkin(self,current_task:str,task_status:str,detail:str=None,claim_size:int=None):
 
         self.current_task=current_task
         self.task_status=task_status
         if task_status=='ERROR':
             self.has_error=True
-
+        if claim_size:
+            self.row.claim_size=claim_size
         if current_task == 'BEGIN':
             self.logging.debug('Restarting Timer for New Task')
             self.row.job_start_time=func.now()
@@ -95,6 +96,22 @@ class PidManager(object):
             self.row.current_task=self.current_task
             self.table.add_record(self.row,commit=True)
              
+    #un claim files
+    def release_claim(self,db):
+        sql="""UPDATE logging.meta_source_files
+                SET process_start_dtm=null
+                ,process_end_dtm=null
+                ,current_worker_host=null
+                ,current_worker_host_pid=null
+                ,file_process_state='RAW'
+                ,reporcess = True
+                WHERE  file_process_state='RAW' and 
+                current_worker_host= '{self.host}' and
+                current_worker_host_pid= {self.pid} and
+                process_start_dtm is not NULL and 
+                process_end_dtm is not NULL
+                """
+        db.execute(sql)
 
     
     def deregister(self):
