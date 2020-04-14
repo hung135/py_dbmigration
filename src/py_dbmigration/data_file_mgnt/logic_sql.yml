@@ -52,7 +52,7 @@ sql_update_ALL_meta_source:
   ,current_worker_host=null
   ,current_worker_host_pid=null
   ,file_process_state='RAW'
-  ,reporcess = True
+  ,reprocess = True
   ,total_rows=0
   ,duplicate_file=False
   WHERE  1=1

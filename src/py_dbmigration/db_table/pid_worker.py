@@ -104,7 +104,7 @@ class PidManager(object):
                 ,current_worker_host=null
                 ,current_worker_host_pid=null
                 ,file_process_state='RAW'
-                ,reporcess = True
+                ,reprocess = True
                 WHERE  file_process_state='RAW' and 
                 current_worker_host= '{self.host}' and
                 current_worker_host_pid= {self.pid} and
