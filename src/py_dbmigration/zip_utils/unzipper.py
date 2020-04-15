@@ -36,11 +36,20 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
             #else:
             namelist = [str(f) for f in file.filelist]
         # print(source_file)
-        types=[ 'tar','gz']
+        types=[ 'gz']
+        if (any(zip_type in sublist for sublist in types) ):
+        #if zip_type in ['gzip','tar']:
+            logging.info("\tExtracting GZ File:{}".format(source_file))
+            file = tarfile.open(source_file, "r:gz")
+            namelist = list(file.getnames())
+            if skip is False:
+                file.extractall(writeable_path)
+                file.close()
+        types=[ 'tar']
         if (any(zip_type in sublist for sublist in types) ):
         #if zip_type in ['gzip','tar']:
             logging.info("\tExtracting TAR File:{}".format(source_file))
-            file = tarfile.open(source_file, "r:gz")
+            file = tarfile.open(source_file, "r:")
             namelist = list(file.getnames())
             if skip is False:
                 file.extractall(writeable_path)
