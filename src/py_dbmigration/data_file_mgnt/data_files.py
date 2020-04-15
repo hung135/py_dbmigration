@@ -97,9 +97,9 @@ class DataFile:
     #                    WHERE  file_name='{1}' and
     #                    """
     current_file_state = None
-    file_id_list=[]
+    
     file_id = None
-    claim_size = 1 #number of files to fetch each time
+    #claim_size = 1 #number of files to fetch each time
 
     def get_curr_table_row_count(self,fqn_table_name):
         current_table_row_count=0
@@ -116,6 +116,7 @@ class DataFile:
     def __init__(self, working_path, db, foi_list, parent_file_id=0,compressed_file_type=None,claim_size=1):
         #assert isinstance(foi_list[0], FilesOfInterest)
         self.claim_size=claim_size
+        self.file_id_list=[]
         logging.debug(f'Claim Size; {self.claim_size}')
         if not self.pidManager:
             
