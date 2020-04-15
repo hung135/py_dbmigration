@@ -560,8 +560,7 @@ class DataFile:
         assert isinstance(self.foi_list, list)
          
         if len(self.file_id_list)==0:
-
-            print('Querying database')
+ 
             x = set(self.project_list)
             for foi in self.foi_list:
                 self.extract_file_name_datav2(db, foi)

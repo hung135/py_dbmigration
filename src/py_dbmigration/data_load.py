@@ -136,20 +136,17 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
 
     sub_proc_count=int(cores or 1)
     if len(datafiles) > 0:
-
-        #so pyinstall will pick it upt
-        db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main',loglevel=logging.level)
-       
-        df = dfm.data_files.DataFile(writable_path, db, datafiles,claim_size=claim_size)
-        df.init_db()
-        df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
-        
         if sub_proc_count==1:
-            
+            #so pyinstall will pick it upt
+            db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main',loglevel=logging.level)
+        
+            df = dfm.data_files.DataFile(writable_path, db, datafiles,claim_size=claim_size)
+            df.init_db()
+            df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
+             
             df.do_work(db, cleanup=False,    skip_ifexists=False)
             #db.execute('vacuum analyze logging.meta_source_files')
-            
-    
+             
 
         else:
             # variables visible to all spawn processes
