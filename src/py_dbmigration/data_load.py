@@ -160,7 +160,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
    
     
 
-def mp_do_work(foi_list, data_schema, writable_path,proc_num,claim_size, return_dict):
+def mp_do_work(foi_list, data_schema, writable_path,claim_size,proc_num, return_dict):
     
     db = db_utils.DB(schema=data_schema,label='mp_do_work'+str(proc_num))
     

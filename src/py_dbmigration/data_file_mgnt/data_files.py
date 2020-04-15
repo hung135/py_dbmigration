@@ -709,7 +709,7 @@ class DataFile:
 
             elif get_work_status == WorkState.NO_MORE_WORK:
                 logging.info(f"No More Work Found Exiting Process")
-                self.pidManager.checkin(str(WorkState.NO_MORE_WORK),'DONE') 
+                self.pidManager.checkin('NO_MORE_WORK','DONE') 
             elif get_work_status == WorkState.SLEEP:
                 logging.info(f"Woke up From sleep, Checking for more work")  
                 self.pidManager.checkin('SLEEPING','SLEEP',"Waiting for Work") 
