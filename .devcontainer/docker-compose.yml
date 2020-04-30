@@ -69,7 +69,8 @@ services:
   #       MSSQL_PID: Express
         
   pgadmin4:
-    image: dpage/pgadmin4
+    # image: dpage/pgadmin4
+    image: pgadmin-local
     restart: always
     ports: 
       - 80:80

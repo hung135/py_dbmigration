@@ -101,3 +101,6 @@ clean_meta:
 
 pytest:
 	pytest tests/test_pidmanager.py 
+
+bumpversion:
+	bumpversion patch 
