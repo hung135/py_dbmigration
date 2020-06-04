@@ -1,14 +1,14 @@
 
 twine
+psycopg2-binary
 pandas
 xlsxwriter
 requests
 pyyaml
 py-dbutils
-pyinstaller
+#pyinstaller
 xlrd
 statistics
-jaydebeapi
+#jaydebeapi
 pytest-cov
-pgcli
 inflection

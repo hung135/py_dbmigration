@@ -2,8 +2,8 @@
     "database.connections": [
         {
             "type": "postgres",
-            "name": "DOCKER_PG_DBxxx",
-            "host": "pgdb:5432",
+            "name": "DockerCitus",
+            "host": "master:5432",
             "username": "docker",
             "database": "postgres",
             "password": "docker"
@@ -14,10 +14,10 @@
             "connectionTimeout": 30,
             "database": "postgres",
             "dialect": "PostgreSQL",
-            "name": "pgdb",
+            "name": "docker-masters-citus",
             "password": "docker",
             "port": 5432,
-            "server": "pgdb",
+            "server": "master",
             "username": "docker"
         }
     ],

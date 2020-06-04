@@ -48,8 +48,8 @@ exe: clean_exe
 	tar -czvf artifact.tar -C exe/ .
 
 buildbase:
-	docker image rm buildbase2:latest || true
-	docker build -t buildbase2 -f Build.Dockerfile_base .
+	docker image rm buildbase:latest || true
+	docker build -t buildbase -f Build.Dockerfile_base .
 
 buildCentos6: version
 	./BuildTarget.sh
@@ -104,3 +104,11 @@ pytest:
 
 bumpversion:
 	bumpversion patch 
+
+network:=--network="py_dbmigration_devcontainer_default"
+envfile:=--env-file="./tests/env.txt"
+testexe:
+	#data_load  --yaml=data_load_plugin.yaml 
+	bash BuildTargetTest.sh
+	docker run --rm ${envfile} ${network} buildtest:latest env
+	docker run --rm ${envfile} ${network} buildtest:latest /exe/data_load --yaml=run_once.yaml

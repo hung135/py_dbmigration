@@ -1,0 +1,12 @@
+FROM buildbase
+ 
+
+RUN mkdir -p /exe
+WORKDIR /exe/
+COPY ./artifacts/py_dbmigration_centos6.tar .
+RUN tar -xvf py_dbmigration_centos6.tar 
+COPY Makefile .
+COPY ./tests/ .
+ 
+ 
+  
