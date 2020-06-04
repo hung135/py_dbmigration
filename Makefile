@@ -105,10 +105,16 @@ pytest:
 bumpversion:
 	bumpversion patch 
 
-network:=--network="py_dbmigration_devcontainer_default"
+
+#docker inspect $(docker ps | awk '{ print $NF }' | grep pgdb) | grep NetworkID | awk -F '"' '{print $4}'
+#containerid=$(shell docker ps | awk '{ print $$NF }' | grep pgdb)
+networkid:= $(shell docker inspect $$(docker ps | awk '{ print $$NF }' | grep pgdb) | grep NetworkID | awk -F '"' '{print $$4}')
+network:=--network="${networkid}"
 envfile:=--env-file="./tests/env.txt"
-testexe:
+# this is used to spin up a base centos container and run the built executable to check if dependencies were properly packaged
+testexe: 
 	#data_load  --yaml=data_load_plugin.yaml 
 	bash BuildTargetTest.sh
+	psql -c"create schema logging" || true
 	docker run --rm ${envfile} ${network} buildtest:latest env
 	docker run --rm ${envfile} ${network} buildtest:latest /exe/data_load --yaml=run_once.yaml
