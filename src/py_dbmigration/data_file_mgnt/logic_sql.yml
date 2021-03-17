@@ -32,7 +32,7 @@ sql_update_file_data_date_children:
   set file_name_data= substring(parent.file_name,'{extract_regex}')  
   from logging.meta_source_files parent 
   where a.parent_file_id=parent.id and a.parent_file_id>0 
-  and (a.file_name_data is null or a.file_name_data='0' or file_name_data='') 
+  and (a.file_name_data is null or a.file_name_data='0' or a.file_name_data='') 
   and a.project_name='{project_name}'
 
 sql_update_file_data_date_regex: 
