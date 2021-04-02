@@ -82,23 +82,8 @@ def parse_sql(dbconnection,yaml,runtime_params):
             #sql_execute(conn,sql)
         
 
-def main(args):
+def main():
     
-    dbconnection=get_engine() 
-    start_date=number_to_date(args.start)
-    end_date=number_to_date(args.end)
-    
-    print(start_date)
-    yaml_sql=read_yaml(args.file)
-    
-    days=pd.date_range(start_date,end_date-timedelta(days=1),freq='d')
-    for day in days:
-        s = day.strftime("%Y%m%d")
-        runtime_params['{day}']=s
-        parse_sql(dbconnection,yaml_sql,runtime_params)
-
- 
-if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", 
             help="Increase output (Debug Log Level)", action="store_true")
@@ -121,9 +106,27 @@ if __name__ == "__main__":
 
     start_time = datetime.now()
     logging.info('start_time %s', start_time)
-    exit = main(args)
+    
+
+    dbconnection=get_engine() 
+    start_date=number_to_date(args.start)
+    end_date=number_to_date(args.end)
+    
+    print(start_date)
+    yaml_sql=read_yaml(args.file)
+    
+    days=pd.date_range(start_date,end_date-timedelta(days=1),freq='d')
+    for day in days:
+        s = day.strftime("%Y%m%d")
+        runtime_params['{day}']=s
+        parse_sql(dbconnection,yaml_sql,runtime_params)
+
+
+ 
     end_time = datetime.now()
     elapsed_time = end_time - start_time
     logging.info('end_time %s', end_time)
     logging.info('elapsed_time %s', elapsed_time)
     sys.exit(exit)
+if __name__ == "__main__":
+    main()

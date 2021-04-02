@@ -168,10 +168,10 @@ def mp_do_work(foi_list, data_schema, writable_path,claim_size,proc_num, return_
     
     
     return_dict['proc_num{}'.format(proc_num)]='Started'
-    print(">>>>>>>>>>>Proc Started: {}".format(proc_num))
+    logging.info(">>>>>>>>>>>Proc Started: {}".format(proc_num))
     df.do_work(db, cleanup=False,    skip_ifexists=False)
     return_dict['proc_num{}'.format(proc_num)]='Done'
-    print(">>>>>>>>>>>Proc Done: {}".format(proc_num))
+    logging.info(">>>>>>>>>>>Proc Done: {}".format(proc_num))
    
 
 def multi_process(funct, list_params, max_cores, p_return_dict=None):
