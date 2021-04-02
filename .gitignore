@@ -62,3 +62,5 @@ tests/sample_data/
 test*.zip
 _sample_working_dir/
 .scannerwork/
+tests/*.csv
+.vscode

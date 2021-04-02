@@ -6,9 +6,10 @@ xlsxwriter
 requests
 pyyaml
 py-dbutils
-#pyinstaller
+pyinstaller
 xlrd
 statistics
 #jaydebeapi
 pytest-cov
 inflection
+prettytable
