@@ -2,7 +2,8 @@ PHONY: build
 version_file=src/py_dbmigration/version.py
 GIT_HASH := $(shell git rev-parse HEAD)
 DATE:= ${shell date}
-
+DANGLING:= $(shell docker images -f "dangling=true" -q)
+STOPPED:=$(shell docker container ls -aq)
 #the first remote will be used
 GIT_HASH_URL:=$(shell git remote -v | head -n1 | sed -e"s/\t/ /g" | cut -d " " -f 2)
 # all: clean build
@@ -54,6 +55,9 @@ buildbase:
 buildCentos6: version
 	./BuildTarget.sh
 	mv ./artifacts/artifact.tar ./artifacts/py_dbmigration_centos6.tar
+buildCentos7: version
+	./BuildTarget.sh
+	mv ./artifacts/artifact.tar ./artifacts/py_dbmigration_centos7.tar
 
 move_to_prod: 
 	cp ./artifacts/py_dbmigration_centos6.tar /runtime-exe/
@@ -104,3 +108,7 @@ testexe:
 	psql -c"create schema logging" || true
 	docker run --rm ${envfile} ${network} buildtest:latest env
 	docker run --rm ${envfile} ${network} buildtest:latest /exe/data_load --yaml=run_once.yaml
+remove_dangling:
+	 
+	docker container stop ${STOPPED}
+	docker rmi ${DANGLING}

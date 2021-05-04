@@ -1,8 +1,8 @@
 FROM buildbase
  
 USER root
-RUN mkdir -p /tmp/Build/
-WORKDIR /tmp/Build/
+RUN mkdir -p /Build/
+WORKDIR /Build/
 COPY *.spec .
 COPY src/ src/
 COPY hooks/ hooks/
