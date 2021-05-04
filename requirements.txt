@@ -13,3 +13,4 @@ statistics
 pytest-cov
 inflection
 prettytable
+bumpversion
