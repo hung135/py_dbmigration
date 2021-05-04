@@ -67,21 +67,7 @@ rebuild_move: clean_exe buildCentos6
 test:
 	/runtime-exe/data_load --yaml=/workspace/tests/data_load.yaml --ll=debug
 
-sonar:
-	sonar-scanner -Dsonar.projectKey=3af30f919bc788e20e7130d351c049f184e03844 \
-	-Dsonar.sources=src \
-	-Dsonar.host.url=http://sonarqube:9000 \
-	-Dsonar.login=admin \
-	-Dsonar.password=bitnami 
-	echo http://localhost:9000/dashboard?id=3af30f919bc788e20e7130d351c049f184e03844
-sonar_switchboard:
-	sonar-scanner -Dsonar.projectKey=3af30f919bc788e20e7130d351c049f184e03845 \
-	-Dsonar.sources=scripts \
-	-Dsonar.projectBaseDir=/workspace/switchboard \
-	-Dsonar.host.url=http://sonarqube:9000 \
-	-Dsonar.login=admin \
-	-Dsonar.password=bitnami 
-	echo http://localhost:9000/dashboard?id=3af30f919bc788e20e7130d351c049f184e03845
+ 
 
 python_test:
 	clear

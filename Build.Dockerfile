@@ -1,18 +1,20 @@
 FROM buildbase
  
-
-RUN mkdir -p /Build/
-WORKDIR /Build/
+USER root
+RUN mkdir -p /tmp/Build/
+WORKDIR /tmp/Build/
 COPY *.spec .
 COPY src/ src/
 COPY hooks/ hooks/
 COPY Makefile .
 # COPY version.py src/
+
 ENV PYTHONPATH="src/:/usr/local/lib64/python3.6/site-packages/"
-RUN yum install -y postgresql-devel python-devel
+RUN yum install -y postgresql-devel python3-devel
 COPY requirements.txt src/
 RUN cat src/requirements.txt
 RUN pip3 install -r src/requirements.txt
+ 
 #RUN pip3 install pandas twine pyyaml pytest-cov xlrd
 # RUN head -n -1 src/version.py >src/version2.py
 # RUN mv src/version2.py src/version.py
