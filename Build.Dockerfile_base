@@ -5,25 +5,27 @@ RUN yum -y update && \
     yum -y groupinstall development 
 RUN yum install -y https://repo.ius.io/ius-release-el6.rpm \
         https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
-RUN yum install -y wget
-WORKDIR /tmp
-RUN wget https://www.python.org/ftp/python/3.6.6/Python-3.6.6.tgz
-RUN ls -la
+RUN yum install -y wget zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel
 
-RUN tar xzf Python-3.6.6.tgz
-RUN yum install -y zlib-devel
-WORKDIR /tmp/Python-3.6.6
-RUN ./configure --enable-optimizations
-RUN make altinstall
-RUN ln -sfn /usr/local/bin/python3.6 /usr/bin/python3.6
+WORKDIR /tmp
+RUN wget https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tgz
+RUN tar xzf Python-3.6.8.tgz
 
 #RUN  yum -y install python36u && \
 #    yum -y install python36u-devel && \ 
 #    yum -y install python36u-setuptools
 #yum -y install https://centos6.iuscommunity.org/ius-release.rpm && \
-    
-#RUN easy_install-3.6 pip && \
-#    pip3 install pyinstaller
+WORKDIR /tmp/
 
+
+WORKDIR /tmp/Python-3.6.8
+RUN ./configure --enable-optimizations
+RUN make altinstall
+RUN ln -sfn /usr/local/bin/python3.6 /usr/bin/python3.6
+
+RUN easy_install-3.6 pip && \
+    pip3 install --upgrade pip && \
+    pip3 install setuptools pyinstaller bumpversion
 RUN mkdir -p Build/
 WORKDIR Build/
+RUN ls -la /usr/local/bin/bumpversion
