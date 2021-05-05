@@ -1,12 +1,79 @@
-#FROM centos:6.8
-FROM centos/python-36-centos7
+FROM centos:6.8
+
 USER root
-#COPY centos6.repo /etc/yum.repos.d/CentOS-Base.repo
-RUN pip install --upgrade pip
-RUN easy_install-3.6 pip && \
-    pip3 install pyinstaller
+COPY centos6.repo /etc/yum.repos.d/CentOS-Base.repo
+RUN yum update -y
+RUN yum install -y https://repo.ius.io/ius-release-el6.rpm \
+        https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+
+RUN yum -y install yum-utils tar && \
+    yum -y groupinstall development 
+RUN yum -y groupinstall "Development tools"
+RUN yum -y install zlib-devel bzip2-devel openssl-devel ncurses-devel zx-devel \
+      sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel
+  
+RUN yum -y install wget 
+RUN yum -y install perl-Test-Harness
+RUN cd /opt && \
+    wget https://www.python.org/ftp/python/3.6.12/Python-3.6.12.tgz  && \
+    tar xzf Python-3.6.12.tgz
+ 
+
+RUN cd /opt && \
+    wget https://www.openssl.org/source/openssl-1.1.1k.tar.gz && \ 
+    tar -xzf openssl-1.1.1k.tar.gz 
+RUN cd /opt/openssl-1.1.1k && ls -la 
+
+ENV PATH=$HOME/openssl/bin:$PATH
+ENV LD_LIBRARY_PATH=$HOME/openssl/lib
+ENV LC_ALL="en_US.UTF-8"
+ENV LDFLAGS="-L/root/openssl/lib -Wl,-rpath,/root/openssl/lib"
+
+
+RUN  cd /opt/openssl-1.1.1k && \
+    ./config --prefix=/root/openssl --openssldir=/root/openssl no-ssl2
+    #./config  --prefix=/opt/openssl --openssldir=/opt/openssl/ssl
+    #./config shared --prefix=/root/openssl/ --openssldir=/opt/openssl/ssl
+ 
+RUN  cd /opt/openssl-1.1.1k && \
+    make &&  make install  
+#RUN ls /opt/Python-3.6.12/Modules/
+WORKDIR /opt/Python-3.6.12
+COPY python_setup_36.txt /opt/Python-3.6.12/Modules/Setup
+#run yum install -y mlocate grep
+#RUN updatedb
+#run ls /root/openssl
+#run testbreak
+ 
+RUN  ./configure --enable-optimizations --enable-shared  CPPFLAGS="-I /root/include" LDFLAGS="-L /root/lib" 
+#--with-ssl=/root/openssl
+RUN make install
+#ENV LDFLAGS=-Wl,-rpath=/usr/src/openssl-1.0.2o/lib
+ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib
+RUN python --version && export LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib && python3 --version
+RUN echo $LD_LIBRARY_PATH
+
+RUN cat /opt/Python-3.6.12/Modules/Setup.local
+RUN cat /opt/Python-3.6.12/Modules/Setup
+
+
+#RUN ls -la /usr/bin/
+#RUN ln -sfn /usr/local/bin/python3 /usr/bin/python3.6
+#RUN ln -sfn /usr/local/bin/python3.6 /usr/bin/python3.6
+RUN which python3
+#RUN yum install -y python-setuptools
+RUN yum install -y python-pip
+RUN easy_install pip
+RUN which pip3
+#RUN pip3 install pyinstaller
+RUN yum install -y zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel zlib* libffi-devel readline-devel tk-devel 
+RUN pip3 install --upgrade pip --trusted-host pypi.org --trusted-host files.pythonhosted.org
 
 RUN mkdir -p /Build/
 WORKDIR /Build
+
+
+
+RUN ldconfig
 ENTRYPOINT []
 CMD []
