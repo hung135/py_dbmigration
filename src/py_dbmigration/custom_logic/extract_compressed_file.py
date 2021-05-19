@@ -18,7 +18,9 @@ from py_dbmigration.data_file_mgnt.state import LogicState, FOI
     Python Version: 3.6
     Descripton:
     #  This logic will extract a compressed zip file and inventory the files extracted and link it to the parent_file_id
-    #  
+        - logic: 
+            name: 'custom_logic.extract_compressed_file'
+            skip_extract: False # if unzipped directory found we won't reexctract defaults to false if not specified
     #  
 '''
 
@@ -26,7 +28,7 @@ from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
 
     file_id = df.file_id
-    skip_ifexists = (not foi.unzip_again)
+    
     abs_file_path = logic_status.file_state.file_path
     abs_writable_path = os.path.join(df.working_path, df.curr_src_working_file)
 
@@ -34,12 +36,15 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
 # def extract_file(self, db, abs_file_path, abs_writable_path, skip_ifexists=False):
 
     try:
-
+        logic_dict=search_foi_yaml(foi)
+        skip_extract=False
+        if logic_dict:
+            skip_extract=logic_dict.get('skip_extract',False)
         md5 = logic_status.row.crc
         modified_write_path = os.path.join(abs_writable_path, str(md5)[:8])
 
         files = zip_utils.unzipper.extract_file(abs_file_path, modified_write_path,
-                                                False, df.work_file_type, skip_ifexists=skip_ifexists)
+                                                False, df.work_file_type, skip_ifexists=skip_extract)
 
         total_files = len(files)
 
@@ -49,7 +54,7 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
         logging.debug(
             "WALKING EXTRACTED FILES:\nsrc_dir:{0} \nworking_dir:{1}: --{2}".format(new_src_dir, df.working_path, modified_write_path))
 
-        file_table_map = [FilesOfInterest('DATA', '.*', file_path=modified_write_path, file_name_data_regex=None,
+        file_table_map = [FilesOfInterest('DATA', '.*', file_path=modified_write_path,  
                                                                     parent_file_id=file_id, project_name=foi.project_name)]
 
         # instantiate a new Datafile object that craw this new directory of extracted files
@@ -57,10 +62,26 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
             new_src_dir, db, file_table_map, parent_file_id=file_id)
     except Exception as e:
         logging.exception(f"Failed Extracting: {e}")
-        logic_status.failed(e)
+        logic_status.failed(e,foi.reprocess)
     
     return logic_status
 
+
+#function to iterate over yaml definition looking for logic or plugin optional parameters
+def search_foi_yaml(foi: FOI):
+
+    logic_dict=None
+    file_file="custom_logic.extract_compressed_file"
+    logic_file=os.path.basename(__file__)
+    
+    for x in foi.process_logic: 
+        if isinstance(x.get('logic'), dict):
+            if str(x.get('logic').get('name'))==str(file_file):
+                logic_dict=x.get('logic') 
+        if isinstance(x.get('plugin'), dict):
+            if str(logic_file) == os.path.basename(str(x.get('plugin').get('name'))):
+                logic_dict=x.get('plugin') 
+    return logic_dict
 
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 def process(db, foi, df, logic_status):

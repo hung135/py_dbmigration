@@ -39,17 +39,18 @@ def custom_logic(db, foi, df,logic_status):
                 and cur.file_name<=newer.file_name
                 and cur.id!=newer.id
                 and cur.file_type=newer.file_type
+                and newer.file_process_state<>'FAILED'
                 limit 1
                     """.format(file_id=df.file_id, file_regex=foi.regex))
 
     if file_exists:
         # raise execption to continue with the next file
         # raise valuerror to abort process
-        logging.info("\t\tObsolete Data File: Newer File Found")
+        logging.debug("\t\tObsolete Data File: Newer File Found")
     
         logic_status.continue_to_next_logic(logic_status.file_state.obsolete())
     else:
-        logging.info("\t\tNOT Obsolete Data")
+        logging.debug("\t\tNOT Obsolete Data")
 
     return logic_status
 

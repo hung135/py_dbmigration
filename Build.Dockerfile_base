@@ -68,7 +68,7 @@ RUN which pip3
 #RUN pip3 install pyinstaller
 RUN yum install -y zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel zlib* libffi-devel readline-devel tk-devel 
 RUN pip3 install --upgrade pip --trusted-host pypi.org --trusted-host files.pythonhosted.org
-
+RUN yum install -y xz-devel
 RUN mkdir -p /Build/
 WORKDIR /Build
 
@@ -76,4 +76,4 @@ WORKDIR /Build
 
 RUN ldconfig
 ENTRYPOINT []
-CMD []
+CMD ["/bin/sh"]

@@ -101,21 +101,30 @@ class DataFileState:
         logging.debug(f'Processed Called: {self.name}')
         if not self.status in [FileStateEnum.FAILED,FileStateEnum.DUPLICATE,FileStateEnum.OBSOLETE]:
             self.status=FileStateEnum.PROCESSED
+           
+            self.row.reprocess=False
         else:
             self.status=FileStateEnum.FAILED
+            self.row.reprocess=reprocess
+ 
         logging.debug(f"Processed: Reprocess: {reprocess}, Statue: {self.status.value}")
-        self.row.reprocess=reprocess
+        
         self.row.file_process_state=self.status.value
         self.commit()
+ 
         return self.status.value
     def obsolete(self):
         self.status=FileStateEnum.OBSOLETE
         self.row.file_process_state=self.status.value
+        self.row.last_error_msg='Obsolete File'
+        self.row.reprocess=False
         self.commit()
         return False
     def duplicate(self):
         self.status=FileStateEnum.DUPLICATE
         self.row.file_process_state=self.status.value
+        self.row.duplicate_file=True
+        self.row.last_error_msg='Duplicate File'
         self.commit()
         return False        
     def failed(self,msg,reprocess=False):
@@ -194,7 +203,7 @@ class LogicState:
     #This logic has ran to completion
     def continue_to_next_logic(self,TrueFalse):
         assert isinstance(TrueFalse,bool)
-        logging.info("\t\tSet Continue to Next Logic: {}".format(TrueFalse))
+        logging.debug("\t\tSet Continue to Next Logic: {}".format(TrueFalse))
         self.continue_processing_logic=TrueFalse
     #This logic has ran to completion
     def completed(self):
@@ -281,12 +290,11 @@ class FOI(object):
     post_process_scripts = []
     reprocess=False 
     extract_file_name_data = None
-    format_extracted_date = None
-    file_name_data_regex = None
-    table_name_extract = None
-    unzip_again = None
+    file_name_data_regex = None 
+     
+     
     header_row = None
-    new_delimiter = None
+  
     convert_table_name_snake_case = None
     encoding = None
     mapping = None
@@ -314,7 +322,7 @@ class FOI(object):
             
          
         self.regex = self.regex or self.file_regex
-        self.file_name_data_regex = self.extract_file_name_data or self.file_name_data_regex
+         
         self.encoding = self.file_encoding or self.encoding
         self.limit_rows = self.limit_rows 
         self.header_row = self.header_row or 0
@@ -379,16 +387,15 @@ class FilesOfInterest(FOI):
     # source to a table
     write_path=None
     extract_file_name_data = None
-    format_extracted_date = None
+    
     file_path = None # the direction not the FQN of the file...
     def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
                  use_header=False, has_header=True, quoted_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
-                 file_name_data_regex=None, file_path=None, parent_file_id=0, insert_option=None, encoding='UTF8',
-                 append_crc=False, limit_rows=None, header_row_location=0,  
-                 new_delimiter=None, dataset_name=None, redaction_file=None,
-                 upsert_function_name=None, import_method=None, unzip_again=False, pre_action_sql=None,
+                   file_path=None, parent_file_id=0, insert_option=None, encoding='UTF8',
+                 append_crc=False, limit_rows=None,  
+                 upsert_function_name=None, import_method=None,   pre_action_sql=None,
                  post_action=None, pre_action=None, process_logic=None, project_name='Default',
-                 table_name_extract=None, reprocess=False, yaml=None,mapping=None):
+                  reprocess=False, yaml=None,mapping=None):
         self.yaml = yaml
         self.mapping = mapping
         # avoid trying to put any logic here
@@ -409,7 +416,7 @@ class FilesOfInterest(FOI):
         self.append_file_id = append_file_id
         self.append_column_name = append_column_name
         self.file_type = file_type
-        self.file_name_data_regex = file_name_data_regex
+         
         self.append_crc = append_crc
 
         if file_path is not None and not(file_path[:5]=='s3://'):
@@ -427,13 +434,12 @@ class FilesOfInterest(FOI):
        
         self.header_added = None
         # self.start_row = start_row
-        self.header_row = header_row_location or 0
-        
-        self.new_delimiter = new_delimiter
-        self.dataset_name = dataset_name
-        self.redaction_file = redaction_file
+      
+         
+         
+ 
         self.upsert_function_name = upsert_function_name
-        self.unzip_again = unzip_again
+         
         self.pre_action_sql = pre_action_sql
         # list of sql to execute prior or post import of the file
         self.post_action = post_action
@@ -441,7 +447,7 @@ class FilesOfInterest(FOI):
          
         self.process_logic = process_logic
         self.project_name = project_name
-        self.table_name_extract = table_name_extract
+         
         self.reprocess = reprocess
 
     

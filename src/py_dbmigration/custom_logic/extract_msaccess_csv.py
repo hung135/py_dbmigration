@@ -32,8 +32,7 @@ def custom_logic(db, foi, df,logic_status):
     
     table_name = foi.table_name
     #target_schema = foi.schema_name
-    file_id = df.file_id
-    #skip_ifexists = (not foi.unzip_again)
+    file_id = df.file_id 
     abs_file_path = os.path.join(df.source_file_path, df.curr_src_working_file)
     abs_writable_path = os.path.join(df.working_path, df.curr_src_working_file)
     import py_dbutils.rdbms.msaccess as msaccess
@@ -69,7 +68,7 @@ def custom_logic(db, foi, df,logic_status):
         logging.debug(
             " EXTRACTED From ACCESS FILES:\nsrc_dir:{0} \nworking_dir:{1}: --{2}".format(new_src_dir, df.working_path, modified_write_path))
 
-        file_table_map = [data_files.FilesOfInterest('DATA', '.*', file_path=modified_write_path, file_name_data_regex=None,
+        file_table_map = [data_files.FilesOfInterest('DATA', '.*', file_path=modified_write_path,  
                                                                     parent_file_id=file_id, project_name=foi.project_name)]
 
         # instantiate a new Datafile object that craw this new directory of extracted files

@@ -25,7 +25,7 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
     def test_data_load_postgres_utils(self):
         print('# In function:', sys._getframe().f_code.co_name) 
         shutil.copyfile("/workspace/tests/sample_data/Contacts_Demo_200101.zip","/workspace/tests/sample_data/Contacts_Demo_200102.zip")
-        shutil.copyfile("/workspace/tests/sample_data/Contacts_Demo_200101.zip","/workspace/tests/sample_data/Contacts_Demo_duplicate.zip")
+        shutil.copyfile("/workspace/tests/sample_data/Contacts_Demo_200101.zip","/workspace/tests/sample_data/Contacts_Demo_200103_duplicate.zip")
          
         db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
          

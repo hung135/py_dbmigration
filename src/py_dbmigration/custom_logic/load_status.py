@@ -63,7 +63,7 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     #going through and pulling values and setting the object above
     create_date=datetime.datetime.now()
     x = LoadStatusTblStruct()
-    fqn_table_name=f'{foi.schema_name}.{foi.table_name}'
+    fqn_table_name=f'{foi.schema_name or db.schema}.{foi.table_name}'
      
     if foi.table_name is not None:
         try:
@@ -73,7 +73,8 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
         except Exception as e:
             logging.exception(e)
 
-    
+    #x.load_status = 'TBD'
+    x.end_date = datetime.datetime.now()
     x.table_name = foi.table_name
     x.program_unit = os.path.basename(df.full_file_path)
     x.program_unit_type_code = int(df.file_id)
@@ -87,10 +88,10 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     x.records_deleted = 0
     x.records_updated = 0
     db.execute(x.build_sql_insert())
-    sql=f"""select id from logging.load_status where created_date='{x.created_date}' 
-                        and program_unit_type_code='{x.program_unit_type_code}' order by id desc limit 1"""
+    sql=f"""select load_status_id from logging.load_status where created_date='{x.created_date}' 
+                        and program_unit_type_code='{x.program_unit_type_code}' order by 1 desc limit 1"""
     #place holder for now
-    df.load_status_id,=db.get_a_row(sql)
+    #df.load_status_id,=db.get_a_row(sql)
 
     return logic_status
 

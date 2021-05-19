@@ -61,7 +61,7 @@ def get_mapped_table(file_name, foi_list):
 
         if re.match(i.regex, file_name, re.IGNORECASE):
             # print("***FOI.regex:", i.regex, i.table_name, file_name)
-            logging.info(
+            logging.debug(
                 "File->Table mapping found: {} {}".format(i.file_type, i.regex))
             return copy.copy(i)
     return None
@@ -97,7 +97,7 @@ class DataFile:
     #                    WHERE  file_name='{1}' and
     #                    """
     current_file_state = None
-    
+    file_name_data_regex = None
     file_id = None
     #claim_size = 1 #number of files to fetch each time
 
@@ -193,9 +193,7 @@ class DataFile:
                     logging.debug(f"Connecting to Switchboard : {switch_db_name} : {switch_db_hostname}")
                    
                     sw_db=dbconn.DB(host=switch_db_hostname,dbname=switch_db_name)
-                     
-                    file_list=[]
-                    id_list=[]
+                      
                     logging.debug(f"Fetching from Switchboard: {switch_project_name}:{switch_db_name}:{switch_db_hostname}")
                     rs,_=sw_db.query(f"Select outgoing_path, id from switchboard.switchboard_history where upper(project_name)=upper('{switch_project_name}') and state='M' ")
                      
@@ -242,23 +240,23 @@ class DataFile:
             project_name = getattr(foi, 'project_name')
             date_format = getattr(foi, 'format_extracted_date')
 
-            if extract_file_name is not None and date_format is None:
-                #print('EXTRACT_FILE_NAME EXISTS AND DATE_FORMAT NOT EXISTS')
-                sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
-                sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children']
+            # if extract_file_name is not None and date_format is None:
+            #     #print('EXTRACT_FILE_NAME EXISTS AND DATE_FORMAT NOT EXISTS')
+            #     sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
+            #     sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children']
 
-            if extract_file_name is not None and date_format is not None:
-                #print('EXTRACT_FILE_NAME EXISTS AND DATE_FORMAT EXISTS')
-                sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
-                sql_update_file_data_date_children = self.sql_yaml[
-                    'sql_update_file_data_date_children_regex']
-            if extract_file_name is not None:
-                #print('EXTRACT_FILE_NAME EXISTS')
+            # if extract_file_name is not None and date_format is not None:
+            #     #print('EXTRACT_FILE_NAME EXISTS AND DATE_FORMAT EXISTS')
+            #     sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
+            #     sql_update_file_data_date_children = self.sql_yaml[
+            #         'sql_update_file_data_date_children_regex']
+            # if extract_file_name is not None:
+            #     #print('EXTRACT_FILE_NAME EXISTS')
 
-                db.execute(sql_update_file_data_date.format(
-                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
-                db.execute(sql_update_file_data_date_children.format(
-                    extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
+            #     db.execute(sql_update_file_data_date.format(
+            #         extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
+            #     db.execute(sql_update_file_data_date_children.format(
+            #         extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
  
 
     # compiles a given regext and will returned a compiled regex
@@ -304,10 +302,11 @@ class DataFile:
 
             # If the file already exists in the database we don't need to
             # insert again
-            file_found, = db.get_a_row(
-                "select count(1) from logging.meta_source_files where file_name='{}' and file_path='{}' and project_name='{}'".format(
+            sql= "select count(1) from logging.meta_source_files where file_name='{}' and file_path='{}' and project_name='{}'".format(
                     file_name, file_path, foi.project_name)
-            )
+            logging.debug(f"Checking File Exist: {sql}")
+            file_found, = db.get_a_row(sql)
+            
           
 
             if file_found == 0:
@@ -316,13 +315,7 @@ class DataFile:
                 v_file_type = foi.file_type
                 if foi.file_type == 'DATA':
                     v_file_type = file_name.split(".")[-1].upper()
-                if parent_file_id>0 and file_name_data=='':
-                    # if not file_name data take the parent file's data
-                    if foi.file_name_data_regex is not None:
-                        parent_file_name,=db.get_a_row(f'select file_name from logging.meta_source_files where id={parent_file_id}')
-                        xx=re.search(foi.extract_file_name_data,parent_file_name) or ''
-                        if xx:
-                            file_name_data=xx.group()
+                
                 row = db_table.db_table_def.MetaSourceFiles(file_path=file_path,
                                                             file_name=file_name,
                                                             file_name_data=file_name_data,
@@ -673,9 +666,9 @@ class DataFile:
                         
 
                         # self.work_file_type in self.SUPPORTED_DATAFILE_TYPES:
-                        logging.info(
+                        logging.debug(
                             "->Processing file_id: {}: --> {}".format(self.file_id, self.curr_src_working_file))
-                        logging.info(
+                        logging.debug(
                             "->Path: \n\t\t{0}\n\t\t{1}".format(self.source_file_path, full_file_name))
 
                         # self.set_work_file_status(

@@ -63,7 +63,7 @@ class PidManager(object):
     def commit(self):
         self.table.add_record(self.row,True)
     def getwork(self,file_id:int=None):
-        self.logging.info(f"Got file_id : {file_id}")
+        self.logging.debug(f"Got file_id : {file_id}")
         self.file_count+=1
         self.row.file_count = self.file_count
         if file_id is not None:

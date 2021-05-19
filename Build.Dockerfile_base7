@@ -9,4 +9,4 @@ RUN easy_install-3.6 pip && \
 RUN mkdir -p /Build/
 WORKDIR /Build
 ENTRYPOINT []
-CMD []
+CMD ["/bin/sh"]

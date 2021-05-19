@@ -32,6 +32,7 @@ RUN pip3 install -r src/requirements.txt
 
 RUN make clean
 RUN make exe   
-
+ 
+CMD ["/bin/sh"]
  
   

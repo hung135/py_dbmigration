@@ -37,13 +37,13 @@ def custom_logic(db, foi, df,logic_status):
     
     table_name = foi.table_name
     target_schema = foi.schema_name
-    #table_name_extract = foi.table_name_extract
+  
     header = foi.header_row
     names =  foi.column_list
-    file_type = foi.file_type
+    
     file_id = df.file_id
 
-    delim = foi.new_delimiter or foi.file_delimiter
+    delim =  foi.file_delimiter
     append_file_id = foi.append_file_id
  
     if db is not None:
@@ -58,13 +58,7 @@ def custom_logic(db, foi, df,logic_status):
         if make_snake_case:
             table_name=migrate_utils.static_func.convert_str_snake_case(table_name)
         counter = 0
-        # if table_name_extract is not None:
-        #     table_name_regex = re.compile(table_name_extract)
-        #     # table_name = table_name_regex.match(table_name))
-        #     print("----", table_name_extract, table_name)
-        #     table_name = re.search(table_name_extract, table_name).group(1)
-
-        #     logging.info("\t\tExtracted tableName from file: {} ".format(table_name))
+        
         if lowercase:
             table_name = str.lower(str(table_name))
         try:

@@ -29,7 +29,7 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
         if (any(zip_type in sublist for sublist in types) ):
             file = zipfile.ZipFile(source_file)
             if skip is False:
-                logging.info("\tExtracting Zip File:\n\t\t{}".format(source_file))
+                logging.debug("\tExtracting Zip File:\n\t\t{}".format(source_file))
 
                 file.extractall(writeable_path)
                 file.close()

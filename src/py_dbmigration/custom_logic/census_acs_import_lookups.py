@@ -47,7 +47,7 @@ def custom_logic(db, foi, df:DataFile,logic_status:LogicState):
       
     table_name = foi.table_name
     target_schema = foi.schema_name
-    #table_name_extract = foi
+     
 
     file_id = df.file_id
 

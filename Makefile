@@ -23,7 +23,8 @@ clean:
 	rm -rf build/ dist/ exe/
 clean_exe:
 	rm -rf exe/ artifacts/
-
+clean_tmp:
+	rm -rf /workspace/tmp/
 version:
 	echo "version = {">${version_file}>${version_file}
 	
@@ -43,7 +44,7 @@ exe: clean_exe
 	# --hidden-import=py_dbmigration.custom_logic.generate_checksum 
 
 	# need to make sure all dependency exists so pyinstall can crawl and package them also
-	pip install -r src/py_dbmigration/requirements.txt 
+	pip install -r requirements.txt 
 
 	pyinstaller ./data_load.spec --distpath=exe
 	tar -czvf artifact.tar -C exe/ .
@@ -68,10 +69,17 @@ rebuild_move: clean_exe buildCentos6
 	#cp ./artifacts/py_dbmigration_centos6.tar /runtime-exe/
 	tar -xvf ./artifacts/py_dbmigration_centos6.tar -C /runtime-exe/
 
-test:
-	/runtime-exe/data_load --yaml=/workspace/tests/data_load.yaml --ll=debug
 
- 
+
+test: 
+	exe/data_load --yaml=/workspace/tests/simple_test.yaml --ll=info
+	psql -c"select id,file_name_data,file_process_state,file_name,reprocess,last_error_msg from logging.meta_source_files"
+
+test_python: 
+	python /workspace/src/py_dbmigration/data_load.py --yaml=/workspace/tests/simple_test.yaml --ll=info
+	psql -c"select id,file_name_data,file_process_state,file_name,reprocess,last_error_msg from logging.meta_source_files"
+
+clean_test: clean_meta clean_tmp test
 
 python_test:
 	clear
@@ -85,9 +93,12 @@ testplugin: clean_meta
 testpluginexe: clean_meta
 	clear
 	/workspace/exe/data_load  --yaml=/workspace/tests/data_load_plugin.yaml --ll=20
-
+create_test_schema:
+	psql <"/workspace/tests/sql/create_schema.sql"
 clean_meta:
-	psql -c"truncate table logging.meta_source_files;"
+	clear
+	
+	psql -c"truncate table logging.meta_source_files;" 
 
 pytest:
 	pytest tests/test_pidmanager.py 

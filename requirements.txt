@@ -14,3 +14,4 @@ pytest-cov
 inflection
 prettytable
 bumpversion
+bs4

@@ -138,6 +138,5 @@ class RecordKeeper():
             logging.error(f'Error Closing Session: {e}')
     def __del__(self):
         
-        logging.debug("Out of Scope Deleting RecordKeeper")
         self.close()
             # print(e)

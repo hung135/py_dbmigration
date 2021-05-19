@@ -102,6 +102,9 @@ def inject_frame_work_data(string_text, foi, df):
     x = x.replace("{{{schema_name}}}", str(foi.schema_name or 'NONE'))
     x = x.replace("{{{table_name}}}", str(foi.table_name or 'NONE'))
     x = x.replace("{{{column_list}}}", ','.join(foi.column_list or []))
+    
+    x = x.replace("{{{curr_src_working_file}}}", str(df.curr_src_working_file))
+    
 
     return x
  
@@ -129,7 +132,7 @@ def get_imported_plugin_module(custom_logic,foi,curr_plugin):
      
     abs_plugin = os.path.abspath(curr_plugin)
     logic_name = abs_plugin.split('.')[-2]
-    logging.info(abs_plugin)
+    logging.info(f"Plugin Logic: {abs_plugin}")
     #foi.logic_options = copy.copy(custom_logic)
     #foi.logic_options['name']=copy.copy((logic_name))
 
@@ -161,25 +164,29 @@ def loop_through_logic(foi, db, df,process_logic):
         custom_logic=copy.copy(logic.get('logic',None))
         plugin_logic=copy.copy(logic.get('plugin',None))
         #advanced process logic config
-        
+        name =''
         if custom_logic is not None:
        
             if isinstance(custom_logic,dict):
-
-                imported_module = get_imported_module(custom_logic['name'],foi)
+                name=custom_logic['name']
+                imported_module = get_imported_module(name,foi)
+                
             else:
                 imported_module = get_imported_module(custom_logic,foi)
+                name=custom_logic
             
-            logic_name = f'py_dbmigration.{custom_logic}'
+            logic_name = f'py_dbmigration.{name}'
            
         
         elif plugin_logic is not None: 
            
             if isinstance(plugin_logic,dict):
-                imported_module = get_imported_plugin_module(logic,foi,plugin_logic['name'])
+                name=plugin_logic['name']
+                imported_module = get_imported_plugin_module(logic,foi,name)
             else:
                 imported_module = get_imported_plugin_module(logic,foi,plugin_logic)
-            logic_name = os.path.basename(plugin_logic) 
+                name=plugin_logic
+            logic_name = os.path.basename(name) 
             
         
         else:

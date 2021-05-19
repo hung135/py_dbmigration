@@ -11,14 +11,14 @@ COPY .devcontainer/settings.vscode.json /root/.vscode-remote/data/Machine/settin
 ENV PYTHONUNBUFFERED 1
 
 # Install git, process tools
-RUN apt-get update && apt-get -y install git procps fish postgresql-client default-jre vim lsb-release docker.io
+RUN apt-get update && apt-get -y install git procps fish postgresql-client default-jre vim lsb-release docker.io sqitch
 #RUN apt-get -y install python3-tables
-RUN mkdir /sonar
-WORKDIR /sonar
-RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip
-RUN unzip sonar-scanner-cli-4.2.0.1873-linux.zip \
-    && ln -s /sonar/sonar-scanner-4.2.0.1873-linux/bin/sonar-scanner /bin/sonar-scanner
-RUN mkdir /workspace
+# RUN mkdir /sonar
+# WORKDIR /sonar
+# RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip
+# RUN unzip sonar-scanner-cli-4.2.0.1873-linux.zip \
+#     && ln -s /sonar/sonar-scanner-4.2.0.1873-linux/bin/sonar-scanner /bin/sonar-scanner
+# RUN mkdir /workspace
 
 
 # Install pylint

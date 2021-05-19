@@ -12,9 +12,9 @@ a = Analysis(['src/py_dbmigration/data_load.py'],
                 ,'py_dbmigration.custom_logic.abort_if_obsolete'
                 ,'py_dbmigration.custom_logic.pg_bulk_copy'
                 ,'py_dbmigration.custom_logic.extract_compressed_file'
+                ,'py_dbmigration.custom_logic.update_child_file'                
                 ,'py_dbmigration.custom_logic.read_from_s3'
                 ,'py_dbmigration.custom_logic.append_file_id_w_header'
-                ,'py_dbmigration.custom_logic.wyman'
                 ,'py_dbmigration.custom_logic.append_file_id'
                 ,'py_dbmigration.custom_logic.load_status'
                 ,'py_dbmigration.custom_logic.count_file_linux_wc'
@@ -33,6 +33,7 @@ a = Analysis(['src/py_dbmigration/data_load.py'],
                 ,'py_dbmigration.custom_logic.upsert_table_from_stg'
                 ,'py_dbmigration.custom_logic.copy_file'
                 ,'xlrd'
+                ,'pylzma'
              ],
              hookspath=[],
              runtime_hooks=[],

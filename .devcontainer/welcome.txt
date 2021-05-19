@@ -1,8 +1,7 @@
 
 make test - test executable
 python setup.py test - run python unittest
-make exe - creates the executable
-make sonar - run sonarqube code analysis on current codebase
+make exe - creates the executable 
 
 How to Deploy:
     1: make buildCentos6
@@ -15,8 +14,5 @@ Upload to PyPi:
 pgadmin:
 http://localhost
 
-sonarqube:
-http://localhost:9000
-username/password:
-admin/bitnami
+ 
 

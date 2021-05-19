@@ -8,7 +8,8 @@
   enabled: True # activates this configration tree
   project_name: test_1
   reprocess: True # flag used to identify files we want to attempt to re-run the next go around
-  extract_file_name_data: '\d\d\d\d\d\d'  # regext to extract data from file name and store
+  table_name: ttttt
+  schema_name: testing
   format_extracted_date: 'YYYYMM'       #postgres format of the regex above
   process_logic: # this will get executed for all files
     - logic: 'custom_logic.load_status'
@@ -25,6 +26,14 @@
       process_logic:
         - logic: 'custom_logic.abort_if_obsolete'
         - logic: 'custom_logic.extract_compressed_file'
+        # - logic: 
+        #     name: 'custom_logic.update_child_file'
+        #     extract_regex: '\d\d\d\d\d'  # regext to extract data from file path and name and store
+        #     option: 'full_path' # 'full_path', 'file_name'
+        - plugin:
+            name: '/workspace/src/py_dbmigration/custom_logic/update_child_file.py'
+            extract_regex: '\d\d\d\d\d'  # regext to extract data from file path and name and store
+            option: 'full_path' # 'full_path', 'file_name'
     - file_regex: '^.*.mdb$'
       file_type: 'mdb'
       process_logic:

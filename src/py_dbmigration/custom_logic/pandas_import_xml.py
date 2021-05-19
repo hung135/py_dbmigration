@@ -75,7 +75,7 @@ def custom_logic(db, foi, df,logic_status):
     
     table_name = foi.table_name
     target_schema = foi.schema_name
-    #table_name_extract = foi.table_name_extract
+    
     header = foi.header_row
     names =  foi.column_list
     file_type = foi.file_type
@@ -84,7 +84,7 @@ def custom_logic(db, foi, df,logic_status):
     print("xpath_list")
     print(xpath_list)
 
-    delim = foi.new_delimiter or foi.file_delimiter
+    delim = foi.file_delimiter
     append_file_id = foi.append_file_id
  
     if db is not None:
