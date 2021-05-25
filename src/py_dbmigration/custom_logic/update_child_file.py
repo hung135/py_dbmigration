@@ -4,7 +4,7 @@ import os, logging as lg
 logging=lg.getLogger() 
 import sys
 from py_dbutils.rdbms.postgres import DB
-from py_dbmigration.data_file_mgnt.data_files import DataFile,FilesOfInterest 
+from py_dbmigration.data_file_mgnt.data_files import DataFile  
 import py_dbmigration.zip_utils as zip_utils
 from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 import re
@@ -29,8 +29,8 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     file_id = df.file_id 
     abs_file_path = logic_status.file_state.file_path
     #abs_writable_path = os.path.join(df.working_path, df.curr_src_working_file)
-
-
+    
+    print(foi)
 # def extract_file(self, db, abs_file_path, abs_writable_path, skip_ifexists=False):
 
     try:

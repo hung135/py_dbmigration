@@ -16,7 +16,7 @@ import time
 import py_dbmigration.migrate_utils as migrate_utils
 import py_dbutils.parents as db_utils
 from py_dbmigration.data_file_mgnt import utils 
-from py_dbmigration.data_file_mgnt.state import FilesOfInterest, DataFileState, FOI,LogicState, WorkState
+from py_dbmigration.data_file_mgnt.state import DataFileState, FOI,LogicState, WorkState
 import os
 import logging as log
 
@@ -51,19 +51,19 @@ logging.setLevel(log.DEBUG)
 # Struct used to group parameters to define files of interests
 
 
-def get_mapped_table(file_name, foi_list):
+def get_matching_yaml(file_name, foi_list):
     import copy
-
-    for i in foi_list:
+    print("--------",file_name)
+    for foi in foi_list:
         # print(i.regex)
         # if i.table_name is not None:
-        assert isinstance(i, FilesOfInterest) or isinstance(i, FOI)
+        assert isinstance(foi, FOI)
 
-        if re.match(i.regex, file_name, re.IGNORECASE):
-            # print("***FOI.regex:", i.regex, i.table_name, file_name)
+        if re.match(foi.file_regex, file_name, re.IGNORECASE):
+            print(foi)
             logging.debug(
-                "File->Table mapping found: {} {}".format(i.file_type, i.regex))
-            return copy.copy(i)
+                "File->Table mapping found: {} {}".format(foi.file_type, foi.file_regex))
+            return copy.copy(foi)
     return None
 
 
@@ -114,7 +114,7 @@ class DataFile:
 
 
     def __init__(self, working_path, db, foi_list, parent_file_id=0,compressed_file_type=None,claim_size=1):
-        #assert isinstance(foi_list[0], FilesOfInterest)
+         
         self.claim_size=claim_size
         self.file_id_list=[]
         logging.debug(f'Claim Size; {self.claim_size}')
@@ -133,6 +133,7 @@ class DataFile:
 
         self.project_list = []
         for p in foi_list:
+             
             self.project_list.append(p.project_name)
             if p.write_path is not None:
                 
@@ -158,7 +159,7 @@ class DataFile:
         self.work_file_type = 0
         self.total_files = 0
         self.curr_file_success = False
-        self.FilesOfInterest = None
+        #self.FilesOfInterest = None
         self.total_data_file_count = 0
         self.foi_list = foi_list
         self.rows_inserted = 0  # initialzed in constructor
@@ -211,7 +212,7 @@ class DataFile:
                         sw_db.execute(f"update switchboard.switchboard_history set state='C' where id={id}")
                 else:
                     if os.path.isdir(files_of_interest.file_path):
-                        if files_of_interest.regex:
+                        if files_of_interest.file_regex:
                             
                             self.FilesOfInterest = self.walk_dir( files_of_interest)
                             self.FilesOfInterest.parent_file_id = self.file_id
@@ -232,36 +233,7 @@ class DataFile:
         t = db_table.db_table_func.RecordKeeper(
             self.db, db_table.db_table_def.MetaSourceFiles, appname=appname)
         t.close()
-
-    def extract_file_name_datav2(self, db, foi):
-
-        if foi.project_name is not None:
-            extract_file_name = getattr(foi, 'extract_file_name_data')
-            project_name = getattr(foi, 'project_name')
-            date_format = getattr(foi, 'format_extracted_date')
-
-            # if extract_file_name is not None and date_format is None:
-            #     #print('EXTRACT_FILE_NAME EXISTS AND DATE_FORMAT NOT EXISTS')
-            #     sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date']
-            #     sql_update_file_data_date_children = self.sql_yaml['sql_update_file_data_date_children']
-
-            # if extract_file_name is not None and date_format is not None:
-            #     #print('EXTRACT_FILE_NAME EXISTS AND DATE_FORMAT EXISTS')
-            #     sql_update_file_data_date = self.sql_yaml['sql_update_file_data_date_regex']
-            #     sql_update_file_data_date_children = self.sql_yaml[
-            #         'sql_update_file_data_date_children_regex']
-            # if extract_file_name is not None:
-            #     #print('EXTRACT_FILE_NAME EXISTS')
-
-            #     db.execute(sql_update_file_data_date.format(
-            #         extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
-            #     db.execute(sql_update_file_data_date_children.format(
-            #         extract_regex=extract_file_name, date_format_pattern=date_format, project_name=project_name), catch_exception=False)
  
-
-    # compiles a given regext and will returned a compiled regex
-    # will logg and error and returnx None if regext can not be compiled
-
     def validate_regex(self, regex):
         compiled_regex = None
 
@@ -280,8 +252,7 @@ class DataFile:
     # that id gets stored with the meta data about the file to later use
 
     def insert_working_files(self, db, foi, parent_file_id=0):
-        assert isinstance(foi, FilesOfInterest) or isinstance(
-            foi, FOI)
+        assert  isinstance( foi, FOI)
         appname = os.path.basename(__file__)+"insert_working_files"
         t = db_table.db_table_func.RecordKeeper(
             db, db_table.db_table_def.MetaSourceFiles, appname=appname)
@@ -321,7 +292,6 @@ class DataFile:
                                                             file_name_data=file_name_data,
                                                             file_type=v_file_type,
                                                             parent_file_id=parent_file_id,
-                                                            # upsert_function_name=file_of_interest_obj.upsert_function_name,
                                                             project_name=foi.project_name
                                                             )
                 t.add_record(row)
@@ -361,11 +331,11 @@ class DataFile:
 
         regex = None
         try:
-            regex = re.compile(foi.regex)
+            regex = re.compile(foi.file_regex)
         except Exception :
             logging.exception(
-                "Bad Regex Pattern for Walking Directory: '{}'".format(foi.regex))
-            return none
+                "Bad Regex Pattern for Walking Directory: '{}'".format(foi.file_regex))
+            return None
 
         s3 = boto3.resource('s3')
         split_url = foi.file_path.replace('s3://', '').split('/')
@@ -420,20 +390,20 @@ class DataFile:
     @staticmethod
     def walk_dir(foi):
         """Walks a directory structure and returns all files that match the regex pattern
-        :rtype: FilesOfInterest
+        :rtype: FOI
         """
-        assert isinstance(foi, FilesOfInterest) or isinstance(foi, FOI)
+        assert isinstance(foi, FOI)
         file_path = foi.file_path
         logging.debug("Walking Directory: '{}' : Search Pattern: {}".format(
-            file_path, foi.regex))
+            file_path, foi.file_regex))
 
         regex = None
         try:
  
-            regex = re.compile(foi.regex)
+            regex = re.compile(foi.file_regex)
         except Exception as e:
             logging.exception(
-                "Bad Regex Pattern for Walking Directory: '{}' \n{}".format(foi.regex, e))
+                "Bad Regex Pattern for Walking Directory: '{}' \n{}".format(foi.file_regex, e))
             raise
 
         files_list = []
@@ -556,8 +526,7 @@ class DataFile:
         if len(self.file_id_list)==0:
  
             x = set(self.project_list)
-            for foi in self.foi_list:
-                self.extract_file_name_datav2(db, foi)
+           
             project_list = (','.join("'" + item + "'" for item in x))
             appname = os.path.basename(__file__)+"get_work"
             sqlAlcTable = db_table.db_table_func.RecordKeeper(
@@ -617,6 +586,7 @@ class DataFile:
         self.pidManager.checkin('pre_process_scripts','START')
         scripts=[] 
         for foi in foi_list:
+             
             #just take the last instance
             scripts = foi.pre_process_scripts
         utils.loop_through_scripts(db,scripts)
@@ -659,7 +629,7 @@ class DataFile:
                 try:
                     full_file_name = os.path.join(
                         self.source_file_path, self.curr_src_working_file)
-                    foi = get_mapped_table(full_file_name, self.foi_list)
+                    foi = get_matching_yaml(full_file_name, self.foi_list)
                     self.current_file_state = DataFileState(self.db, os.path.join(
                     self.source_file_path, self.curr_src_working_file), self.file_id)
                     if foi is not None:
@@ -712,3 +682,8 @@ class DataFile:
                 sys.exit(1)  
             
         self.do_post_process_scripts(db,self.foi_list)     
+    def __str__(self):
+          
+        self_attributes=[{a:f"{getattr(self,a)}"} for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
+       
+        return str(self_attributes)

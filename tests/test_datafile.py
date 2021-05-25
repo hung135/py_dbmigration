@@ -47,10 +47,10 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
  
         # This is how we store the files we are looking for List of FileOfInterest
         foi_list = [
-            data_files.FilesOfInterest('CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
+            data_files.FOI(file_type='CSV', regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
                                        parent_file_id=0,project_name=self.PROJECT_NAME)]
         foi_list.append(
-            data_files.FilesOfInterest('ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
+            data_files.FOI(file_type='ZIP', regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
                                        parent_file_id=0,project_name=self.PROJECT_NAME))
 
         df = data_files.DataFile(working_path=self.dirs["sample_working_dir"], db=db, foi_list=foi_list,

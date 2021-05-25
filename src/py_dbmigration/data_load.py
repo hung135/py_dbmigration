@@ -9,7 +9,7 @@ import yaml
 from py_dbutils.rdbms import postgres as db_utils
 import py_dbmigration.data_file_mgnt as dfm
 import py_dbmigration.migrate_utils.static_func as static_func
-from  py_dbmigration.data_file_mgnt.utils import  pre_process_yaml as ppy
+from  py_dbmigration.data_file_mgnt.utils import  pre_process_yaml 
 from  py_dbmigration.data_file_mgnt.state import  FOI
 
 import multiprocessing as mp
@@ -38,23 +38,26 @@ def process_yaml(yaml_file=None):
     # with open(yaml_file,'r') as f:
     #     from yaml import Loader
     #     paths= yaml.load(f,Loader=Loader)
-    paths=ppy(yaml_file)
+    processed_yaml=pre_process_yaml(yaml_file)
+    
     datafiles = []
     #print(paths)
      
     
     try:
-        for path_dict in paths:
+        for path_dict in processed_yaml:
             level1={}
             for key in path_dict.keys():
-                
+                 
                 if key.upper()!='MAPPING':
                     level1[key]=path_dict[key]
             mapping=path_dict.get('mapping',False)
+            
             if mapping==False:
                 datafiles.append(FOI(level1))
             else:
                 for mapping in path_dict['mapping']:
+                   
                     datafiles.append(FOI(level1,mapping))
  
                                              
@@ -62,6 +65,7 @@ def process_yaml(yaml_file=None):
     except Exception as e:
         logging.exception("Error processing YAML Files: {}\n Error Message: {}".format(yaml_file, e))
         datafiles = []
+
     return datafiles
 
 #configure the root logger
@@ -129,7 +133,8 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
 
         
     datafiles = process_yaml(yamlfile)
- 
+   
+    print(len(datafiles))
     writable_path = write_path or os.getenv('WORKINGPATH',None)  
     PGDATASCHEMA = schema or os.getenv('PGDATASCHEMA',schema)
     
@@ -141,6 +146,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
             db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main',loglevel=logging.level)
         
             df = dfm.data_files.DataFile(writable_path, db, datafiles,claim_size=claim_size)
+            
             df.init_db()
             df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
              

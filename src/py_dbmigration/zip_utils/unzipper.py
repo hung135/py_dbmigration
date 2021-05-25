@@ -26,11 +26,12 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
         zip_type = zip_type.lower()
         # shutil.rmtree(writeable_path)
         types=['zip']
+        logging.debug("\tWrite Path:\n\t\t{}".format(writeable_path))
         if (any(zip_type in sublist for sublist in types) ):
             file = zipfile.ZipFile(source_file)
             if skip is False:
                 logging.debug("\tExtracting Zip File:\n\t\t{}".format(source_file))
-
+                 
                 file.extractall(writeable_path)
                 file.close()
             #else:
@@ -40,6 +41,7 @@ def extract_file(source_file, writeable_path, skip=False, zip_type='zip', skip_i
         if (any(zip_type in sublist for sublist in types) ):
         #if zip_type in ['gzip','tar']:
             logging.info("\tExtracting GZ File:{}".format(source_file))
+            
             file = tarfile.open(source_file, "r:gz")
             namelist = list(file.getnames())
             if skip is False:

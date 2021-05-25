@@ -93,7 +93,7 @@ def pre_process_yaml(yaml_file):
 
                 j = recurse_replace_yaml(j, yaml_obj)
 
-    #pprint.pprint(mig_list)
+  
      
     return mig_list
 def inject_frame_work_data(string_text, foi, df):
@@ -154,9 +154,11 @@ def get_imported_module(custom_logic: str,foi):
 def loop_through_logic(foi, db, df,process_logic):
     logic_status = None
     logic_status = LogicState(df.curr_src_working_file, df.current_file_state)
+    CURRENT_LOGIC_CONFIG=None #use to inject config into FOI object to be avail to runtime process
+    
     for logic in process_logic:
         
-
+         
         #foi.logic_options={}
         logic_name = None
         imported_module = None 
@@ -166,7 +168,7 @@ def loop_through_logic(foi, db, df,process_logic):
         #advanced process logic config
         name =''
         if custom_logic is not None:
-       
+            CURRENT_LOGIC_CONFIG=custom_logic
             if isinstance(custom_logic,dict):
                 name=custom_logic['name']
                 imported_module = get_imported_module(name,foi)
@@ -179,7 +181,7 @@ def loop_through_logic(foi, db, df,process_logic):
            
         
         elif plugin_logic is not None: 
-           
+            CURRENT_LOGIC_CONFIG=plugin_logic
             if isinstance(plugin_logic,dict):
                 name=plugin_logic['name']
                 imported_module = get_imported_plugin_module(logic,foi,name)
@@ -203,12 +205,15 @@ def loop_through_logic(foi, db, df,process_logic):
             
 
             logging.info(f'Custom Logic Start: {logic_name}' )
+            logging.debug(f'CURRENT_LOGIC_CONFIG: \n\t{CURRENT_LOGIC_CONFIG}')
             #df.set_work_file_status(db, df.file_id, custom_logic)
 
             time_started = datetime.datetime.now()
         # *************************************************************************
             logic_status.name=logic_name
+            setattr(foi, 'CURRENT_LOGIC_CONFIG', CURRENT_LOGIC_CONFIG)
             df.pidManager.checkin(logic_name,'START')
+            
             logic_status=imported_module.process(db, foi, df, logic_status)
             logic_status.completed()
             df.pidManager.checkin(logic_name,'DONE')

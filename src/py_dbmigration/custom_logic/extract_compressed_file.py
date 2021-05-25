@@ -4,7 +4,7 @@ import os, logging as lg
 logging=lg.getLogger() 
 import sys
 from py_dbutils.rdbms.postgres import DB
-from py_dbmigration.data_file_mgnt.data_files import DataFile,FilesOfInterest 
+from py_dbmigration.data_file_mgnt.data_files import DataFile 
 import py_dbmigration.zip_utils as zip_utils
 from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 
@@ -54,7 +54,7 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
         logging.debug(
             "WALKING EXTRACTED FILES:\nsrc_dir:{0} \nworking_dir:{1}: --{2}".format(new_src_dir, df.working_path, modified_write_path))
 
-        file_table_map = [FilesOfInterest('DATA', '.*', file_path=modified_write_path,  
+        file_table_map = [FOI(file_type='DATA', file_regex='.*', file_path=modified_write_path,  
                                                                     parent_file_id=file_id, project_name=foi.project_name)]
 
         # instantiate a new Datafile object that craw this new directory of extracted files
@@ -62,7 +62,7 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
             new_src_dir, db, file_table_map, parent_file_id=file_id)
     except Exception as e:
         logging.exception(f"Failed Extracting: {e}")
-        logic_status.failed(e,foi.reprocess)
+        logic_status.failed(e)
     
     return logic_status
 

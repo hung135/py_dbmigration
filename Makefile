@@ -44,7 +44,7 @@ exe: clean_exe
 	# --hidden-import=py_dbmigration.custom_logic.generate_checksum 
 
 	# need to make sure all dependency exists so pyinstall can crawl and package them also
-	pip install -r requirements.txt 
+	# pip install -r requirements.txt 
 
 	pyinstaller ./data_load.spec --distpath=exe
 	tar -czvf artifact.tar -C exe/ .
@@ -72,10 +72,11 @@ rebuild_move: clean_exe buildCentos6
 
 
 test: 
-	exe/data_load --yaml=/workspace/tests/simple_test.yaml --ll=info
+	#exe/data_load --yaml=/workspace/mpo.yaml --ll=info
+	exe/data_load --yaml=/workspace/tests/simple_test.yaml --ll=debug
 	psql -c"select id,file_name_data,file_process_state,file_name,reprocess,last_error_msg from logging.meta_source_files"
 
-test_python: 
+test_python: clean_meta clean_tmp
 	python /workspace/src/py_dbmigration/data_load.py --yaml=/workspace/tests/simple_test.yaml --ll=info
 	psql -c"select id,file_name_data,file_process_state,file_name,reprocess,last_error_msg from logging.meta_source_files"
 

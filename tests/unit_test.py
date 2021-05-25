@@ -121,11 +121,9 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         # WHERE table_schema = '{}'""".format(self.TEST_SCHEMA))
         
         # This is how we store the files we are looking for List of FileOfInterest
-        foi_list = [
-            data_files.FilesOfInterest('CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
+        foi_list = [ FOI(file_type='CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
                                        parent_file_id=0)]
-        foi_list.append(
-            data_files.FilesOfInterest('ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
+        foi_list.append( FOI(file_type='ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
                                        parent_file_id=0))
 
         df = data_files.DataFile(working_path=self.dirs["sample_working_dir"], db=db, foi_list=foi_list,
@@ -164,11 +162,9 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
 
     def make_foi(self):
         # This is how we store the files we are looking for List of FileOfInterest
-        foi_list = [
-            data_files.FilesOfInterest('CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
+        foi_list = [ FOI(file_type='CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
                                        parent_file_id=0)]
-        foi_list.append(
-            data_files.FilesOfInterest('ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
+        foi_list.append( FOI(file_type='ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
                                        parent_file_id=0))
         return foi_list
 

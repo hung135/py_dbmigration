@@ -3,6 +3,7 @@ import sys
 import py_dbmigration.db_table as db_table
 from py_dbmigration.data_file_mgnt import utils
 import os, logging as lg
+import pprint as pp
 
 logging=lg.getLogger('StateKeeper')
 
@@ -265,18 +266,15 @@ class FOI(object):
     # source to a table
     project_name = None
     regex = None
-    path = None
+     
     write_path = None
     file_path = None
     file_type= None
     table_name= None
-    file_regex= None
-    file_delimiter= None
-    column_list= None
-    column_list2 = None
+  
+     
     schema_name= None
-    use_header= None
-    has_header= None
+   
     append_file_id= None
     file_encoding= None
     pre_action_sql= None
@@ -298,39 +296,39 @@ class FOI(object):
     convert_table_name_snake_case = None
     encoding = None
     mapping = None
-    def __init__(self,level1,mapping=[]):
+    path = None
+    #required variables for now:
+    column_list = []
+    def __init__(self,level1=[],mapping=[],**kwargs):
+        
+        self.__dict__.update(kwargs)
 
         for key in level1:
+             
             if str(level1[key])=='None':
                 setattr(self, key, None)
             else:
                 setattr(self, key, level1[key])
-                #print("----foi key ",key,level1[key])
+                 
 
         for key in mapping:
+             
             if str(mapping[key])=='None':
                 setattr(self, key, None)
             elif (key)=='process_logic':
                 self.process_logic=self.process_logic + (mapping[key] or []) 
+            
             else:
                 setattr(self, key, mapping[key])
-
+         
         #ensure variable data types are proper here so we don't have to massage it else wheres
-        self.file_path = self.path or self.file_path
-        if not (self.file_path.lower().startswith('s3') or self.file_path.lower().startswith('switchboard@')):
-            self.file_path = os.path.abspath(self.file_path)
+        path_from_yaml=self.file_path or self.path
+         
+        if not (path_from_yaml.lower().startswith('s3') or path_from_yaml.lower().startswith('switchboard@')):
+             
+            self.file_path = os.path.abspath(path_from_yaml)
             
-         
-        self.regex = self.regex or self.file_regex
-         
-        self.encoding = self.file_encoding or self.encoding
-        self.limit_rows = self.limit_rows 
-        self.header_row = self.header_row or 0
-        if self.column_list is not None:
-            self.column_list =  self.column_list.replace(' ', '').replace('\n', '').split(',')
-        if self.column_list2 is not None:
-            self.column_list2 = self.column_list2.replace(' ', '').replace('\n', '').split(',')
-        print(self.pre_process_scripts)
+            
     #set runtime values for any objects
     def render_runtime_data(self,df):
         obj=self
@@ -356,123 +354,17 @@ class FOI(object):
                     setattr(self,a,field)
 
     def __str__(self):
-         
-        string_result={
-            'project_name':self.project_name,
-            'regex_pattern': self.regex,
-            'file_path':self.path,
-            'current_file':self.file_path,
-            'pre_process_scripts': self.pre_process_scripts,
-            'post_process_scripts': self.post_process_scripts
-
-        }
-         
-        return str(string_result)
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def __repr__(self):
-
-        return self.__str__()
-
-    def __del__(self):
-        pass
-
-  
-#this will be decprecated one day as you can see the why in the __init__ function
-class FilesOfInterest(FOI):
-    
-    # 2 scerios...given a path and a file pattern we walk the dir
-    # gven table_name and a file regex we use it to map files from the meta
-    # source to a table
-    write_path=None
-    extract_file_name_data = None
-    
-    file_path = None # the direction not the FQN of the file...
-    def __init__(self, file_type, file_regex, table_name=None, file_delimiter=None, column_list=None, schema_name=None,
-                 use_header=False, has_header=True, quoted_header=False, folder_regex=None, append_file_id=False, append_column_name='file_id',
-                   file_path=None, parent_file_id=0, insert_option=None, encoding='UTF8',
-                 append_crc=False, limit_rows=None,  
-                 upsert_function_name=None, import_method=None,   pre_action_sql=None,
-                 post_action=None, pre_action=None, process_logic=None, project_name='Default',
-                  reprocess=False, yaml=None,mapping=None):
-        self.yaml = yaml
-        self.mapping = mapping
-        # avoid trying to put any logic here
-        self.regex = file_regex
-        self.folder_regex = folder_regex
-        self.table_name = table_name
-        self.schema_name = schema_name
-        if column_list is not None:
-            self.column_list = column_list.replace(' ', '').replace('\n', '').split(',')
-        else:
-            self.column_list = None
-        
-        self.file_delimiter = file_delimiter
-        self.use_header = use_header
-        self.has_header = has_header
-        self.quoted_header = quoted_header
-        self.import_method = import_method
-        self.append_file_id = append_file_id
-        self.append_column_name = append_column_name
-        self.file_type = file_type
-         
-        self.append_crc = append_crc
-
-        if file_path is not None and not(file_path[:5]=='s3://'):
-            self.file_path = file_path = os.path.abspath(file_path)
-        else:
-            self.file_path = file_path
-        self.parent_file_id = parent_file_id
-        self.insert_option = insert_option
-        self.encoding = encoding
-        self.total_files = 0
-
-        self.encoding = encoding
-        self.current_working_abs_file_name = None
-        self.limit_rows = limit_rows
+          
+        self_attributes=[{a:f"{getattr(self,a)}"} for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
        
-        self.header_added = None
-        # self.start_row = start_row
-      
-         
-         
- 
-        self.upsert_function_name = upsert_function_name
-         
-        self.pre_action_sql = pre_action_sql
-        # list of sql to execute prior or post import of the file
-        self.post_action = post_action
-        self.pre_action = pre_action
-         
-        self.process_logic = process_logic
-        self.project_name = project_name
-         
-        self.reprocess = reprocess
-
-    
-    def __str__(self):
-        string_result={
-            'project_name':self.project_name,
-            'regex_pattern': self.regex,
-            'file_path':self.file_path,
-            'current_file':self.current_working_abs_file_name
-
-        }
-         
-        return str(string_result)
+        return str(self_attributes)
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
     def __repr__(self):
-        return self.__str__()
 
-    
+        return self.__str__()
 
     def __del__(self):
         pass
-
-    def authenticate(self):
-        pass
-
-   
+ 
