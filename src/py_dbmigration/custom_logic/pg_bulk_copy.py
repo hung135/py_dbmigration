@@ -35,7 +35,7 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
         target_schema = foi.schema_name
         delim = foi.file_delimiter or ','
         use_header = None
-        encoding=foi.encoding
+        encoding=foi.file_encoding
         config_column_list = foi.column_list
         
         #override anything passed in at logic level
@@ -46,6 +46,7 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
             table_name=foi.CURRENT_LOGIC_CONFIG.get('table_name',table_name)
             encoding=foi.CURRENT_LOGIC_CONFIG.get('encoding',encoding)
             config_column_list=foi.CURRENT_LOGIC_CONFIG.get('column_list',config_column_list)
+            encoding=foi.CURRENT_LOGIC_CONFIG.get('file_encoding',encoding)
              
         table_name_fqn = "{}.{}".format(target_schema,table_name) 
         config_column_list = [x.strip() for x in config_column_list.split(',')]  

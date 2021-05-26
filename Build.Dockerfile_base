@@ -44,10 +44,14 @@ COPY python_setup_36.txt /opt/Python-3.6.12/Modules/Setup
 #RUN updatedb
 #run ls /root/openssl
 #run testbreak
- 
+
+RUN yum install -y zlib-devel bzip2-devel openssl-devel ncurses-devel \
+                    sqlite-devel zlib* libffi-devel readline-devel tk-devel \
+                    xz-devel
 RUN  ./configure --enable-optimizations --enable-shared  CPPFLAGS="-I /root/include" LDFLAGS="-L /root/lib" 
 #--with-ssl=/root/openssl
-RUN make install
+RUN make install 
+
 #ENV LDFLAGS=-Wl,-rpath=/usr/src/openssl-1.0.2o/lib
 ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib
 RUN python --version && export LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib && python3 --version
@@ -65,10 +69,10 @@ RUN which python3
 RUN yum install -y python-pip
 RUN easy_install pip
 RUN which pip3
-#RUN pip3 install pyinstaller
-RUN yum install -y zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel zlib* libffi-devel readline-devel tk-devel 
+#RUN pip3 install pyinstaller 
+
 RUN pip3 install --upgrade pip --trusted-host pypi.org --trusted-host files.pythonhosted.org
-RUN yum install -y xz-devel
+ 
 RUN mkdir -p /Build/
 WORKDIR /Build
 
