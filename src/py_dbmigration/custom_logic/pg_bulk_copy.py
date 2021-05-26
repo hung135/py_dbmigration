@@ -51,6 +51,7 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
         config_column_list = [x.strip() for x in config_column_list.split(',')]  
         db_cols_list =db.get_table_columns(table_name_fqn)
         cols = config_column_list or  db_cols_list
+        cols = ','.join(cols)
         with_options=['FORMAT CSV']
         rows_inserted = 0
         data_file = os.path.join(df.source_file_path, df.curr_src_working_file)
@@ -72,10 +73,11 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
               
         with_options.append(f"ENCODING '{encoding}'")
          
-        if use_header:
-            with_options.append("HEADER")
+        
+            
         #header only works for csv
         if use_header:
+            with_options.append("HEADER")
             with open(data_file,'r',encoding=encoding) as f:
                 for row in f:
                     cols=row.replace(delim,',')
