@@ -3,6 +3,7 @@ import unittest
 
 import py_dbmigration.data_file_mgnt.data_files as data_files
 import py_dbmigration.migrate_utils.static_func as static_func
+from  py_dbmigration.data_file_mgnt.state import  FOI
 import py_dbmigration.db_table as db_table
 import os, logging as lg
 
@@ -17,7 +18,7 @@ logger.level = lg.INFO
 
  
 class Test_db_utils_postgres(unittest.TestCase,Config):
-     
+    PROJECT_NAME='Test_db_utils_postgres'
     SAMPLE_DATA_LINE_COUNT = 1500
     SAMPLE_DATA_TOTAL_TABLES = 8  # None will get all tables
     CLEAN_PREV = False
@@ -122,9 +123,9 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
         
         # This is how we store the files we are looking for List of FileOfInterest
         foi_list = [ FOI(file_type='CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
-                                       parent_file_id=0)]
+                                       parent_file_id=0,project_name=self.PROJECT_NAME)]
         foi_list.append( FOI(file_type='ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
-                                       parent_file_id=0))
+                                       parent_file_id=0,project_name=self.PROJECT_NAME))
 
         df = data_files.DataFile(working_path=self.dirs["sample_working_dir"], db=db, foi_list=foi_list,
                                  parent_file_id=0)
@@ -163,9 +164,9 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
     def make_foi(self):
         # This is how we store the files we are looking for List of FileOfInterest
         foi_list = [ FOI(file_type='CSV', file_regex=r".*\.csv", file_path=self.dirs["sample_data_dir"],
-                                       parent_file_id=0)]
+                                       parent_file_id=0,project_name=self.PROJECT_NAME)]
         foi_list.append( FOI(file_type='ZIP', file_regex=r".*\.zip", file_path=self.dirs["sample_zip_data_dir"],
-                                       parent_file_id=0))
+                                       parent_file_id=0,project_name=self.PROJECT_NAME))
         return foi_list
 
 

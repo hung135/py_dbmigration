@@ -30,7 +30,7 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     abs_file_path = logic_status.file_state.file_path
     #abs_writable_path = os.path.join(df.working_path, df.curr_src_working_file)
     
-    print(foi)
+     
 # def extract_file(self, db, abs_file_path, abs_writable_path, skip_ifexists=False):
 
     try:

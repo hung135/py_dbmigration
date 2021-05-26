@@ -57,7 +57,7 @@ def custom_logic(db, foi, df,logic_status):
     
     table_name = foi.table_name
     target_schema = foi.schema_name
-    #table_name_extract = foi.table_name_extract
+     
     header = foi.header_row
     names =  foi.column_list
     file_type = foi.file_type

@@ -53,14 +53,15 @@ logging.setLevel(log.DEBUG)
 
 def get_matching_yaml(file_name, foi_list):
     import copy
-    print("--------",file_name)
+  
     for foi in foi_list:
         # print(i.regex)
         # if i.table_name is not None:
+        
         assert isinstance(foi, FOI)
 
         if re.match(foi.file_regex, file_name, re.IGNORECASE):
-            print(foi)
+            
             logging.debug(
                 "File->Table mapping found: {} {}".format(foi.file_type, foi.file_regex))
             return copy.copy(foi)
@@ -133,7 +134,6 @@ class DataFile:
 
         self.project_list = []
         for p in foi_list:
-             
             self.project_list.append(p.project_name)
             if p.write_path is not None:
                 
@@ -212,6 +212,7 @@ class DataFile:
                         sw_db.execute(f"update switchboard.switchboard_history set state='C' where id={id}")
                 else:
                     if os.path.isdir(files_of_interest.file_path):
+                        
                         if files_of_interest.file_regex:
                             
                             self.FilesOfInterest = self.walk_dir( files_of_interest)
@@ -526,7 +527,7 @@ class DataFile:
         if len(self.file_id_list)==0:
  
             x = set(self.project_list)
-           
+            
             project_list = (','.join("'" + item + "'" for item in x))
             appname = os.path.basename(__file__)+"get_work"
             sqlAlcTable = db_table.db_table_func.RecordKeeper(

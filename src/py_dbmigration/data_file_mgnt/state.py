@@ -328,7 +328,7 @@ class FOI(object):
              
             self.file_path = os.path.abspath(path_from_yaml)
             
-            
+ 
     #set runtime values for any objects
     def render_runtime_data(self,df):
         obj=self

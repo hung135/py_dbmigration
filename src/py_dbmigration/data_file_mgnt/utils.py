@@ -205,7 +205,7 @@ def loop_through_logic(foi, db, df,process_logic):
             
 
             logging.info(f'Custom Logic Start: {logic_name}' )
-            logging.debug(f'CURRENT_LOGIC_CONFIG: \n\t{CURRENT_LOGIC_CONFIG}')
+            logging.info(f'CURRENT_LOGIC_CONFIG: \n\t{CURRENT_LOGIC_CONFIG}')
             #df.set_work_file_status(db, df.file_id, custom_logic)
 
             time_started = datetime.datetime.now()
