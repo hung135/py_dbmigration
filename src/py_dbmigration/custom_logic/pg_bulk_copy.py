@@ -28,22 +28,32 @@ import pprint
 
 # def process(db, file, file_id, dbschema):
 def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicState):
- 
-    try:  
     
-
+    try:  
+         
+        table_name = foi.table_name or static_func.convert_str_snake_case(df.curr_src_working_file)
+        target_schema = foi.schema_name
+        delim = foi.file_delimiter or ','
+        use_header = None
+        encoding=foi.encoding
+        config_column_list = foi.column_list
+        
+        #override anything passed in at logic level
+        if not isinstance(foi.CURRENT_LOGIC_CONFIG,str):
+            use_header=foi.CURRENT_LOGIC_CONFIG.get('use_header',use_header)
+            target_schema=foi.CURRENT_LOGIC_CONFIG.get('schema_name',target_schema)
+            delim=foi.CURRENT_LOGIC_CONFIG.get('delimiter',delim) 
+            table_name=foi.CURRENT_LOGIC_CONFIG.get('table_name',table_name)
+            encoding=foi.CURRENT_LOGIC_CONFIG.get('encoding',encoding)
+            config_column_list=foi.CURRENT_LOGIC_CONFIG.get('column_list',config_column_list)
+             
+        table_name_fqn = "{}.{}".format(target_schema,table_name) 
+        config_column_list = [x.strip() for x in config_column_list.split(',')]  
+        db_cols_list =db.get_table_columns(table_name_fqn)
+        cols = config_column_list or  db_cols_list
         with_options=['FORMAT CSV']
         rows_inserted = 0
-    
         data_file = os.path.join(df.source_file_path, df.curr_src_working_file)
-    
-        table_name = foi.table_name or static_func.convert_str_snake_case(df.curr_src_working_file)
-        
-        target_schema = foi.schema_name
-        table_name_fqn = "{}.{}".format(target_schema,table_name)
-        
-        delim = foi.file_delimiter or ','
-
         table_exists=db.table_exists(table_name_fqn)
     
         if not table_exists:
@@ -52,32 +62,25 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
     
             #sqlalchemy_conn = db.connect_SqlAlchemy()
             csv_reader=pandas.read_csv(data_file, sep=delim, nrows=10,
-                                        quotechar='"', encoding=foi.encoding, chunksize=10, 
+                                        quotechar='"', encoding=encoding, chunksize=10, 
                                         header=0, index_col=False,
                                         dtype=object)
             
             dataframe=csv_reader.get_chunk(3)
             dataframe.rename(columns=lambda x: str(x).strip(), inplace=True)
             db.create_table_from_dataframe(dataframe,table_name_fqn)
-            
-        
-    
-        db_cols_list =db.get_table_columns(target_schema+'.'+table_name)
-        config_column_list = [x.strip() for x in foi.column_list.split(',')]
-        cols = config_column_list or  db_cols_list
-        encoding = foi.encoding
+              
         with_options.append(f"ENCODING '{encoding}'")
-        
-        
-        if foi.use_header or foi.has_header:
+         
+        if use_header:
             with_options.append("HEADER")
         #header only works for csv
-        if foi.use_header:
+        if use_header:
             with open(data_file,'r',encoding=encoding) as f:
                 for row in f:
                     cols=row.replace(delim,',')
                     break
-        delim = foi.file_delimiter
+
         with_options.append(f"DELIMITER '{delim}'")  
             
         ###############THERE EXEC COMMAND LOGIC HERE########################################################
@@ -107,10 +110,6 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
         logging.exception(e)
         logic_status.failed(e) 
 
-        
-    
-
- 
     return logic_status
 
 
