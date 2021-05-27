@@ -1084,50 +1084,24 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
 
 
 # this will return sql to do upsert based on the primary keys
-def generate_postgres_upsert(db, table_name, source_schema, trg_schema=None, file_id=None, src_table=None):
-    
-    if trg_schema is None:
-        schema = db.schema
-    else:
-        schema = trg_schema
-    if src_table is None:
-        src_table = table_name
-
-    columns = db.get_table_columns("{}.{}".format(schema,table_name))
-    z = ""
-    md5_src = ""
-    md5_trg = ""
-    first_col = -1
+def generate_postgres_upsert(db, src_table_name, trg_table_name, src_schema, trg_schema=None):
+  
+    columns = db.get_table_columns("{}.{}".format(src_schema,src_table_name))
+    set_stmnt = ""
     for i, col in enumerate(columns):
         if i == 0:
-            z += col + ' = excluded.' + col + '\n\t\t'
+            set_stmnt += col + ' = excluded.' + col + '\n\t\t'
 
         else:
-            z += ',' + col + ' = excluded.' + col + '\n\t\t'
-
-        if col not in ('file_id', 'cdo_last_update'):
-            first_col += 1
-            if first_col == 0:
-                md5_trg += 'trg.' + col + '\n\t\t'
-                md5_src += 'excluded.' + col + '\n\t\t'
-            else:
-
-                md5_trg += ',trg.' + col + '\n\t\t'
-                md5_src += ',excluded.' + col + '\n\t\t'
-
-    primary_keys = get_pg_primary_key(db,schema + '.' + table_name)
-
-    sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {}  ON CONFLICT ({}) 
-    DO UPDATE SET \n\t{}\n WHERE \n\tmd5(ROW({})::Text)\n!= md5(ROW({})::Text)
-                    """.format(
-						        schema + '.' + table_name,
-						        ',\n\t\t'.join(columns),
-						        ',\n\t\t'.join(columns),
-						        source_schema + '.' + src_table,
-						        ','.join(primary_keys),
-						        z,
-						        md5_src,
-						        md5_trg)
+            set_stmnt += ',' + col + ' = excluded.' + col + '\n\t\t'
+ 
+    primary_keys = ','.join(get_pg_primary_key(db,trg_schema + '.' + trg_table_name))
+    cols=',\n\t\t'.join(columns)
+    sql_template = f"""INSERT into {trg_schema}.{trg_table_name} as trg ({cols})
+    SELECT {cols} 
+    FROM {src_schema}.{src_table_name} ON CONFLICT ({primary_keys}) 
+    DO UPDATE SET 
+    {set_stmnt} """ 
 
     return sql_template
 def get_pg_primary_key(db,table_name_fqn):
@@ -1141,56 +1115,7 @@ AND    i.indisprimary; """.format(table_name_fqn)
     return [col[0] for col in rs]
 
 # upsert syntax with no data checking
-
-
-# def generate_postgres_straight_upsert(db, table_name, source_schema, trg_schema=None,  src_table=None):
-#     import db_utils.dbconn
-#     assert isinstance(db, db_utils.DB)
-#     if trg_schema is None:
-#         schema = db.schema
-#     else:
-#         schema = trg_schema
-#     if src_table is None:
-#         src_table = table_name
-
-#     columns = db.get_table_columns(table_name, schema)
-#     z = ""
-#     md5_src = ""
-#     md5_trg = ""
-#     first_col = -1
-#     for i, col in enumerate(columns):
-#         if i == 0:
-#             z += col + ' = excluded.' + col + '\n\t\t'
-
-#         else:
-#             z += ',' + col + ' = excluded.' + col + '\n\t\t'
-
-#         if col not in ('file_id', 'cdo_last_update'):
-#             first_col += 1
-#             if first_col == 0:
-#                 md5_trg += 'trg.' + col + '\n\t\t'
-#                 md5_src += 'excluded.' + col + '\n\t\t'
-#             else:
-
-#                 md5_trg += ',trg.' + col + '\n\t\t'
-#                 md5_src += ',excluded.' + col + '\n\t\t'
-
-#     primary_keys = db.get_primary_keys(schema + '.' + table_name)
-
-#     sql_template = """INSERT into {} as trg ({})\nSELECT {} \nFROM {}  ON CONFLICT ({}) 
-#     DO UPDATE SET \n\t{}\n  
-#                     """.format(
-#         schema + '.' + table_name, ',\n\t\t'.join(columns), ',\n\t\t'.join(columns),
-#         source_schema + '.' + src_table,   ','.join(primary_keys),  z)
-
-#     return sql_template
-
-# @timer
-
-# run through the first 200 lines of a file and count the columns
-# puts the counts in a list and returns the median value
-
-
+ 
 def count_column_csv(full_file_path, header_row_location=0, sample_size=200, delimiter=','):
     import pandas
     import statistics

@@ -30,37 +30,34 @@ logging=lg.getLogger()
 
 def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     continue_processing = True
-    table_name = foi.table_name
-    data_schema = db.dbschema
-    stage_schema = 'stg'
-    primary_key = db.get_primary_keys(data_schema + "." + table_name)
+    trg_table_name = foi.table_name
+    src_table_name = foi.table_name
+    trg_schema = db.dbschema
+    src_schema = 'stg'
+    primary_key = db.get_primary_keys(trg_schema + "." + trg_table_name)
     update_sql = None
     if not isinstance(foi.CURRENT_LOGIC_CONFIG,str):
-        data_schema=foi.CURRENT_LOGIC_CONFIG.get('data_schema',data_schema)
-        stage_schema=foi.CURRENT_LOGIC_CONFIG.get('stage_schema',stage_schema)
-        delim=foi.CURRENT_LOGIC_CONFIG.get('delimiter',delim) 
-        table_name=foi.CURRENT_LOGIC_CONFIG.get('table_name',table_name)
-        encoding=foi.CURRENT_LOGIC_CONFIG.get('encoding',encoding)
-        config_column_list=foi.CURRENT_LOGIC_CONFIG.get('column_list',config_column_list)
-        encoding=foi.CURRENT_LOGIC_CONFIG.get('file_encoding',encoding)
+        trg_schema=foi.CURRENT_LOGIC_CONFIG.get('trg_schema',trg_schema)
+        src_schema=foi.CURRENT_LOGIC_CONFIG.get('src_schema',src_schema)
+        trg_table_name=foi.CURRENT_LOGIC_CONFIG.get('trg_table_name',trg_table_name)
+        src_table_name=foi.CURRENT_LOGIC_CONFIG.get('src_table_name',src_table_name)
 
 
     if len(primary_key) == 0:
-        no_upsert_sql = """insert into {target_schema}.{table_name} ({column_list}) select {column_list} from {src_schema}.{table_name}"""
-        col_list = db.get_columns(table_name, data_schema)
+        no_upsert_sql = """insert into {target_schema}.{trg_table_name} ({column_list}) 
+        select {column_list} from {src_schema}.{src_table_name}"""
+        col_list = db.get_columns(trg_table_name, trg_schema)
         colums_str = "\"" + "\", \"".join(col_list) + "\""
-        update_sql = no_upsert_sql.format(column_list=colums_str, target_schema=data_schema,
-                                          src_schema=stage_schema, table_name=table_name)
+        update_sql = no_upsert_sql.format(column_list=colums_str, target_schema=trg_schema,
+                                          src_schema=src_schema, trg_table_name=trg_table_name,
+                                          src_table_name=src_table_name)
         logging.info("\t\tNo Primary Key found, Loading directly:")
     else:
         upsert_sql = migrate_utils.static_func.generate_postgres_upsert(
-            db, table_name, stage_schema, data_schema, df.file_id)
+            db, src_table_name,trg_table_name, src_schema, trg_schema)
 
         update_sql = upsert_sql
         logging.info("\t\tPrimary Found Loading via Upsert: {}".format(primary_key))
-
-    #logging.info("\t\tSetting file_id to: {}".format(df.file_id))
-    #cnt = db.execute("update stg.{} set file_id={}".format(table_name, df.file_id),catch_exception=False)
     logging.info("\t\tLoading...could take a while:")
     logging.debug(update_sql)
     x = db.execute(update_sql,catch_exception=False)
