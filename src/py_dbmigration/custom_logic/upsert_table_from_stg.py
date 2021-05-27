@@ -29,7 +29,7 @@ logging=lg.getLogger()
 
 
 def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
-    continue_processing = True
+     
     trg_table_name = foi.table_name
     src_table_name = foi.table_name
     trg_schema = db.schema
@@ -37,13 +37,13 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     
     update_sql = None
     if not isinstance(foi.CURRENT_LOGIC_CONFIG,str):
-        print("heeeer-----")
+         
         trg_schema=foi.CURRENT_LOGIC_CONFIG.get('trg_schema',trg_schema)
         src_schema=foi.CURRENT_LOGIC_CONFIG.get('src_schema',src_schema)
         trg_table_name=foi.CURRENT_LOGIC_CONFIG.get('trg_table_name',trg_table_name)
         src_table_name=foi.CURRENT_LOGIC_CONFIG.get('src_table_name',src_table_name)
     primary_key = db.get_primary_keys(trg_schema + "." + trg_table_name)
-
+     
     if len(primary_key) == 0:
         no_upsert_sql = """insert into {target_schema}.{trg_table_name} ({column_list}) 
         select {column_list} from {src_schema}.{src_table_name}"""
