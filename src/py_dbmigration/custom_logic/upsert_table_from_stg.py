@@ -32,16 +32,17 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     continue_processing = True
     trg_table_name = foi.table_name
     src_table_name = foi.table_name
-    trg_schema = db.dbschema
+    trg_schema = db.schema
     src_schema = 'stg'
-    primary_key = db.get_primary_keys(trg_schema + "." + trg_table_name)
+    
     update_sql = None
     if not isinstance(foi.CURRENT_LOGIC_CONFIG,str):
+        print("heeeer-----")
         trg_schema=foi.CURRENT_LOGIC_CONFIG.get('trg_schema',trg_schema)
         src_schema=foi.CURRENT_LOGIC_CONFIG.get('src_schema',src_schema)
         trg_table_name=foi.CURRENT_LOGIC_CONFIG.get('trg_table_name',trg_table_name)
         src_table_name=foi.CURRENT_LOGIC_CONFIG.get('src_table_name',src_table_name)
-
+    primary_key = db.get_primary_keys(trg_schema + "." + trg_table_name)
 
     if len(primary_key) == 0:
         no_upsert_sql = """insert into {target_schema}.{trg_table_name} ({column_list}) 
@@ -64,7 +65,7 @@ def custom_logic(db: DB, foi: FOI, df: DataFile,logic_status: LogicState):
     logging.debug("\t\tUpsert completed: {}".format(x))
     # def custom_logic(db, schema, table_name, column_list=None, where_clause='1=1'):
 
-    return continue_processing
+    return logic_status
 # Generic code...put your custom logic above to leave room for logging activities and error handling here if any
 
 

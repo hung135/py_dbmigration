@@ -1084,7 +1084,7 @@ def generate_data_sample_all_tables(db, source_schema=None, data_directory='.', 
 
 
 # this will return sql to do upsert based on the primary keys
-def generate_postgres_upsert(db, src_table_name, trg_table_name, src_schema, trg_schema=None):
+def generate_postgres_upsert(db, src_table_name, trg_table_name, src_schema, trg_schema):
   
     columns = db.get_table_columns("{}.{}".format(src_schema,src_table_name))
     set_stmnt = ""

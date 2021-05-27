@@ -79,19 +79,14 @@ class Test_db_utils_postgres(unittest.TestCase,Config):
          
         self.assertTrue(x)
     #@unittest.skip("Not yet")
-    def test_05_upsert(self):
-        file_name=sys._getframe().f_code.co_name
+    def test_05_upsert(self): 
         db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
-        sql = """insert into table_b (pk_b, b)
-                select pk_a,a from table_a
-                on conflict ({}) do update set b=excluded.b;"""
-
-        self.assertTrue((static_func.generate_postgres_upsert(db, 'meta_source_files', 'stg', 'logging')))
+         
+        self.assertTrue((static_func.generate_postgres_upsert(db, 'meta_source_files','meta_source_files', 'logging','logging')))
         # self.db.get_primary_keys('logging.meta_source_files')
 
     #@static_func.timer
-    def test_06_migrate_utils(self):
-        file_name=sys._getframe().f_code.co_name
+    def test_06_migrate_utils(self): 
         db=self.get_pg_database(appname=self.whoami(), loglevel=logging.level)
         if self.GENERATE_SAMPLE_DATA:
             # static_func.generate_data_sample(self.db,'xref_clickwrap_agreement',self.schema,'_sample_data/xref_clickwrap_agreement.csv',line_count=5)
