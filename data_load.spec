@@ -32,6 +32,7 @@ a = Analysis(['src/py_dbmigration/data_load.py'],
                 ,'py_dbmigration.custom_logic.abort_if_duplicate'
                 ,'py_dbmigration.custom_logic.upsert_table_from_stg'
                 ,'py_dbmigration.custom_logic.copy_file'
+                ,'py_dbmigration.utils.func'
                 ,'xlrd'
                 ,'pylzma'
              ],

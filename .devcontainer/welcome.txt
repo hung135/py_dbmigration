@@ -14,5 +14,13 @@ Upload to PyPi:
 pgadmin:
 http://localhost
 
- 
+Github-Manager:
+    Uploading:
+        You need a github token which can be generated from github.com/settings/tokens and generate one
+        To upload:
+            python github-manager.py -e https://github.cfpb.gov -k <token> -r data/py_dbmigration -c "Data_load executable" -m <message_for_release> -a <path-to-asset>
+        To update a release:
+            python github-manager.py -e -k <token> -r <repo> -u -t <tag_id> -a <path-to-asset>
+    Downloading:
+            python github-manager.py -e -r <repo> -dl <tag> -o <output_dir> 
 

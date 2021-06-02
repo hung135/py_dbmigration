@@ -50,6 +50,7 @@ MANIFEST
 
 **/env_vars.rc
 env_vars.rc
+token.txt
 settings.json
 
 artifacts/
