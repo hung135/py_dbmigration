@@ -79,7 +79,7 @@ def custom_logic(db: db_utils.DB, foi: FOI, df: DataFile,logic_status: LogicStat
 
                 # check for sheet_name
                 if s is not None:
-                    dataframe = pd.read_excel(file, sheet_name=sn, encoding='unicode',  index_col=None, usecols=pcol, header=header_row_location)
+                    dataframe = pd.read_excel(file, sheet_name=int(args.s), encoding='unicode',  index_col=None, usecols=pcol, header=header_row_location)
                 else:
                     dataframe = pd.read_excel(file, encoding='unicode',  index_col=None, usecols=None, header=header_row_location)
 

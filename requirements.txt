@@ -16,3 +16,4 @@ prettytable
 bumpversion
 bs4
 pygithub
+openpyxl
