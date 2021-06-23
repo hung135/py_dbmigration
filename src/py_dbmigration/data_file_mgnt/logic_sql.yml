@@ -44,7 +44,7 @@ sql_update_ALL_meta_source:
   ,reprocess = True
   ,total_rows=0
   ,duplicate_file=False
-  WHERE  1=1
+  WHERE  project_name='{project_name}'
   AND {}
 sql_update_FAILED_meta_source:               
   UPDATE logging.meta_source_files
@@ -88,4 +88,5 @@ sql_any_proc_still_unzipping:
   AND file_type in ('ZIP','GZ','TAR','RAR')
   AND process_start_dtm IS NOT NULL 
   AND process_end_dtm IS NULL
+  AND {}
   

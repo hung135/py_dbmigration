@@ -93,7 +93,7 @@ testplugin: clean_meta
 
 testpluginexe: clean_meta
 	clear
-	/workspace/exe/data_load  --yaml=/workspace/tests/data_load_plugin.yaml --ll=20
+	/workspace/exe/data_load  --yaml=/workspace/tests/data_load_plugin.yaml --ll=debug
 create_test_schema:
 	psql <"/workspace/tests/sql/create_schema.sql"
 clean_meta:

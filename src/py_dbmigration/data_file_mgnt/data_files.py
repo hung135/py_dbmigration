@@ -551,8 +551,8 @@ class DataFile:
             if len(rows)==0:
                  
                 logging.info("\tNo Work Left, Checking Unzip in Progress")
-                sql = self.sql_yaml['sql_any_proc_still_unzipping']
-
+                sql = self.sql_yaml['sql_any_proc_still_unzipping'].format(f"project_name in ({project_list})")
+                
                 unzipping_count=1
                 sqlAlcTable.close() #closing sqlalchemy so we don't lock while sleeping
                 while(unzipping_count>0):

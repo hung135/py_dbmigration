@@ -110,6 +110,7 @@ class PidManager(object):
                 current_worker_host_pid= {self.pid} and
                 process_start_dtm is not NULL and 
                 process_end_dtm is not NULL
+                project_name='{self.project_name}'
                 """
         db.execute(sql)
 
