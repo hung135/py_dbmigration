@@ -3,6 +3,15 @@ FROM buildbase
 USER root
 RUN mkdir -p /Build/
 WORKDIR /Build/
+ 
+ 
+
+#RUN yum install -y postgresql-devel python3-devel
+ 
+RUN pip3 install wheel
+RUN pip3 install --upgrade pip 
+
+
 COPY *.spec .
 COPY src/ src/
 COPY hooks/ hooks/
@@ -10,9 +19,11 @@ COPY Makefile .
 # COPY version.py src/
 
 ENV PYTHONPATH="src/:/usr/local/lib64/python3.6/site-packages/"
-RUN yum install -y postgresql-devel python3-devel
+
+
+
 COPY requirements.txt src/
-RUN cat src/requirements.txt
+#RUN cat src/requirements.txt
 RUN pip3 install -r src/requirements.txt
 RUN ls -la src/
 RUN ls -la .
@@ -32,7 +43,7 @@ RUN pwd
 # RUN echo "\"\"\"}" >>src/version.py
 #RUN cd src/ && python3 src/setup.py build_ext --inplace
 RUN sed -i "/:=/d" Makefile
-RUN cat Makefile
+#RUN cat Makefile
 RUN make clean
 RUN make exe   
  

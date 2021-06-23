@@ -34,7 +34,6 @@ a = Analysis(['src/py_dbmigration/data_load.py'],
                 ,'py_dbmigration.custom_logic.copy_file'
                 ,'py_dbmigration.utils.func'
                 ,'xlrd'
-                ,'pylzma'
              ],
              hookspath=[],
              runtime_hooks=[],
