@@ -247,9 +247,7 @@ class LogicState:
     def __del__(self):
         assert isinstance(self.row,db_table.db_table_def.MetaSourceFiles)
         try:
-             
-            self.commit()
-            self.table.close()
+            self.file_state.close()
             
         except Exception as e:
  
