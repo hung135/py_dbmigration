@@ -109,7 +109,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
         parser.add_argument('--claim',default=1, help='Number file to claim at a time')
         parser.add_argument('--ll' , help='set logging mode: debug, info, warn, error ')
         parser.add_argument('--lf' , help='path to loging file')
-        parser.add_argument('--v' , help='print version info',action="store_true")
+        parser.add_argument('--v' ,'--version', help='print version info',action="store_true")
         
         args = parser.parse_args() 
         if args.v:
@@ -148,7 +148,9 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
             df = dfm.data_files.DataFile(writable_path, db, datafiles,claim_size=claim_size)
             
             df.init_db()
-            df.reset_meta_table(db, 'FAILED', where_clause=f" project_name='{df.project_name}' ")
+            project_list_string=','.join(f"'{w}'" for w in df.project_list)
+            
+            df.reset_meta_table(db, 'FAILED', where_clause=f" project_name in ({project_list_string})")
              
             df.do_work(db, cleanup=False,    skip_ifexists=False)
             #db.execute('vacuum analyze logging.meta_source_files')
