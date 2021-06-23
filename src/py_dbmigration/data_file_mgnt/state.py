@@ -221,9 +221,7 @@ class LogicState:
             self.row.process_msg_trail=self.name[:2000]
         else:
             self.row.process_msg_trail=str(self.name +f"\n{self.row.process_msg_trail}")[:2000]
-        logging.debug(f'Calling Commit from LogicState def completed(): {self.name}')
-        self.commit()
-        logging.debug(f'Commit Completed: {self.name}')
+        
          
     # def processed(self):
     #     if not self.status in [LogicStateEnum.FAILED]:
