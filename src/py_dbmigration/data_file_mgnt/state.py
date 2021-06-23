@@ -84,7 +84,7 @@ class DataFileState:
 
     def close(self):
         logging.debug(f'Close Function called: {self.name}')
-        self.table.session.commit()
+        self.commit()
         self.table.session.close()
         self.table.close()
     def __del__(self):
@@ -222,7 +222,7 @@ class LogicState:
         else:
             self.row.process_msg_trail=str(self.name +f"\n{self.row.process_msg_trail}")[:2000]
         logging.debug(f'Calling Commit from LogicState def completed(): {self.name}')
-        self.table.session.commit()
+        self.commit()
         logging.debug(f'Commit Completed: {self.name}')
          
     # def processed(self):
@@ -250,7 +250,7 @@ class LogicState:
         assert isinstance(self.row,db_table.db_table_def.MetaSourceFiles)
         try:
              
-            self.table.session.commit()
+            self.commit()
             self.table.close()
             
         except Exception as e:
