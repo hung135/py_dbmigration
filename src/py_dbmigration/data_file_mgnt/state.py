@@ -188,6 +188,7 @@ class LogicState:
             self.row.file_process_state=FileStateEnum.PROCESSING.value
             logging.debug(f'Calling Commit from LogicState: {self.name}')
             self.table.session.commit()
+            logging.debug(f'Calling Commit from LogicState Completed')
         
    
     def __str__(self):
