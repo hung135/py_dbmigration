@@ -148,7 +148,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
             df = dfm.data_files.DataFile(writable_path, db, datafiles,claim_size=claim_size)
             
             df.init_db()
-            df.reset_meta_table(db, 'FAILED', where_clause=" (1=1) ")
+            df.reset_meta_table(db, 'FAILED', where_clause=f" project_name='{df.project_name}' ")
              
             df.do_work(db, cleanup=False,    skip_ifexists=False)
             #db.execute('vacuum analyze logging.meta_source_files')
