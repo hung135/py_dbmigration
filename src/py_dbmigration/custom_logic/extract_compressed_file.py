@@ -11,7 +11,7 @@ from py_dbmigration.data_file_mgnt.state import LogicState, FOI
 
 
 '''
-    File name: generate_checksum.py
+    File name: extract_compressed_file.py
     Author: Hung Nguyen
     Date created: 7/17/2018
     Date last modified: 7/17/2018

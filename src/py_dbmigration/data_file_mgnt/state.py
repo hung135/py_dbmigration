@@ -93,6 +93,7 @@ class DataFileState:
     def commit(self):
         logging.debug(f'Commit Called: {self.name}')
         self.table.session.commit()
+        logging.debug(f'Commit Done: {self.name}')
     def rollback(self):
         logging.debug(f'Rollback Called: {self.name}')
         #self.table.session.rollback()

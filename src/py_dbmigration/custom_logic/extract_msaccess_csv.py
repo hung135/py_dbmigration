@@ -11,7 +11,7 @@ import py_dbmigration.zip_utils as zip_utils
 from py_dbmigration.data_file_mgnt.state import FOI, LogicState
 
 '''
-    File name: generate_checksum.py
+     
     Author: Hung Nguyen
     Date created: 5/22/2019
     Date last modified: 5/22/2019
