@@ -76,7 +76,7 @@ def parse_sql(dbconnection,yaml,runtime_params):
             for sql in sql_list:
                 runtime_sql=apply_runtime_value(sql,runtime_params)
                 logging.debug(f"Running SQL\n****************************\n{runtime_sql}\n****************************")
-                #sql_execute(dbconnection,runtime_sql)
+                sql_execute(dbconnection,runtime_sql)
         else:
             logging.debug("Data exists aborting")
             #sql_execute(conn,sql)
