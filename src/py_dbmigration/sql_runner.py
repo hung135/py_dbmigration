@@ -1,6 +1,6 @@
 import pandas as pd
 import logging
-from sqlalchemy import create_engine 
+import sqlalchemy
 import os 
 import sys 
 import argparse
@@ -28,7 +28,7 @@ def number_to_date(number):
     date = datetime(year=int(number[0:4]), month=int(number[4:6]), day=int(number[6:8]))
     return date
 def get_engine():
-    engine = create_engine('postgresql://{0}:{1}@{2}:{3}/{4}'.format(
+    engine = sqlalchemy.create_engine('postgresql://{0}:{1}@{2}:{3}/{4}'.format(
         PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE), client_encoding='utf8')
 
     #print('postgresql://{0}:{1}{2}:{3}/{4}'.format(PGUSER,"*******" , PGHOST, PGPORT, PGDATABASE))
@@ -36,7 +36,7 @@ def get_engine():
  
  
 def sql_execute(conn,sql):
-    conn.execute(sql)
+    conn.execute(sqlalchemy.text(sql))
  
 #stupid function to check for 1 record
 def check_loaded(conn,sql):
