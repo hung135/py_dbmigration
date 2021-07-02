@@ -127,6 +127,6 @@ def main():
     elapsed_time = end_time - start_time
     logging.info('end_time %s', end_time)
     logging.info('elapsed_time %s', elapsed_time)
-    sys.exit(exit)
+    
 if __name__ == "__main__":
     main()
