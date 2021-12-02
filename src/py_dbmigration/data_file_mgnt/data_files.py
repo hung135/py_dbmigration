@@ -85,6 +85,7 @@ def convert_to_sql(instring):
 class DataFile:
     #COMPRESSED_FILE_TYPES = ['ZIP', 'GZ', 'TAR']
     #    SUPPORTED_DATAFILE_TYPES = ['DATA', 'CSV', 'DAT', 'XLSX', 'TXT', 'XLS', 'MDB']
+    
     pidManager = None
     working_path = None
     full_file_path = None
@@ -114,12 +115,13 @@ class DataFile:
         return current_table_row_count
 
 
-    def __init__(self, working_path, db, foi_list, parent_file_id=0,compressed_file_type=None,claim_size=1):
+    def __init__(self, working_path, db, foi_list, parent_file_id=0,compressed_file_type=None,claim_size=1, enable_pidworker=False):
          
+        
         self.claim_size=claim_size
         self.file_id_list=[]
         logging.debug(f'Claim Size; {self.claim_size}')
-        if not self.pidManager:
+        if (not self.pidManager) and enable_pidworker:
             
             self.pidManager=PidManager(db,'dfm','logging','pidworker',False)
         curr_path = (os.path.dirname(__file__))

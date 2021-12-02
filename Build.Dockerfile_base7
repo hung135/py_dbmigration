@@ -1,9 +1,9 @@
-#FROM centos:6.8
-FROM centos/python-36-centos7
+
+FROM centos/python-38-centos7
 USER root
-#COPY centos6.repo /etc/yum.repos.d/CentOS-Base.repo
+ 
 RUN pip install --upgrade pip
-RUN easy_install-3.6 pip && \
+RUN easy_install-3.8 pip && \
     pip3 install pyinstaller
 
 RUN mkdir -p /Build/

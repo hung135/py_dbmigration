@@ -8,8 +8,7 @@ a = Analysis(['src/py_dbmigration/data_load.py'],
              binaries=[],
              datas=[('src/py_dbmigration/data_file_mgnt/logic_sql.yml', 'py_dbmigration/data_file_mgnt/')],
              hiddenimports=[
-                 'pkg_resources.py2_warn'
-                ,'py_dbmigration.custom_logic.abort_if_obsolete'
+                'py_dbmigration.custom_logic.abort_if_obsolete'
                 ,'py_dbmigration.custom_logic.pg_bulk_copy'
                 ,'py_dbmigration.custom_logic.extract_compressed_file'
                 ,'py_dbmigration.custom_logic.update_child_file'                

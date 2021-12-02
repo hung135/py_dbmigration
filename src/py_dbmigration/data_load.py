@@ -109,6 +109,9 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
         parser.add_argument('--claim',default=1, help='Number file to claim at a time')
         parser.add_argument('--ll' , help='set logging mode: debug, info, warn, error ')
         parser.add_argument('--lf' , help='path to loging file')
+        
+        parser.add_argument('--t' ,'--pidworker', help='enable pid worker tracking table',action="store_true")
+        
         parser.add_argument('--v' ,'--version', help='print version info',action="store_true")
         
         args = parser.parse_args() 
@@ -133,8 +136,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
 
         
     datafiles = process_yaml(yamlfile)
-   
-    print(len(datafiles))
+    
     writable_path = write_path or os.getenv('WORKINGPATH',None)  
     PGDATASCHEMA = schema or os.getenv('PGDATASCHEMA',schema)
     

@@ -13,7 +13,7 @@
 # echo "}">>version.py
 #docker build -t buildbase -f BuildBase.Dockerfile .
 docker build -t builder -f Build.Dockerfile .
-docker rm buildmecentos
+docker rm buildmecentos || true
 #docker run -it -v /tmp/deploy-ready/:/Build/output builder  
 docker run -d --name buildmecentos builder 
 #docker run -it --name buildmecentos -v /tmp/deploy-ready/:/Build/output builder cp switchboard_centos_6_10.tar /Build/output/

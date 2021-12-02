@@ -12,7 +12,7 @@ RUN pip3 install wheel
 RUN pip3 install --upgrade pip 
 
 
-COPY *.spec .
+COPY *.spec ./
 COPY src/ src/
 COPY hooks/ hooks/
 COPY Makefile .

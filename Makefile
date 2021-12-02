@@ -47,15 +47,16 @@ exe: clean_exe
 	# pip install -r requirements.txt 
 
 	pyinstaller ./data_load.spec --distpath=exe
+	pyinstaller ./publish.spec --distpath=exe
 	tar -czvf artifact.tar -C exe/ .
 
 buildbase:
 	docker image rm buildbase:latest || true
-	docker build -t buildbase -f Build.Dockerfile_base .
+	docker build -t buildbase -f Build.Dockerfile_base7 .
 
-buildCentos6: version
-	./BuildTarget.sh
-	mv ./artifacts/artifact.tar ./artifacts/py_dbmigration_centos6.tar
+# buildCentos6: version
+# 	./BuildTarget.sh
+# 	mv ./artifacts/artifact.tar ./artifacts/py_dbmigration_centos6.tar
 buildCentos7: version
 	./BuildTarget.sh
 	mv ./artifacts/artifact.tar ./artifacts/py_dbmigration_centos7.tar
