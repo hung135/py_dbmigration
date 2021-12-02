@@ -24,4 +24,4 @@ from setuptools import setup
 
 
 if __name__ == "__main__":
-    setup(install_requires = ['xlrd','py-dbutils','pyyaml'],use_pyscaffold=True)
+    setup(use_pyscaffold=True)
