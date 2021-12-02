@@ -24,4 +24,4 @@ except VersionConflict:
 
 
 if __name__ == "__main__":
-    setup(use_pyscaffold=True)
+    setup(install_requires = ['xlrd','py-dbutils','pyyaml'],use_pyscaffold=True)
