@@ -29,7 +29,7 @@ class PidManager(object):
             self.logging.exception('Singleton Already Initiated')
 
         return
-    def __init__(self,db:PGDB,project_name,schema,table_name,on_exit_deregister=True):
+    def __init__(self,db:PGDB,project_name,schema,table_name,on_exit_deregister=True,enable_pidworker=False):
 
 
         self.file_count=0
@@ -39,26 +39,28 @@ class PidManager(object):
         self.schema=schema
         self.table_name=table_name
         self.on_exit_deregister=on_exit_deregister
+        self.enable_pidworker=enable_pidworker
         self.register()
     def checkin(self,current_task:str,task_status:str,detail:str=None,claim_size:int=None):
 
-        self.current_task=current_task
-        self.task_status=task_status
-        if task_status=='ERROR':
-            self.has_error=True
-        if claim_size:
-            self.row.claim_size=claim_size
-        if current_task == 'BEGIN':
-            self.logging.debug('Restarting Timer for New Task')
-            self.row.job_start_time=func.now()
-        if detail and not self.has_error:
-            self.detail=detail
-            self.row.detail=self.detail
-        self.row.current_task=self.current_task
-        self.row.task_status=self.task_status
-        self.row.last_checkin=func.now()
-        self.commit()
-        self.logging.debug(f"Checking in: {current_task}- {task_status}")
+        if self.enable_pidworker:
+            self.current_task=current_task
+            self.task_status=task_status
+            if task_status=='ERROR':
+                self.has_error=True
+            if claim_size:
+                self.row.claim_size=claim_size
+            if current_task == 'BEGIN':
+                self.logging.debug('Restarting Timer for New Task')
+                self.row.job_start_time=func.now()
+            if detail and not self.has_error:
+                self.detail=detail
+                self.row.detail=self.detail
+            self.row.current_task=self.current_task
+            self.row.task_status=self.task_status
+            self.row.last_checkin=func.now()
+            self.commit()
+            self.logging.debug(f"Checking in: {current_task}- {task_status}")
         
     def commit(self):
         self.table.add_record(self.row,True)

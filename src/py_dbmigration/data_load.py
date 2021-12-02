@@ -115,6 +115,11 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
         parser.add_argument('--v' ,'--version', help='print version info',action="store_true")
         
         args = parser.parse_args() 
+        enable_pidworker=False
+        if args.t:
+            enable_pidworker=True
+        
+            
         if args.v:
             from py_dbmigration.version import version
             print(version)
@@ -147,7 +152,7 @@ def main(yamlfile=None,write_path=None,schema=None,logging_mode=None,cores=None)
             #so pyinstall will pick it upt
             db = db_utils.DB(schema=PGDATASCHEMA,label='data_load_main',loglevel=logging.level)
         
-            df = dfm.data_files.DataFile(writable_path, db, datafiles,claim_size=claim_size)
+            df = dfm.data_files.DataFile(writable_path, db, datafiles,claim_size=claim_size,enable_pidworker=enable_pidworker)
             
             df.init_db()
             project_list_string=','.join(f"'{w}'" for w in df.project_list)

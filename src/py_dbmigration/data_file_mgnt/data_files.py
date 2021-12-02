@@ -5,16 +5,16 @@ import socket
 import datetime
 import copy
 import pandas as pd
-#import db_logging
+ 
 import py_dbmigration.db_table as db_table
 from py_dbmigration.db_table.pid_worker import PidManager
-# mport db_table.db_table_func
+ 
 import yaml
 import sys
 import time
 
 import py_dbmigration.migrate_utils as migrate_utils
-import py_dbutils.parents as db_utils
+from py_dbutils.rdbms import postgres as db_utils 
 from py_dbmigration.data_file_mgnt import utils 
 from py_dbmigration.data_file_mgnt.state import DataFileState, FOI,LogicState, WorkState
 import os
@@ -121,9 +121,7 @@ class DataFile:
         self.claim_size=claim_size
         self.file_id_list=[]
         logging.debug(f'Claim Size; {self.claim_size}')
-        if (not self.pidManager) and enable_pidworker:
-            
-            self.pidManager=PidManager(db,'dfm','logging','pidworker',False)
+        self.pidManager=PidManager(db,'dfm','logging','pidworker',enable_pidworker)
         curr_path = (os.path.dirname(__file__))
 
         with open(os.path.join(curr_path, 'logic_sql.yml'), 'r') as f:
@@ -585,7 +583,7 @@ class DataFile:
         self.pop_row()
         return WorkState.HAVE_MORE_WORK
     def do_pre_process_scripts(self,db,foi_list):
-         
+          
         self.pidManager.checkin('pre_process_scripts','START')
         scripts=[] 
         for foi in foi_list:
@@ -615,8 +613,7 @@ class DataFile:
 
         # iterate over each file in the logging.meta_source_files table
         # get work will lock 1 file and store the id into meta_source_file_id
-        # inside this instance 
-         
+        # inside this instance  
         self.do_pre_process_scripts(db,self.foi_list)
         get_work_status=WorkState.HAVE_MORE_WORK
         
